@@ -1,0 +1,14 @@
+- create English TODO file
+
+- Türkçe klavye
+- user panic fonksiyonu
+- cr3_reload yerine invalidate
+- kernel monitor fonksiyonlari (kill ...)
+- mem_ fonksiyonlarini byte cinsine cevir
+
+- interruptlarin kritik yerlerde disable yapildiginin kontrolu
+- copy-on-write fork
+- shell programi
+
+- kullanici programlarinin ciktilarini Linux ile karsilastiran program
+- jos'daki gibi debug (satır numaralarıyla backtrace)

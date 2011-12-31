@@ -1,0 +1,110 @@
+TODO: create English README file
+
+	MakarnaX kernel 0.01
+
+NELER VAR?
+
+ - bellek yonetimi
+    - fiziksel bellegin yonetilmesi
+  	- sanal bellek (segmantasyon & paging)
+  	- malloc fonksiyonu (kmalloc)
+
+ - fork
+
+ - task scheduling
+
+ - binary program calistirma: exec gibi fakat dosya sistemi olmadigi icin kernel
+   dosyasina gomulmus executable elf dosyalarini kullanarak
+
+ - sistem cagrilari
+
+ - Unix signalleri
+
+ - ipc
+    - shared memory
+    - semaphore
+
+ - kernel monitor ve debug modu: ctrl-alt-delete ile sistem duraklatilip,
+   kaynaklar, process vb. gozlemlenebilir
+
+ - test programlari (user_programs): sistem cagrilarini test etmek icin
+   kullanilan programlar.
+
+
+NELER YOK?
+
+ - copy-on-write fork
+
+ - ipc
+    - message queues
+    - ipc permissions
+
+ - dosya sistemi
+
+ - kullanicilar
+
+ - socket
+
+ - bircok sey ...
+
+
+
+SISTEM CAGRILARI VE FONKSIYONLAR
+
+  int getpid();
+  int exit(int error_code);
+  int fork();
+  sighandler_t signal(int signum, sighandler_t handler);
+  unsigned int alarm(unsigned int seconds);
+  int kill(int pid, int sig);
+  int pause();
+  int wait(int *status);
+  int sys_ipc(unsigned int ipc_no, int a1, int a2, int a3, int a4);
+  unsigned int sys_sleep(unsigned int seconds);
+  int brk(void *addr);
+  void *sbrk(unsigned int increment);
+
+  void sys_cputs(const char *s, size_t len);
+  int sys_cgetc();
+  void sys_yield();
+
+  key_t shmget(key_t key, size_t size, int shmflg);
+  void *shmat(int shmid, const void *shmaddr, int shmflg);
+  int shmdt(const void *shmaddr);
+
+  int sem_init(sem_t *sem, int pshared, unsigned int value);
+  int sem_wait(sem_t *sem);
+  int sem_post(sem_t *sem);
+
+
+
+KODLAR
+
+  Kodlarda belli bir standart yok.  Biraz C++'in ozelliklerini iceriyor.
+  Kodlarin bulundugu dizinler su sekilde.
+
+  kernel : kernel kodlari
+
+  user_programs : test etmek icin kullanilan kullanici programlari
+
+  bin : derleme sonucunda olusturulan kernel'in bulundugu dizin
+
+  doc : dokumantasyon
+
+  include : kernel ve user programlari icin kullanilan include directory
+
+  include/kernel : kernele ozel header dosyalari
+
+  include/asm : assembly kodlari icin hazirlanmis inline fonksiyonlarin
+  bulundugu dizin. Fonksiyonlarin bir kisimi user modda kullanilabilir
+
+  include/*.h, include/sys/ : Standart C kutuphanesi vb. hem kernelde hem
+  userda kullanilabilir.
+
+  include/user.h : sistem cagrilarinin tanimli oldugu header. Sadece userda
+  kullanilabilir.
+
+
+DERLEME VE TEST ETME:
+
+   TODO: --
