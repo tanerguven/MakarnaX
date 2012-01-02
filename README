@@ -105,6 +105,61 @@ KODLAR
   kullanilabilir.
 
 
-DERLEME VE TEST ETME:
 
-   TODO: --
+DERLEMEK:
+
+  Derlemek icin, bir Linux dagitimi uzerinde make, gcc, g++ gibi standart
+  C / C++ derlemek icin gerekli olan program ve copilerlar kurulu olmalidir.
+  gcc 4.5.3 versiyonunda calisiyor. gcc 4.6.1 versiyonunda hatali calisiyor.
+  Farkli versiyonlarda calismama ihtimali var.
+
+  derlemek icin ana dizin icerisinden
+      make
+
+CALISTIRMAK:
+
+  MakarnaX sanal makinada ve gercek makinada calistirilabilir.
+
+
+  Sanal Makinada Calistirmak (QEMU):
+      make qemu
+
+
+  Farkli Qemu versiyonu kullanmak:
+      export QEMU=[qemu versiyonu] // export QEMU=qemu-kvm
+	  make qemu
+
+	  export QEMU=[qemu versiyonu]
+      export QEMU_MEM=[ram boyutu] // export QEMU_MEM=128
+	  make qemu
+
+
+  Baslangicta program calistirmak:
+      make run-[program adi]
+
+      proglarin listesi: kernel/test_programs.h
+
+
+  TODO: GDB ile calistirmak
+
+  TODO: gercek makinada calistirmak
+
+
+
+CALISTIRDIKTAN SONRA:
+  Debug moduna gecmek icin,
+      ctrl-alt-delete
+
+  Acilan komut satirinda help yazarak komut listesini gorebilirsiniz.
+
+  Debug komut satirindan kumutlar kullanilarak, kaynak kullanimi, process
+  listesi gibi bilgilere ulasilabilir.
+
+
+  Simdilik kerneli kullanmak icin fazla secenek yok. test programlarini
+  calistirip, kernel test edilebilir.
+
+
+
+TEST PROGRAMLARI:
+  TODO: --

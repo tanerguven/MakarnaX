@@ -19,6 +19,23 @@ PROGRAMS = \
 	user_programs/ipctest.bin \
 	user_programs/processmemtest.bin \
 
+######################################
+#	env variables
+######################################
+
+ifndef QEMU
+QEMU := qemu
+endif
+
+ifndef QEMU_MEM
+QEMU_MEM := 32
+endif
+
+
+######################################
+#
+######################################
+
 test-%:
 	rm -f kernel/init.o
 	$(MAKE) "DEFS=-DTEST=MAKARNAX_TEST_$*"
@@ -55,25 +72,22 @@ clean:
 	done
 	rm -f bin/kernel bin/mnt/kernel bin/kernel.asm;
 
-image:
-	sh scripts/update_img.sh
-
-qemu: kernel #image
-	OS6828-qemu -m 32 -kernel bin/kernel -serial mon:stdio
-# OS6828-qemu -m 32 bin/kernel.img -serial mon:stdio
-
-qemu-gdb: kernel #image
-	OS6828-qemu -m 32 -kernel bin/kernel -serial mon:stdio -S -s
-
-run-%:
-	$(MAKE) test-$*
-	OS6828-qemu -m 32 -kernel bin/kernel -serial mon:stdio
-
-kvm: kernel
-	qemu-kvm -m 32 -kernel bin/kernel -serial mon:stdio
-
 documentation:
 	doxygen doc/doc.doxygen
 
 documentation-clean:
 	rm -rf doc/html
+
+######################################
+#		running
+######################################
+
+qemu: kernel #image
+	$(QEMU) -m $(QEMU_MEM) -kernel bin/kernel -serial mon:stdio
+
+qemu-gdb: kernel #image
+	$(QEMU) -m $(QEMU_MEM) -kernel bin/kernel -serial mon:stdio -S -s
+
+run-%:
+	$(MAKE) test-$*
+	$(QEMU) -m $(QEMU_MEM) -kernel bin/kernel -serial mon:stdio

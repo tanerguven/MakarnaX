@@ -41,6 +41,10 @@ extern int load_program(uint32_t addres);
 	task_create(&USER_PROGRAM(program), #program" "#param, DEFAULT_PRIORITY); \
 	} while (0)
 
+/*
+ * test programlari
+ * MAKARNAX_TEST_dongu, "make run-%" komutunda dongu olarak kullanilir
+ */
 #define MAKARNAX_TEST_dongu 1
 #define MAKARNAX_TEST_sleep 2
 #define MAKARNAX_TEST_hello 3

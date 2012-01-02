@@ -5,6 +5,7 @@
 - cr3_reload yerine invalidate
 - kernel monitor fonksiyonlari (kill ...)
 - mem_ fonksiyonlarini byte cinsine cevir
+- farkl gcc versiyonlarinda calistirilmali ve test edilmeli
 
 - interruptlarin kritik yerlerde disable yapildiginin kontrolu
 - copy-on-write fork
