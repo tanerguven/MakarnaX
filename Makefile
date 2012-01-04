@@ -27,11 +27,6 @@ ifndef QEMU
 QEMU := qemu
 endif
 
-ifndef QEMU_MEM
-QEMU_MEM := 32
-endif
-
-
 ######################################
 #
 ######################################
@@ -83,10 +78,10 @@ documentation-clean:
 ######################################
 
 qemu: kernel #image
-	$(QEMU) -m $(QEMU_MEM) -kernel bin/kernel -serial mon:stdio
+	$(QEMU) -kernel bin/kernel -serial mon:stdio
 
 qemu-gdb: kernel #image
-	$(QEMU) -m $(QEMU_MEM) -kernel bin/kernel -serial mon:stdio -S -s
+	$(QEMU) -kernel bin/kernel -serial mon:stdio -S -s
 
 run-%:
 	$(MAKE) test-$*

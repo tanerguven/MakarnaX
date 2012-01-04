@@ -135,18 +135,24 @@ CALISTIRMAK:
 
 
   Farkli Qemu versiyonu kullanmak:
-      export QEMU=[qemu versiyonu] // export QEMU=qemu-kvm
+      export QEMU=[qemu programi ve parametreleri]
 	  make qemu
-
-	  export QEMU=[qemu versiyonu]
-      export QEMU_MEM=[ram boyutu] // export QEMU_MEM=128
-	  make qemu
+  yada
+      make QEMU=[qemu programi ve parametreleri] qemu
 
 
   Baslangicta program calistirmak:
       make run-[program adi]
 
-      proglarin listesi: kernel/test_programs.h
+      programlarin listesi: kernel/test_programs.h
+
+
+  Ornekler:
+      make QEMU="qemu -m 32" run-hello
+      // -m -> memory
+
+      make QEMU="qemu-kvm" run-fork
+
 
 
   TODO: GDB ile calistirmak
