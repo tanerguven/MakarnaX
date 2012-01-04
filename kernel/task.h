@@ -74,7 +74,7 @@ struct SignalInfo {
 };
 
 inline Trapframe* current_registers() {
-	return (Trapframe*)(MMAP_KERNEL_STACK_TOP - sizeof(Trapframe));
+	return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_TOP - sizeof(Trapframe));
 }
 
 extern struct Task* task_curr;

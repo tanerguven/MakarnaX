@@ -105,7 +105,7 @@ void vm_init() {
 		uint32_t pt = p->addr();
 
 #if MMAP_SEG_KERNEL_BASE != 0
-		/* kernel segmantasyon kullanilarak calistirilacaksa */
+		/* kernel segmentation kullanilarak calistirilacaksa */
 		kernel_dir.pgdir->e[i+VA_t(MMAP_KERNEL_BASE).pdx] = PDE_t(pt, PTE_P | PTE_W);
 		kernel_dir.pgtables[i+VA_t(MMAP_KERNEL_BASE).pdx] = (PageTable*)pt;
 #endif
@@ -137,7 +137,7 @@ void vm_init() {
 	printf(">> cr0 OK\n");
 	/* */
 
-	/* 2 - segmantation'u etkinleştir */
+	/* 2 - segmentation'u etkinleştir */
 	for (uint32_t i = 0 ; i < sizeof(gdt) / sizeof(gdt[0]) ; i++)
 		gdt[i].set_segNull();
 	gdt_pd.base = kaddr2va((uint32_t)gdt);
@@ -155,7 +155,7 @@ void vm_init() {
 	ss_set(GD_KD);
 	cs_set(GD_KT);
 	asm volatile("lldt %%ax" :: "a" (0));
-	printf(">> segmantation OK\n");
+	printf(">> segmentation OK\n");
 	/* */
 
 #if MMAP_SEG_KERNEL_BASE != 0
@@ -231,7 +231,7 @@ static inline int copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va, i
 	 * kopyala. Sanal adresi kullanmadan fiziksel olarak kopyalamanin bir
 	 * yontemi olabilir.
 	 * Farkli olarak paging kapatilarak yapilabilir. Bence VM kapatmak daha
-	 * sacma bir cozum. (Her page icin pagingi ve segmantasyonu kapa/ac)
+	 * sacma bir cozum. (Her page icin pagingi ve segmentationu kapa/ac)
 	 *
 	 * Simdilik cache-disable olarak gecici map ederek yapiyoruz.
 	 */

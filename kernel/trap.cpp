@@ -213,7 +213,14 @@ void print_trapframe(Trapframe *tf) {
 	printf("ds: %08x\n", tf->ds);
 	printf("esp: %08x\n", tf->esp);
 	printf("ebp: %08x\n", tf->regs.ebp);
+
 	printf("eax: %08x\n", tf->regs.eax);
+	printf("ecx: %08x\n", tf->regs.ecx);
+	printf("edx: %08x\n", tf->regs.edx);
+	printf("ebx: %08x\n", tf->regs.ebx);
+	printf("edi: %08x\n", tf->regs.edi);
+	printf("esi: %08x\n", tf->regs.esi);
+
 }
 
 asmlink void trap_handler(Trapframe *tf) {

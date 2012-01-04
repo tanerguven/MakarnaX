@@ -29,28 +29,13 @@
 #include <errno.h>
 #include "physical.h"
 
+#include <kernel/configuration.h>
+
 /*
  * Kernel ve user adres uzaylarinin yerleri bu makrolar ile degistirilebilir
  */
-#if 0
-/* segmantasyon acik, son 1 gb kernel */
-#define MMAP_KERNEL_BASE 0xC0000000
-#define MMAP_KERNEL_STACK_TOP 0xF0000000
-#define MMAP_KERNEL_TMP_PAGE_BASE 0xD0000000
-#define MMAP_USER_BASE 0x00000000
-#define MMAP_USER_STACK_TOP 0xC0000000
-#endif
 
-#if 1
-/* segmantasyon acik, ilk 1 gb kernel */
-#define MMAP_KERNEL_BASE 0x00000000
-#define MMAP_KERNEL_STACK_TOP 0x40000000
-#define MMAP_KERNEL_TMP_PAGE_BASE 0x20000000
-#define MMAP_USER_BASE 0x40000000
-#define MMAP_USER_STACK_TOP 0xF0000000
-#endif
-
-#if 0
+#if __CONF_segmentation == __CONF_segmentation_off
 /* segmantasyon kapali, ilk 16 mb kernel alani */
 #define MMAP_KERNEL_BASE 0x00000000
 #define MMAP_KERNEL_STACK_TOP 0x01000000
@@ -59,6 +44,24 @@
 #define MMAP_USER_STACK_TOP 0xF0000000
 #define MMAP_SEG_KERNEL_BASE 0
 #define MMAP_SEG_USER_BASE 0
+#endif
+
+#if __CONF_segmentation == __CONF_segmentation_higher_kernel
+/* segmantasyon acik, son 1 gb kernel */
+#define MMAP_KERNEL_BASE 0xC0000000
+#define MMAP_KERNEL_STACK_TOP 0xF0000000
+#define MMAP_KERNEL_TMP_PAGE_BASE 0xD0000000
+#define MMAP_USER_BASE 0x00000000
+#define MMAP_USER_STACK_TOP 0xC0000000
+#endif
+
+#if __CONF_segmentation == __CONF_segmentation_lower_kernel
+/* segmentation acik, ilk 1 gb kernel */
+#define MMAP_KERNEL_BASE 0x00000000
+#define MMAP_KERNEL_STACK_TOP 0x40000000
+#define MMAP_KERNEL_TMP_PAGE_BASE 0x20000000
+#define MMAP_USER_BASE 0x40000000
+#define MMAP_USER_STACK_TOP 0xF0000000
 #endif
 
 #define MMAP_KERNEL_STACK_BASE (MMAP_KERNEL_STACK_TOP - 0x1000)
@@ -70,7 +73,7 @@
 #define MMAP_USER_STACK_LIMIT (0x00800000-0x1000)
 #define MMAP_USER_STACK_BASE_LIMIT (MMAP_USER_STACK_TOP - MMAP_USER_STACK_LIMIT)
 
-/* segmantasyon aciksa segmantasyon makrolarina adresleri ataniyor */
+/* segmentation aciksa segmantasyon makrolarina adresleri ataniyor */
 #ifndef MMAP_SEG_KERNEL_BASE
 # define MMAP_SEG_KERNEL_BASE MMAP_KERNEL_BASE
 #endif
