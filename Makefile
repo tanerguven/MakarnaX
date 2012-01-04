@@ -90,4 +90,8 @@ qemu-gdb: kernel #image
 
 run-%:
 	$(MAKE) test-$*
-	$(QEMU) -m $(QEMU_MEM) -kernel bin/kernel -serial mon:stdio
+	$(MAKE) qemu
+
+gdb-%:
+	$(MAKE) test-$*
+	$(MAKE) qemu-gdb

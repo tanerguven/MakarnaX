@@ -1,8 +1,8 @@
 D = ../..
 include $(D)/Makefile.inc
 
-CFLAGS = -I$(D)/include -O1 -g3 -Wall -c -nostdlib -fno-builtin -fno-stack-protector
-CFLAGS += -Isysdeps/i386/ -I./ -Isysdeps/generic
+CFLAGS = $(M) -I$(D)/include -O1 -g3 -Wall -c -nostdlib -fno-builtin -fno-stack-protector
+CFLAGS += $(M) -Isysdeps/i386/ -I./ -Isysdeps/generic
 
 CPPFLAGS = $(CFLAGS)
 

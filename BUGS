@@ -1,0 +1,3 @@
+
+ - gcc 4.6.1 ile derlendiginde fonksiyonlara girilirken push ebp yapilmiyor.
+   Bundan dolayi read_eip fonksiyonunda page fault aliniyor.

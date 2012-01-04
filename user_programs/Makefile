@@ -1,10 +1,10 @@
-CC = gcc -m32
-CFLAGS = -I../include -O0 -g3 -Wall -c -nostdlib -nostdinc -fno-builtin\
+D = ..
+include ../Makefile.inc
+
+CFLAGS = $(M) -I../include -O0 -g3 -Wall -c -nostdlib -nostdinc -fno-builtin\
 	    -fno-stack-protector -nostartfiles -nodefaultlibs -D_USER_PROGRAM
-CXX = $(CC)
+
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
-AS = gcc -m32
-LD = ld -m elf_i386
 
 LIBS = \
 	../lib/user_lib.a \

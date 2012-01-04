@@ -110,11 +110,20 @@ DERLEMEK:
 
   Derlemek icin, bir Linux dagitimi uzerinde make, gcc, g++ gibi standart
   C / C++ derlemek icin gerekli olan program ve copilerlar kurulu olmalidir.
-  gcc 4.5.3 versiyonunda calisiyor. gcc 4.6.1 versiyonunda hatali calisiyor.
-  Farkli versiyonlarda calismama ihtimali var.
 
   derlemek icin ana dizin icerisinden
       make
+
+  farkli versiyon gcc ile derlemek icin:
+      make CC=gcc-4.4 CXX=g++-4.4
+  ya da
+      export CC=gcc-4.4
+      export CXX=g++-4.4
+      make
+
+  gcc 4.4 : calisiyor
+  gcc 4.5 : calisiyor
+  gcc 4.6 : hatali (bug listesinde yaziyor)
 
 CALISTIRMAK:
 
