@@ -408,6 +408,9 @@ bad_tmp_page_alloc_map__page_alloc:
 }
 
 int tmp_page_free(uint32_t va) {
+	// FIXME: MAMP_KERNEL_TMP_PAGE_TOP
+	ASSERT(va >= MMAP_KERNEL_TMP_PAGE_BASE && va < MMAP_KERNEL_TOP);
+
 	int r;
 	r = kernel_dir.page_remove(va);
 	if (r > -1)

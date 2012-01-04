@@ -220,7 +220,7 @@ static inline void idt_load(uint32_t p) {
 	asm volatile("lidt (%0)\n\t" :: "r"(p));
 }
 
-extern uint32_t read_eip();
+extern uint32_t read_eip() __attribute__ ((noinline));
 
 static inline void cli() {
 	asm("cli");

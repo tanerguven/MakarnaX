@@ -123,9 +123,10 @@ asmlink void sys_wait() {
 	ASSERT(task_curr);
 
 	if ( task_curr->pgdir.verify_user_addr(state, 4, PTE_U) < 0 ) {
-		printf(">> sys_signal not verified: 0x%08x - 0x%08x\n", state, state+1);
+		printf(">> sys_wait not verified: 0x%08x - 0x%08x\n", state, state+1);
 		do_exit(111);
 	}
+	state = (int*)uaddr2kaddr((uint32_t)state);
 
 	uint32_t eflags = eflags_read();
 	cli();

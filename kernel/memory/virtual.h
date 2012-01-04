@@ -33,7 +33,7 @@
  * Kernel ve user adres uzaylarinin yerleri bu makrolar ile degistirilebilir
  */
 #if 0
-/* segmantasyon acki, son 1 gb kernel */
+/* segmantasyon acik, son 1 gb kernel */
 #define MMAP_KERNEL_BASE 0xC0000000
 #define MMAP_KERNEL_STACK_TOP 0xF0000000
 #define MMAP_KERNEL_TMP_PAGE_BASE 0xD0000000

@@ -126,7 +126,7 @@ void kfree(void *v) {
 		uint32_t va = kaddr2va((uint32_t)fb->header.page_addr());
 		ASSERT(fb->size() == 0x1000);
 		// printf(">> page %08x tamamen bos, siliniyor\n", va);
-		tmp_page_free(va);
+		tmp_page_free(va2kaddr(va));
 	}
 }
 

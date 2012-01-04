@@ -106,15 +106,15 @@ void __panic_assert(const char* file, int line, const char* d) {
 void test() {
 #if TEST == MAKARNAX_TEST_dongu
 	/* dongu testi */
-	test_program(dongu, "0 30000");
-	test_program(dongu, "0 30000");
-	test_program(dongu, "0 30000");
+	test_program(dongu, 0 30000);
+	test_program(dongu, 0 30000);
+	test_program(dongu, 0 30000);
 #endif
 
 #if TEST == MAKARNAX_TEST_sleep
 	/* dongu & sleep testi */
-	test_program(dongu, "dongu 1 100");
-	test_program(dongu, "dongu 1 100");
+	test_program(dongu, 1 100);
+	test_program(dongu, 1 100);
 #endif
 
 #if TEST == MAKARNAX_TEST_hello
