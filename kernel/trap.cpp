@@ -198,7 +198,7 @@ void init_traps() {
 	/* load IDT */
 	idt_load((uint32_t)&idt_pd);
 
-    printf(">> init_traps OK\n");
+	printf(">> init_traps OK\n");
 }
 
 /** kayitli olmayan exception durumu */
@@ -212,6 +212,7 @@ void print_trapframe(Trapframe *tf) {
 	printf("cs: %08x\n", tf->cs);
 	printf("ds: %08x\n", tf->ds);
 	printf("esp: %08x\n", tf->esp);
+	printf("ebp: %08x\n", tf->regs.ebp);
 	printf("eax: %08x\n", tf->regs.eax);
 }
 
@@ -249,9 +250,13 @@ asmlink void trap_handler(Trapframe *tf) {
 		task_curr->registers_saved = 0;
 
 	} else {
-		/* donanim kesmeleri haricindekiler kernel modda calismayacak */
+		/*
+		 * donanim kesmeleri ve page fault haricindekiler kernel modda
+		 * calismayacak.
+		 */
+		if (tf->trapno == T_PGFLT)
+			do_page_fault(tf);
 		printf("trapno: %d\n", tf->trapno);
-		print_trapframe(tf);
 		PANIC("kernel mode trap");
 	}
 
@@ -269,10 +274,11 @@ asmlink void trap_handler(Trapframe *tf) {
 return_trap_handler:
 	cli(); // interruptlar disable olmazsa tuhaf hatalar oluyor
 	ASSERT(task_curr && task_curr->state == Task::State_running);
-	/* kernel modda zamanini tuketmisse task degistir */
-	if (task_curr->counter < 0)
+
+	if (task_curr->counter < 0) {
+		/* kernel modda zamanini tuketmisse task degistir */
 		schedule();
-	else {
+	} else {
 		if (!task_curr->registers_saved)
 			return task_trapret(current_registers());
 
@@ -281,7 +287,6 @@ return_trap_handler:
 
 		return task_trapret(&task_curr->registers_user);
 	}
-	/* */
 }
 
 void do_error(Trapframe* tf) {
@@ -318,6 +323,14 @@ void do_page_fault(Trapframe *tf) {
 	int r;
 	uint32_t fault_va = cr2_read();
 
+	if ((tf->cs & 3) != 3) {
+		/* page fault user mod disinda olduysa */
+		printf(">> Kernelde bug olabilir\n");
+		print_trapframe(tf);
+		printf("fault_va: %08x\n", fault_va);
+		PANIC("page fault in kernel");
+		return;
+	}
 
 	/* programin sonlanmasi durumu */
 	if (tf->eip == va2uaddr(0xffffffff)) {
@@ -365,11 +378,6 @@ void do_page_fault(Trapframe *tf) {
 	print_trapframe(tf);
 	printf(">> fault va: %08x\n", fault_va);
 
-	if ((tf->cs & 3) == 3) {
-		/* user modda bilinmeyen bir page fault olursa programi sonlandir */
-		do_exit(111);
-	} else {
-		printf(">> Kernelde bug olabilir\n");
-		PANIC("page fault in kernel");
-	}
+	/* user modda bilinmeyen bir page fault olursa programi sonlandir */
+	do_exit(111);
 }

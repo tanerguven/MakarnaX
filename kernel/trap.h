@@ -238,6 +238,8 @@ inline void push_registers(PushRegs *dest) {
 	asm volatile("popal");
 }
 
+void print_trapframe(Trapframe *tf);
+
 /* #endif /\* __ASSEMBLER__ *\/ */
 
 #endif /* TRAP_H_ */
