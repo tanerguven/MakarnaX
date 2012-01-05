@@ -121,8 +121,9 @@ void schedule() {
 			check_signals();
 
 		} else {
+			/* hic runnable task yoksa */
+			task_curr = NULL;
 			/* kesme gelene kadar bekle */
-			task_curr = &task0;
 			sti();
 			asm("hlt");
 			cli();
@@ -157,6 +158,12 @@ asmlink void sys_yield() {
 asmlink void do_timer(Trapframe *tf) {
 	ASSERT(!(eflags_read() & FL_IF));
 	jiffies++;
+
+	if (task_curr == NULL) {
+		/* sistem bosta bekliyor */
+		// TODO: bosta gecen sureyi hesaplamak icin sayac eklenebilir
+		return;
+	}
 
 	task_curr->counter--;
 	// printf(">> counter: %d\n", task_curr->counter);

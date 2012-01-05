@@ -5,6 +5,9 @@
 - cr3_reload yerine invalidate
 - kernel monitor fonksiyonlari (kill ...)
 - mem_ fonksiyonlarini byte cinsine cevir
+- if 0, 1 seklinde tanimlanan seyleri configuration.h'a ekle
+- ASSERT( fonksiyon() == 0 ); seklindeki kullanimlari
+  r = fonksiyon(); ASSERT( r == 0 ); sekline cevir
 
 - interruptlarin kritik yerlerde disable yapildiginin kontrolu
 - copy-on-write fork

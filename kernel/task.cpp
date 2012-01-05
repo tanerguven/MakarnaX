@@ -65,6 +65,10 @@ uint8_t mem_task_id_ht[4096];
 int next_task_id = 0;
 
 TaskList_t task_zombie_list;
+/**
+ * task_curr sadece sistem cagrisi icinde kullanilmali.
+ * diger durumlarda NULL olabilir. (runnable task yoksa NULL olur)
+ */
 Task *task_curr;
 Task task0; // bostayken kullanilan task
 
@@ -357,21 +361,33 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 	// memory/virtual.cpp
 	extern PageDirInfo kernel_dir;
 	//
-	pgdir = (task_curr) ? &task_curr->pgdir : &kernel_dir;
+
+	if (task->id == 1)
+		pgdir = &kernel_dir;
+	else
+		pgdir = &task_id_ht.get(1)->pgdir;
+
 	err = task_setup_vm(task, pgdir);
 
 	if (err < 0)
 		goto bad_task_create;
 	// printf(">> task_setup_vm OK\n");
 
-	if (task_curr) {
+	if (task->id != 1) {
 		/*
 		 * load_icode yeni processin adres uzayini kullanacagi icin gecici
 		 * olarak simdiki processin kernel stackini yeni processe bagla
 		 */
-		ASSERT(&task_curr->pgdir == pgdir);
+
+		Task *t = task_curr;
+		if (task_curr == NULL) {
+			/* task_curr NULL ise task(1)'in adres uzayi kullaniliyordur */
+			t = task_id_ht.get(1);
+		}
+		ASSERT(&t->pgdir == pgdir);
+
 		VA_t va = VA_t(MMAP_KERNEL_STACK_TOP - 0x1000);
-		PTE_t *pte = task_curr->pgdir.page_get(va);
+		PTE_t *pte = t->pgdir.page_get(va);
 		Page* p = &pages[pageIndex(pte->physAddr())];
 		ASSERT(!p->free);
 		int rc = task->pgdir.page_insert(p, va, PTE_P | PTE_W);
