@@ -251,7 +251,7 @@ bad_sys_shmat:
 int detach_shared_mem(SharedMemDesc* d) {
 	ASSERT(!(eflags_read() & FL_IF));
 	for (uint32_t i = uaddr2va(d->start) ; i < uaddr2va(d->end) ; i+=0x1000) {
-		int r = d->task()->pgdir.page_remove(i);
+		int r = d->task()->pgdir.page_remove(i, 1);
 		if (r < 0)
 			PANIC("shared memory kodlarinda hata olabilir");
 		task_curr->pgdir.count_shared--;

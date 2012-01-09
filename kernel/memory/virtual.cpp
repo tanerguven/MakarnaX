@@ -203,7 +203,7 @@ bad_segment_alloc:
 	end = i;
 	/* free pages */
 	for (i = va ; i < end ; i+= 0x1000) {
-		r = page_remove(i);
+		r = page_remove(i, 1);
 		ASSERT(r == 0);
 	}
 
@@ -239,7 +239,8 @@ static inline int copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va, i
 	Page *p;
 	uint32_t tmp_va;
 
-	r = tmp_page_alloc_map(&p, &tmp_va, PTE_P | PTE_W | PTE_PCD);
+	r = tmp_page_alloc_map(&p, &tmp_va, PTE_P | PTE_W);
+
 	if (r < 0)
 		return r;
 
@@ -252,6 +253,7 @@ static inline int copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va, i
 	}
 
 	r = tmp_page_free(tmp_va);
+
 	ASSERT(r > -1);
 
 	return 0;
@@ -278,7 +280,11 @@ int PageDirInfo::copy_pages(PageDirInfo *src, uint32_t start, uint32_t end) {
 			int err = copy_page_from_current(this, i, pte->perm());
 			if (err < 0)
 				return err;
+
+			// FIXME: tlb_invalidate hatali, gecici cozum (kvm'de hatali calisiyor)
+			cr3_reload();
 		}
+
 		return 0;
 
 	}
@@ -412,7 +418,7 @@ int tmp_page_free(uint32_t va) {
 	ASSERT(va >= MMAP_KERNEL_TMP_PAGE_BASE && va < MMAP_KERNEL_TOP);
 
 	int r;
-	r = kernel_dir.page_remove(va);
+	r = kernel_dir.page_remove(va, 1);
 	if (r > -1)
 		tmp_page_put(va);
 	return r;

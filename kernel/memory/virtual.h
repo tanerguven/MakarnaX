@@ -233,7 +233,7 @@ struct PageDirInfo {
 	inline PTE_t * page_get(VA_t va);
 	inline PTE_t * page_get_c(VA_t va);
 	inline int page_insert(struct Page *p, VA_t va, int perm);
-	inline int page_remove(VA_t va);
+	inline int page_remove(VA_t va, int invl);
 	inline int pde_alloc(uint32_t pde_no);
 	inline int pde_free(uint32_t pde_no);
 
@@ -278,7 +278,7 @@ inline int PageDirInfo::page_insert(Page *p, VA_t va, int perm) {
 		return -ENOMEM;
 
 	if (pte->present) {
-		r = page_remove(va);
+		r = page_remove(va, 1);
 		ASSERT(r > -1);
 	}
 
@@ -329,8 +329,10 @@ inline int PageDirInfo::pde_free(uint32_t pde_no) {
 	return 0;
 }
 
+#include <stdio.h>
+
 /** hata durumunda errno, normal refCount dondurur */
-inline int PageDirInfo::page_remove(VA_t va) {
+inline int PageDirInfo::page_remove(VA_t va, int invl) {
 	ASSERT(!(eflags_read() & FL_IF));
 
 	/* FuncLevelTester(&(this->function_level)); */
@@ -350,9 +352,14 @@ inline int PageDirInfo::page_remove(VA_t va) {
     else
 		PANIC("page_insert: bilinmeyen adres alani");
 
-	// FIXME: --
-	// tlb_invalidate();
-	cr3_reload();
+ 	// FIXME: --
+	extern PageDirInfo kernel_dir;
+	if (invl && (this == &kernel_dir || cr3_read() == pgdir_pa))
+		tlb_invalidate(v);
+	/*  else { */
+	/* 	printf(">> not tlb_invalidate %08x\n", va); */
+	/* } */
+
 	return refCount;
 }
 

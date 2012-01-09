@@ -183,7 +183,7 @@ asmlink void sys_brk() {
 		}
 	} else {
 		for (i = task_curr->pgdir.end_brk - 0x1000 ; i >= brk ; i -= 0x1000) {
-			r = task_curr->pgdir.page_remove(uaddr2va(i));
+			r = task_curr->pgdir.page_remove(uaddr2va(i), 1);
 			if (r < 0) {
 				printf(">> sys_brk bug olabilir\n");
 				goto bad_sys_brk;
@@ -201,7 +201,7 @@ asmlink void sys_brk() {
 
 bad_sys_brk_alloc:
 	for ( ; i >= task_curr->pgdir.end_brk ; i -= 0x1000) {
-		task_curr->pgdir.page_remove(uaddr2va(i));
+		task_curr->pgdir.page_remove(uaddr2va(i), 1);
 	}
 bad_sys_brk:
 	return set_return(tf, -1);

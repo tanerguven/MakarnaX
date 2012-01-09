@@ -139,7 +139,7 @@ static void test_free_pages() {
 	printf(">> Physical Pages Test OK\n");
 
     for (uint32_t i = 0xE0000000 ; i < 0xF0000000 ; i += 0x1000) {
-		kernel_dir.page_remove(VA_t(i));
+		kernel_dir.page_remove(VA_t(i), 1);
 	}
 	/* */
 }

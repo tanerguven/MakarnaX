@@ -112,7 +112,6 @@ void kfree(void *v) {
 	FreeBlock *fb = bh->fb();
 	fb->set_free();
 
-
 	while ((fb->header.sizeno < LAST_SIZENO+1) && fb->pair()->header.is_free() &&
 		   (fb->pair()->header.sizeno == fb->header.sizeno)) {
 		fb = fb->merge();
@@ -127,6 +126,9 @@ void kfree(void *v) {
 		ASSERT(fb->size() == 0x1000);
 		// printf(">> page %08x tamamen bos, siliniyor\n", va);
 		tmp_page_free(va2kaddr(va));
+
+		// FIXME: burada bir bug var. kvm'de cr3_reload yapmayinca sacma hatalar veriyor.
+		cr3_reload();
 	}
 }
 

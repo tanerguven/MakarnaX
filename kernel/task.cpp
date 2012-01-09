@@ -141,7 +141,7 @@ void task_free_kernel_stack(Task* t) {
 	 * paylasilamayan alan, silince refcount=0 olmali
 	 * kernel stack yoksa r = errno da olabilir
 	 */
-	r = t->pgdir.page_remove(va_kernel_stack);
+	r = t->pgdir.page_remove(va_kernel_stack, 1);
 	if (r > -1)
 		ASSERT( r == 0);
 
@@ -259,13 +259,15 @@ static void task_free_vm_user(Task* t) {
 			VA_t va(pde_no, pte_no);
 			if (t->pgdir.pgtables[pde_no]->e[pte_no].present) {
                 /* simdilik page paylasimi yok, silince refcount=0 olmali */
-				int i = t->pgdir.page_remove(va);
+				int i = t->pgdir.page_remove(va, 0);
 				ASSERT(i == 0);
 			}
 		}
 		/* free pages page table */
 		t->pgdir.pde_free(pde_no);
 	}
+
+	cr3_reload();
 
 	t->pgdir.count_stack = 0;
 	t->pgdir.count_program = 0;
@@ -383,6 +385,7 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 		if (task_curr == NULL) {
 			/* task_curr NULL ise task(1)'in adres uzayi kullaniliyordur */
 			t = task_id_ht.get(1);
+			ASSERT(t);
 		}
 		ASSERT(&t->pgdir == pgdir);
 

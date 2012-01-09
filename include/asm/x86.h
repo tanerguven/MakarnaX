@@ -157,6 +157,21 @@ inline uint32_t cr3_read() {
 	return cr3;
 }
 
+#ifdef __CONF_CPU_invlpg
+/** i486 ve sonrasi */
+static inline void invlpg(uint32_t addr) {
+	asm volatile("invlpg %0" : : "m" (addr) : "memory");
+}
+#endif
+
+static inline void tlb_invalidate(uint32_t addr) {
+#ifdef __CONF_CPU_invlpg
+	invlpg(addr);
+# else
+	cr3_reload();
+#endif
+}
+
 inline uint32_t cr2_read() {
 	uint32_t cr2;
 	asm volatile("movl %%cr2,%0" : "=r" (cr2));

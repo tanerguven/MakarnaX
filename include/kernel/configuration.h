@@ -13,5 +13,8 @@
 # error __CONF_segmentation tanimlanmamis
 #endif
 
+#ifndef __CONF_CPU_invlpg
+# warning __CONF_CPU_invlpg not defined
+#endif
 
 #endif /* _KERNEL_CONFIGURATION_H */
