@@ -100,14 +100,14 @@ void sys_semwait() {
 	ASSERT(sem->info->value < 2);
 
 	if (sem_info->value > 0) {
-#if 1
+#if __CONF_semaphore_single_cpu_optimization == 1
 		if (task_curr->run_before_switch_f && task_curr->counter == 0) {
 			sleep_uninterruptible(&sem_info->wait_list);
 		} else {
 			sem_info->value--;
 		}
 # else
-		sem->value--;
+		sem_info->value--;
 #endif
 		ASSERT(sem_info->value == 0);
 	} else {
@@ -122,7 +122,7 @@ void sys_semwait() {
 }
 
 
-#if 1
+#if __CONF_semaphore_single_cpu_optimization == 1
 // TODO: birden fazla semafor olabilir, liste kullanilmali
 void do_sempost(void *p) {
 	SemInfo *sem_info = (SemInfo*)p;
@@ -149,7 +149,7 @@ void sys_sempost() {
 
 	if (sem_info->wait_list.size() > 0) {
 	ASSERT(sem_info->value == 0);
-#if 1
+#if __CONF_semaphore_single_cpu_optimization == 1
 /*
  * Task counteri bitmesine yakin wakeup yap. Boylece calisma suresinde semafor
  * sebebiyle kesintiye ugramaz. Her seferinde semaforu ele gecirir.
@@ -175,7 +175,7 @@ void sys_sempost() {
  * switche sebep oluyor. Saniyede milyonlarca task switch yapilip, task switch
  * islemiyle islemci bosa harcanabilir.
  */
-		wakeup_uninterruptible(&sem->wait_list);
+		wakeup_uninterruptible(&sem_info->wait_list);
 #endif
 	} else {
 		sem_info->value++;

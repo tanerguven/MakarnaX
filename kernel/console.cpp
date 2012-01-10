@@ -198,6 +198,7 @@ static void serial_interrupt(void) {
 static uint16_t (*cga_memory)[80] = (uint16_t(*)[80])0xb8000;
 
 #define TAB_SIZE 8
+#define CHAR_COLOR 0x0700
 
 static void cga_putc(int c) {
 	int cursor_pos;
@@ -221,7 +222,7 @@ static void cga_putc(int c) {
 				cursor_x == 0;
 				cursor_y--;
 			}
-			cga_memory[cursor_y][cursor_x] = (' ' & 0xff) | 0x700;
+			cga_memory[cursor_y][cursor_x] = (' ' & 0xff) | CHAR_COLOR;
 		}
 		break;
 	case '\n':
@@ -232,7 +233,7 @@ static void cga_putc(int c) {
 		cursor_x += TAB_SIZE - (cursor_x % TAB_SIZE);
 		break;
 	default:
-		cga_memory[cursor_y][cursor_x] = (c & 0xff) | 0x0700; // black on white
+		cga_memory[cursor_y][cursor_x] = (c & 0xff) | CHAR_COLOR;
 		if (++cursor_x == 0) {
 			cursor_x = 0;
 			cursor_y++;
@@ -251,7 +252,7 @@ static void cga_putc(int c) {
 	outb(CRTPORT + 1, cursor_pos >> 8);
 	outb(CRTPORT, 15);
 	outb(CRTPORT + 1, cursor_pos);
-	cga_memory[cursor_y][cursor_x] = ' ' | 0x0700;
+	cga_memory[cursor_y][cursor_x] = ' ' | CHAR_COLOR;
 
 	eflags_load(eflags);
 }

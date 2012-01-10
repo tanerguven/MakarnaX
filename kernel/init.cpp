@@ -44,6 +44,7 @@ void test();
 asmlink int main() {
 
 	init_console();
+	printf("\n");
 
 #ifdef M_DEBUG_1
 	printf("DEBUG 1\n");

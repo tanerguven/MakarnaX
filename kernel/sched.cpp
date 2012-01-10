@@ -112,6 +112,7 @@ void schedule() {
 			/* kernel modda switch yapilmissa devam et */
 			if (task_curr->kernel_mode) {
 				// printf(">> kernel mode switch\n");
+				task_curr->run_count++;
 				task_curr->kernel_mode = 0;
 				task_curr->registers_kernel.regs.eax = 0;
 				task_trapret(&task_curr->registers_kernel);
@@ -358,14 +359,12 @@ void kernel_mode_task_switch() {
 	uint32_t eflags = eflags_read();
 	cli();
 
-#if 1
 	push_registers(&task_curr->registers_kernel.regs);
-# else
 	/* FIXME: asagidaki kod gercek makinada calismiyor, neden acaba? */
-	asm("pushal");
-	task_curr->registers_kernel.regs = *(PushRegs*)esp_read();
-	asm("popal");
-#endif
+	// asm("pushal");
+	// task_curr->registers_kernel.regs = *(PushRegs*)esp_read();
+	// asm("popal");
+
 	task_curr->registers_kernel.es = es_read();
 	task_curr->registers_kernel.ds = ds_read();
 
