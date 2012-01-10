@@ -40,14 +40,13 @@ ptr_t LI_FreeBlock::offset_node_value = (ptr_t)offsetof(FreeBlock,list_node);
 void kmalloc_init() {
 	ASSERT(sizeof(FreeBlock) <= (1<<(FIRST_SIZENO+5)));
 
-	FreeBlock t;
 	for (uint32_t i = 0 ; i < n_sizes ; i++) {
 		sizes[i].list.init();
 	}
 }
 
 size_t kmalloc_size(size_t size) {
-	int s = 32;
+	uint32_t s = 32;
 	do {
 		s = s<<1;
 	} while (size + sizeof(BlockHeader) > s);
@@ -88,8 +87,8 @@ void *kmalloc(size_t size) {
 		b = (FreeBlock*)va2kaddr(va);
 		// printf("page alindi %08x\n", b->header.page_addr());
 		b->init();
-		// FIXME: list::erase -> error kontrolu yap
-		b->list_node.__list->erase(&b->list_node);
+		FreeBlockList_t::iterator r = b->list_node.__list->erase(&b->list_node);
+		ASSERT( r != FreeBlockList_t::error());
 		i = LAST_SIZENO;
 	}
 
@@ -249,6 +248,7 @@ void test_kmalloc() {
 	return;
 }
 
+#if 0
 static void listele(PageHeader *ph) {
 	printf("\n");
 	printf("size:\tcount\tused\n");
@@ -257,6 +257,7 @@ static void listele(PageHeader *ph) {
 			   ph->count_used.get(i));
 	}
 }
+#endif
 
 static void test1() {
 	i = 0;
@@ -306,7 +307,8 @@ static void test1() {
 	/* artan boyutlarda bellek al */
 	for ( ; i < 10 ; ) {
 		// printf(">> malloc %d\n", i);
-		x[++i] = kmalloc(i * 7);
+		++i;
+		x[i] = kmalloc(i * 7);
 		bh[i] = BlockHeader::bh(x[i]);
 		kfree(x[i]);
 		ASSERT( x[i] == kmalloc(i * 7) );

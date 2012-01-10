@@ -56,8 +56,10 @@ int memory_init() {
 	kmalloc_init();
 
 	/* page test */
-	// test_free_pages();
-	// printf(">> test_free_pages OK\n");
+	#if 0
+	test_free_pages();
+	printf(">> test_free_pages OK\n");
+	#endif
 	/* */
 
 	/* kmalloc test */
@@ -71,6 +73,7 @@ int memory_init() {
 /**********************************************************
  * test
  **********************************************************/
+#if 0
 static void test_free_pages() {
 	extern FreePageList freePageList;
 	extern PageDirInfo kernel_dir;
@@ -121,7 +124,7 @@ static void test_free_pages() {
 	 * döngüyle 0xE0000000 0xF0000000 aralığına bütün pageleri bağla ve
 	 * 0 lar ve 1 ler yaz.
 	 */
-	if (mem_total() > 250 * 1024) {
+	if (mem_total() > 256 << 20) {
 		// FIXME: silinen page'ler icin bir liste olusturulmali
 		PANIC("test physical pages 250mb üstü bellekle calismak icin ayarlanmadi");
 	}
@@ -143,3 +146,4 @@ static void test_free_pages() {
 	}
 	/* */
 }
+#endif

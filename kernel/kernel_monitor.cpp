@@ -271,15 +271,15 @@ static int command_sysinfo(int argc, char **argv) {
 }
 
 static int command_info(int argc, char **argv) {
-	uint32_t unusable = (1<<10) - mem_lowFree();
+	uint32_t unusable = (1<<20) - mem_lowFree();
 	uint32_t used_mem = mem_total() - mem_free() - unusable - mem_lowFree();
 
 	printf("Memory Info:\n");
-	printf("total: %d kb\n", mem_total());
-	printf("free: %d kb\n", mem_free());
-	printf("used: %d kb\n", used_mem);
-	printf("unusable: %d kb\n", unusable);
-	printf("free low mem: %d kb\n", mem_lowFree());
+	printf("total: %d kb\n", mem_total()>>10);
+	printf("free: %d kb\n", mem_free()>>10);
+	printf("used: %d kb\n", used_mem>>10);
+	printf("unusable: %d kb\n", unusable>>10);
+	printf("free low mem: %d kb\n", mem_lowFree()>>10);
 
 	return 0;
 }
@@ -341,7 +341,7 @@ static int command_tasks(int argc, char **argv) {
 	printf("zombie task: %d\n", task_zombie_list.size());
 	printf("\n");
 
-	for (int i = 0 ; i < task_id_ht.__table_size; i++) {
+	for (uint32_t i = 0 ; i < task_id_ht.__table_size; i++) {
 		TaskIdHashTable_t::node_t *n = task_id_ht.__table[i];
 		while (n != NULL) {
 			Task* t = n->value();
@@ -417,7 +417,7 @@ static int command_memdebug(int argc, char **argv) {
 	uint32_t unknown_mem = 0;
 	uint32_t ipc_mem = mem_ipc();
 
-	for (int i = 0 ; i < task_id_ht.__table_size; i++) {
+	for (uint32_t i = 0 ; i < task_id_ht.__table_size; i++) {
 		TaskIdHashTable_t::node_t *n = task_id_ht.__table[i];
 		while (n != NULL) {
 			Task* t = n->value();
@@ -434,19 +434,18 @@ static int command_memdebug(int argc, char **argv) {
 		}
 	}
 
-	size_tasks = size_tasks>>10;
-	size_tasks_zombie = size_tasks_zombie>>10;
+	printf("start free memory: %d k\n", free_memory_start>>10);
+	printf("current free memory: %d kb\n", mem_free()>>10);
 
-	printf("start free memory: %d kb\n", free_memory_start);
-	printf("current free memory: %d kb\n", mem_free());
-
-	printf("zombie tasks: %d kb\n", size_tasks_zombie);
-	printf("tasks: %d kb\n", size_tasks);
-	printf("ipc: %d kb\n", ipc_mem);
+	printf("zombie tasks: %d kb\n", size_tasks_zombie>>10);
+	printf("tasks: %d kb\n", size_tasks>>10);
+	printf("ipc: %d kb\n", ipc_mem>>10);
 
 	unknown_mem = free_memory_start - mem_free() - ipc_mem - size_tasks;
 
-	printf("unknown memory: %d kb\n", unknown_mem);
+	printf("unknown memory: %d kb\n", unknown_mem >> 10);
+
+	return 0;
 }
 
 /*

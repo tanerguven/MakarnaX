@@ -107,7 +107,7 @@ struct Task {
 
 	uint32_t time_start, time_end, time_user, time_kernel;
 	int32_t counter;
-	uint32_t priority;
+	int32_t priority;
 
 	ChildList_t childs;
 

@@ -58,7 +58,12 @@ void sys_semget() {
 	// int pshared = (int)get_param3(tf);
 	unsigned int value = get_param4(tf);
 
-	// FIXME: adres kontrolu
+	if ( task_curr->pgdir.verify_user_addr(sem, sizeof(sem_t*), PTE_U) < 0 ) {
+		// FIXME: adres hatasi olmasi durumda process sonlanmali mi, hata mi dondurulmeli
+		printf(">> sys_semget not verified: 0x%08x - 0x%08x\n", sem, sem+1);
+		return set_return(tf, -1);
+	}
+
 	sem = (sem_t*)uaddr2kaddr((uint32_t)sem);
 
 	uint32_t eflags = eflags_read();
@@ -77,7 +82,7 @@ void sys_semget() {
 
 void sys_sem_destroy() {
 	Trapframe *tf = task_curr->registers();
-	sem_t *sem = (sem_t*)get_param2(tf);
+	// sem_t *sem = (sem_t*)get_param2(tf);
 
 	PANIC("fonksiyon tamamlanmadi");
 
@@ -96,8 +101,6 @@ void sys_semwait() {
 
 	uint32_t eflags = eflags_read();
 	cli();
-
-	ASSERT(sem->info->value < 2);
 
 	if (sem_info->value > 0) {
 #if __CONF_semaphore_single_cpu_optimization == 1
@@ -144,11 +147,8 @@ void sys_sempost() {
 	uint32_t eflags = eflags_read();
 	cli();
 
-	ASSERT(sem_info->value > -1);
-	ASSERT(sem_info->value < 2);
-
 	if (sem_info->wait_list.size() > 0) {
-	ASSERT(sem_info->value == 0);
+	  ASSERT(sem_info->value == 0);
 #if __CONF_semaphore_single_cpu_optimization == 1
 /*
  * Task counteri bitmesine yakin wakeup yap. Boylece calisma suresinde semafor
@@ -188,8 +188,8 @@ void sys_sempost() {
 
 void sys_semgetvalue() {
 	Trapframe *tf = task_curr->registers();
-	struct sem_t *sem = (struct sem_t*)get_param2(tf);
-	int *val = (int*)get_param3(tf);
+	// struct sem_t *sem = (struct sem_t*)get_param2(tf);
+	// int *val = (int*)get_param3(tf);
 
 	printf(">> sys_semgetvalue\n");
 

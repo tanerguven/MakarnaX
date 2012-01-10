@@ -342,7 +342,7 @@ void shm_task_free(Task* t) {
 
 uint32_t mem_shm() {
 	uint32_t size = 0;
-	for (int i = 0 ; i < shm_id_ht.__table_size ; i++) {
+	for (uint32_t i = 0 ; i < shm_id_ht.__table_size ; i++) {
 		SharedMemIdHT_t::node_t *n = shm_id_ht.__table[i];
 		while (n != NULL) {
 			// size += n->value()->size;

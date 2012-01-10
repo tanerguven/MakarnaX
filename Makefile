@@ -67,6 +67,9 @@ clean:
 	done
 	rm -f bin/kernel bin/mnt/kernel bin/kernel.asm;
 
+kclean:
+	cd kernel; make clean;
+
 documentation:
 	doxygen doc/doc.doxygen
 

@@ -101,9 +101,9 @@ extern void pm_init() {
 }
 
 uint32_t mem_total() {
-	return pages_nr * 4;
+    return pages_nr << 12;
 }
 
 uint32_t mem_lowFree() {
-	return roundUp(_multiboot_info->mem_lower<<10)>>10;
+	return roundUp(_multiboot_info->mem_lower<<10);
 }

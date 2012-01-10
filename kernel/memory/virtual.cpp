@@ -21,6 +21,7 @@ using namespace std;
 
 #include <types.h>
 #include <asm/x86.h>
+#include "../panic.h"
 #include <data_structures/bitmap.h>
 
 #include "virtual.h"

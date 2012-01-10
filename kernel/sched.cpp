@@ -191,10 +191,12 @@ asmlink void sys_alarm() {
 	uint32_t eflags = eflags_read();
 	cli();
 
-	// FIXME: hata kontrolu
 	/* alarm listesindeyse listeden cikar */
-	if (task_curr->alarm_list_node.__list)
-		task_alarm_list.erase(&task_curr->alarm_list_node);
+	if (task_curr->alarm_list_node.__list) {
+		AlarmList_t::iterator r;
+		r = task_alarm_list.erase(&task_curr->alarm_list_node);
+		ASSERT(r != AlarmList_t::error());
+	}
 
 	if (seconds == 0) {
 		eflags_load(eflags);
@@ -204,12 +206,14 @@ asmlink void sys_alarm() {
 	task_curr->alarm = jiffies_to_seconds() + seconds;
 	ASSERT(task_curr->alarm > jiffies_to_seconds());
 
-	// FIXME: hata kontrolu
 	/* alarm listesine sure siralamasina gore insert yap */
 	AlarmList_t::iterator i;
 	for (i = task_alarm_list.begin() ; i != task_alarm_list.end() ; i++) {
-		if (i->value()->alarm > seconds)
-			task_alarm_list.insert(i, &task_curr->alarm_list_node);
+		if (i->value()->alarm > seconds) {
+			AlarmList_t::iterator r;
+			r = task_alarm_list.insert(i, &task_curr->alarm_list_node);
+			ASSERT(r != AlarmList_t::error());
+		}
 	}
 	task_alarm_list.push_back(&task_curr->alarm_list_node);
 
@@ -223,7 +227,7 @@ void check_alarm() {
 	uint32_t eflags = eflags_read();
 	cli();
 
-	const long seconds = jiffies_to_seconds();
+	const uint32_t seconds = jiffies_to_seconds();
 	AlarmList_t::iterator i;
 	for (i = task_alarm_list.begin() ; i != task_alarm_list.end() ; ) {
 
@@ -295,7 +299,7 @@ void check_sleep_list() {
 	uint32_t eflags = eflags_read();
 	cli();
 
-	const long seconds = jiffies_to_seconds();
+	const uint32_t seconds = jiffies_to_seconds();
 
 	TaskList_t::iterator i;
 	for (i = task_sleep_list.begin() ; i != task_sleep_list.end() ; ) {

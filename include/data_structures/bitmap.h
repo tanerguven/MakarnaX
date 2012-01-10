@@ -8,10 +8,9 @@ inline int bitmap_find_first_zero(unsigned int *bitmap, size_t size) {
  	for (unsigned int i = 0 ; i < size ; i++) {
 		if (bitmap[i] == 0xffffffff)
 			continue;
-		int b = bit_find_first_zero(bitmap[i]);
+		uint32_t b = bit_find_first_zero(bitmap[i]);
 		// FIXME: gecici kontrol
-		if ((b > 31) || (b < 0))
-			return -2;
+		ASSERT(b < 32);
 		return 32 * i + b;
 	}
 	return -1;

@@ -31,7 +31,9 @@ void keyboard_interrupt();
 //
 static void serial_init();
 static void serial_putc(int c);
+#if 0
 static void serial_interrupt();
+#endif
 static void cga_putc(int c);
 void console_putc(int c);
 //
@@ -155,6 +157,8 @@ static void serial_init() {
 	outb(serial_port + 4, 0x0B);
 	eflags_load(eflags);
 }
+
+#if 0
 static int serial_getc() {
 	int r;
 
@@ -167,6 +171,7 @@ static int serial_getc() {
 	eflags_load(eflags);
 	return r;
 }
+#endif
 
 static void serial_putc(int c) {
 	uint32_t eflags = eflags_read();
@@ -178,9 +183,11 @@ static void serial_putc(int c) {
 	eflags_load(eflags);
 }
 
+#if 0
 static void serial_interrupt(void) {
 	console_interrupt(serial_getc);
 }
+#endif
 
 
 /*******************************************************************
@@ -219,7 +226,7 @@ static void cga_putc(int c) {
 	case '\b': //backspace
 		if (cursor_x | cursor_y) {
 			if (cursor_x-- == 0) {
-				cursor_x == 0;
+				cursor_x = 0;
 				cursor_y--;
 			}
 			cga_memory[cursor_y][cursor_x] = (' ' & 0xff) | CHAR_COLOR;

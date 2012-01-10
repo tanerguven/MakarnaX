@@ -180,8 +180,8 @@ struct List {
 	inline iterator end() { return &__; }
 	inline T* front() { return __.__next->value(); }
 	inline T* back() { return __.__prev->value(); }
- 	inline const iterator error()
-		const { return NULL; }
+	static inline const iterator error()
+		{ return NULL; }
 
 	inline bool push_front(node_t* n)
 		{ return (insert(begin(), n) != error()); }

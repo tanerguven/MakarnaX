@@ -86,6 +86,7 @@ int ipc_fork(struct Task* child) {
 	r = shm_fork(child);
 	if (r < 0)
 		return r;
+	return 0;
 }
 
 extern void ipc_task_free(Task *t) {

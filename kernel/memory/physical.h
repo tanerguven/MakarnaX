@@ -204,7 +204,7 @@ inline int Page::refcount_dec() {
 }
 
 inline uint32_t mem_free() {
-	return freePageList._count * 4;
+	return freePageList._count << 12;
 }
 
 #endif //_MEMORY_PHYSICAL_H_
