@@ -29,55 +29,15 @@
 
 #include "trap.h"
 #include "memory/virtual.h"
-
+#include "signal.h"
 #include "ipc/ipc.h"
 
 #define DEFAULT_PRIORITY 3
 
-// TODO: bunlari makro olarak tanimlarsak guzel olabilir
-struct LI_Alarm {
-	static const  ptr_t offset_node_value;
-};
-typedef List_2<struct Task, LI_Alarm> AlarmList_t;
-
-struct LI_Child {
-	static const ptr_t offset_node_value;
-};
-typedef List_2<struct Task, LI_Child> ChildList_t;
-
-struct LI_Task {
-	static const ptr_t offset_node_value;
-};
-typedef List_2<struct Task, LI_Task> TaskList_t;
-
-struct HI_TaskId {
-	static const ptr_t offset_struct;
-	static const ptr_t offset_id;
-};
-typedef IdHashTable<struct Task, HI_TaskId> TaskIdHashTable_t;
-
-
-
-// FIXME: bunlari uygun yerlere tasi
-struct SignalAction {
-	uint32_t handler;
-};
-
-struct SignalInfo {
-	uint32_t sig;
-	uint32_t pending;
-	SignalAction action[32];
-	inline void init() {
-		sig = 0;
-		pending = 0;
-	}
-};
-
-inline Trapframe* current_registers() {
-	return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_TOP - sizeof(Trapframe));
-}
-
-extern struct Task* task_curr;
+define_list(struct Task, AlarmList_t);
+define_list(struct Task, ChildList_t);
+define_list(struct Task, TaskList_t);
+define_id_hash(struct Task, TaskIdHashTable_t);
 
 struct Task {
 	enum  State {
@@ -135,50 +95,19 @@ struct Task {
 
 	SharedMemList_t shared_mem_list;
 
-	inline void init() {
-		list_node.init();
-		childlist_node.init();
-		childs.init();
-		time_start = time_user = time_kernel = time_end = 0;
-		run_count = counter = 0;
-		alarm = 0;
-		free = kernel_mode = waiting_child = 0;
-		signal.init();
-		wait_notify_next = NULL;
-
-		/* shared_mem_list.init(); //shm_fork */
-		id_hash_node.init();
-		run_before_switch_f = NULL;
-	}
-
-	inline Trapframe* saved_registers() {
-		if (signal.pending)
-			return &registers_signal;
-
-		return &registers_user;
-	}
-
-	inline Trapframe* registers() {
-		if (registers_saved)
-			return (trap_in_signal) ? &registers_signal : &registers_user;
-
-		ASSERT(task_curr == this);
-		return current_registers();
-	}
-
-	inline void save_new_registers() {
-		if (trap_in_signal)
-			registers_signal = *current_registers();
-		else
-			registers_user = *current_registers();
-		registers_saved = 1;
-	}
+	inline void init();
+	inline Trapframe* saved_registers();
+	inline Trapframe* registers();
+	inline void save_new_registers();
 
 };
+
 
 extern TaskIdHashTable_t task_id_ht;
 extern TaskList_t task_zombie_list;
 extern Task task0;
+extern struct Task* task_curr;
+
 
 inline void task_trapret(Trapframe *tf) {
 /*
@@ -193,6 +122,51 @@ inline void task_trapret(Trapframe *tf) {
 
 inline Task* SharedMemDesc::task() {
 	return (Task*)((ptr_t)list_node.__list - offsetof(Task,shared_mem_list));
+}
+
+
+inline Trapframe* current_registers() {
+	return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_TOP - sizeof(Trapframe));
+}
+
+
+inline void Task::init() {
+	list_node.init();
+	childlist_node.init();
+	childs.init();
+	time_start = time_user = time_kernel = time_end = 0;
+	run_count = counter = 0;
+	alarm = 0;
+	free = kernel_mode = waiting_child = 0;
+	signal.init();
+	wait_notify_next = NULL;
+
+	/* shared_mem_list.init(); //shm_fork */
+	id_hash_node.init();
+	run_before_switch_f = NULL;
+}
+
+inline Trapframe* Task::saved_registers() {
+	if (signal.pending)
+		return &registers_signal;
+
+	return &registers_user;
+}
+
+inline Trapframe* Task::registers() {
+	if (registers_saved)
+		return (trap_in_signal) ? &registers_signal : &registers_user;
+
+	ASSERT(task_curr == this);
+	return current_registers();
+}
+
+inline void Task::save_new_registers() {
+	if (trap_in_signal)
+		registers_signal = *current_registers();
+	else
+		registers_user = *current_registers();
+	registers_saved = 1;
 }
 
 

@@ -21,6 +21,8 @@
 #include <wmc/list.h>
 #include <wmc/idhashtable.h>
 
+#include "../task.h"
+
 struct LI_SharedMem {
 	static const ptr_t offset_node_value;
 };

@@ -137,4 +137,16 @@ inline int IdHashTable<T, O>::remove(node_t* n) {
 	return 0;
 }
 
+
+#define define_id_hash(type_t,id_hash_t)\
+struct HI_##id_hash_t {\
+	static const ptr_t offset_struct;\
+	static const ptr_t offset_id;\
+};\
+typedef IdHashTable<type_t, HI_##id_hash_t> id_hash_t;
+
+#define set_id_hash_offset(type_t,id_hash_t,off_str,off_id)\
+const ptr_t HI_##id_hash_t::offset_struct = (ptr_t)offsetof(type_t,off_str);\
+const ptr_t HI_##id_hash_t::offset_id = (ptr_t)(offsetof(type_t,off_str) - offsetof(type_t,off_id));
+
 #endif /* _WMC_ID_HASH_TABLE_H_ */

@@ -33,4 +33,12 @@ namespace __wmc_list2 {
 #define List_1 __wmc_list1::List
 #define List_2 __wmc_list2::List
 
+
+#define define_list(type_t,list_t) \
+struct LI_##list_t { static const  ptr_t offset_node_value; }; \
+typedef List_2<type_t, LI_##list_t> list_t;
+
+#define set_list_offset(type_t,list_t,node_name) \
+const ptr_t LI_##list_t::offset_node_value =(ptr_t)offsetof(type_t,node_name);
+
 #endif /* _WMC_LIST_H_ */

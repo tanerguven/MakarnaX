@@ -52,13 +52,10 @@ void parse_cmd(char *cmd, int *argc, char *argv[10]);
 //
 
 /* liste tipleri icin nodlarin offset degerleri */
-const ptr_t LI_Alarm::offset_node_value =(ptr_t)offsetof(Task,alarm_list_node);
-const ptr_t LI_Child::offset_node_value = (ptr_t)offsetof(Task,childlist_node);
-const ptr_t LI_Task::offset_node_value = (ptr_t)offsetof(Task,list_node);
-
-const ptr_t HI_TaskId::offset_struct = (ptr_t)offsetof(Task,id_hash_node);
-const ptr_t HI_TaskId::offset_id =
-	(ptr_t)(offsetof(Task,id_hash_node) - offsetof(Task,id));
+set_list_offset(struct Task, AlarmList_t, alarm_list_node);
+set_list_offset(struct Task, ChildList_t, childlist_node);
+set_list_offset(struct Task, TaskList_t, list_node);
+set_id_hash_offset(struct Task, TaskIdHashTable_t, id_hash_node, id);
 
 TaskIdHashTable_t task_id_ht;
 uint8_t mem_task_id_ht[4096];
