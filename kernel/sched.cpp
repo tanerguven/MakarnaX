@@ -85,6 +85,7 @@ void schedule() {
 
 				task_curr->counter += task_curr->priority;
 /*
+ * FIXME: task switch degistiginde bu kontrole gerek yok
  * Counter degeri priority/2 den kucukse taski calistirma. Bu sayede counter
  * eksi degerden, arti degere cikana kadar task bekler. counter'in eksi degere
  * dusmesinin sebebi calismasi izin verilenden fazla sure calismasidir.
@@ -169,6 +170,7 @@ asmlink void do_timer(Trapframe *tf) {
 	task_curr->counter--;
 	// printf(">> counter: %d\n", task_curr->counter);
 
+// FIXME: task switch degistiginde, kernel modda da task switch yapilabilir
 	if ((tf->cs & 3) == 3) {
 		/* user modda timer kesmesi */
 		task_curr->time_user++;
@@ -350,13 +352,41 @@ asmlink void sys_sleep() {
 
 	int r = task_curr->sleep - jiffies_to_seconds();
 
+	ASSERT(task_curr->registers_saved);
+	// FIXME: registerlar task_curr->registers() ile ulasilmali
+#if 0
+	return set_return(task_curr->registers(), (r < 1) ? 0 : r);
+#else
 	if (task_curr->trap_in_signal)
 		set_return(&task_curr->registers_signal, (r < 1) ? 0 : r);
 	else
 		set_return(&task_curr->registers_user, (r < 1) ? 0 : r);
 
 	set_return(tf, (r < 1) ? 0 : r);
+#endif
 }
+
+#if 0
+// TODO: kernel_mode_task_switch fonksiyonu yerine
+void switch_to_task(Task *newtask) {
+/*
+ * schedule icerisinden bu fonksiyon calistirilmali. Kernel_mode ve normal task
+ * switch ayrimi kaldirilip, sadece bu fonksiyon ile task switch yapilmali.
+ *
+ * task switch su sekilde yapilmali:
+ * - registerlar processin kernel stackine basilir
+ * - yeni task'in kernel stacki yuklenir
+ * - registerlar kernel stackinden alinir (yeni processin registerlari)
+ * - cr3 load (onceki adimda da yapilabilir)
+ * bu sekilde yapildiginda eip ile ugrasilmaz, eip kaldigi yerden yeni process
+ * ile devam eder
+ *
+ * sunlar kaldirilmali:
+ * - task::registers_kernel
+ * - task::kernel_mode
+ */
+}
+#endif
 
 
 void kernel_mode_task_switch() {
@@ -388,6 +418,10 @@ void kernel_mode_task_switch() {
 
 		/* task signal sebebiyle uyandirilmis olabilir, signalleri kontrol et */
 		check_signals();
+		// FIXME: schedule registerlari kaydetti
+		ASSERT(task_curr->registers_saved);
+#if 0
+		// FIXME: registerlar kayitli degilse kaydedilmeli
 		if (task_curr->signal.pending) {
 			/*
 			 * once signal calistirilacak, bu fonksiyon calistirilmadan onceki
@@ -396,6 +430,7 @@ void kernel_mode_task_switch() {
 			if (!task_curr->registers_saved)
 				task_curr->save_new_registers();
 		}
+#endif
 	}
 /*
  * buradan trapret yapilamaz, cunku yarim kalan sistem cagrisi tamamlanmali

@@ -229,6 +229,12 @@ asmlink void trap_handler(Trapframe *tf) {
 	 * devam eder. (traphandler.S, trapret)
 	 */
 
+#if 0
+	// FIXME: task switch degistiginde bu islem do_timer'dan once yapilmali
+	if (task_curr)
+		task_curr->registers_saved = 0;
+#endif
+
 	/*
 	 * Donanim kesmelerinde task struct'daki registerlar degistirilmiyor.
 	 * Schedule yapilacagi zaman, "schedule()" fonksiyonundan once  "tf",
@@ -284,6 +290,7 @@ return_trap_handler:
 
 	if (task_curr->counter < 0) {
 		/* kernel modda zamanini tuketmisse task degistir */
+		// FIXME: task switch degistiginde duzenlenmeli
 		schedule();
 	} else {
 		if (!task_curr->registers_saved)
