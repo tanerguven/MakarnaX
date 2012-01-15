@@ -31,11 +31,12 @@ extern void init_traps();
 extern void task_init();
 extern void task_create(void* program_addr, const char *cmd, int priority);
 extern void schedule_init();
-extern void schedule();
+extern void run_first_task();
 extern void start_kernel_monitor();
 extern void picirq_init();
 extern void timer_init();
 extern void ipc_init();
+
 
 extern uint32_t free_memory_start;
 
@@ -72,11 +73,9 @@ asmlink int main() {
 	printf("teste baslamak icin bir tusa basin\n");
 	getchar();
 	test();
-	schedule();
 #endif
 
-
-	PANIC("init processi yok");
+	run_first_task();
 
 	return 0;
 }

@@ -142,6 +142,9 @@ asmlink void sys_cputs() {
 int console_getc();
 
 asmlink void sys_cgetc() {
+	// FIXME: registerlar kaydedilmediginde run-keyboard'da page fault aliniyor
+	if (!task_curr->registers_saved)
+		task_curr->save_new_registers();
 
 	sleep_interruptible(&console_input_list);
 

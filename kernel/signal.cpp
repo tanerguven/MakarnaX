@@ -98,7 +98,7 @@ int send_signal(uint32_t sig, Task* t) {
 		 * uninterruptible durumu henuz kullanilmadi
 		 * diger durumlar da tanimlanmali
 		 */
-		printf("%d\n", t->state);
+		printf("[%d] %d\n", t->id, t->state);
 		PANIC("--");
 	}
 
@@ -180,15 +180,6 @@ void signal_return(Trapframe *tf) {
 	task_curr->signal.pending &= ~_S(esp[0]); //signal tamamlandi, biti sifirla
 	tf->eip = esp[1];
 	tf->esp += 8;
-
-	/* signal fonksiyonlarindan siradakini calistir */
-	if (tf->esp != task_curr->registers_user.esp) {
-		task_trapret(tf);
-		PANIC("--");
-	}
-
-	/* signal kalmadiysa normal calistir */
-	task_trapret(&task_curr->registers_user);
 }
 
 asmlink void sys_signal() {

@@ -31,6 +31,7 @@ extern void check_signals();
 
 void check_alarm();
 void check_sleep_list();
+void switch_to_task(Task *newtask) __attribute__ ((noinline));
 
 /** runnable (ready) queue) */
 TaskList_t __task_runnable_queue[41];
@@ -49,19 +50,15 @@ void schedule_init() {
 	printf(">> schedule init OK\n");
 }
 
-// FIXME: schedule, baska bir fonksiyon icerisinden cagirilinca counter
-// birikiyor. Buna bir cozum bulunmali.
 void schedule() {
 	cli();
-
-	if (task_curr && !task_curr->registers_saved)
-		task_curr->save_new_registers();
 
 	if (task_curr && task_curr->run_before_switch_f) {
 		task_curr->run_before_switch_f(task_curr->run_before_switch_f_p);
 		task_curr->run_before_switch_f = NULL;
 	}
 
+	Task *task_next = NULL;
 	TaskList_t *first_priority_level;
 	do {
 		check_alarm();
@@ -78,53 +75,17 @@ void schedule() {
 
 		if (first_priority_level) {
 			/* runnable listesinden task bul ve zaman ekle */
-			do {
-				task_curr = first_priority_level->front();
-				first_priority_level->pop_front();
-				first_priority_level->push_back(&task_curr->list_node);
+			task_next = first_priority_level->front();
+			first_priority_level->pop_front();
+			first_priority_level->push_back(&task_next->list_node);
 
-				task_curr->counter += task_curr->priority;
-/*
- * FIXME: task switch degistiginde bu kontrole gerek yok
- * Counter degeri priority/2 den kucukse taski calistirma. Bu sayede counter
- * eksi degerden, arti degere cikana kadar task bekler. counter'in eksi degere
- * dusmesinin sebebi calismasi izin verilenden fazla sure calismasidir.
- * Bu durumun gerceklesme ihtimali dusuk ama bu durumdan korumak icin bir
- * kontrol.
- * Bu durum Kernel modda cok fazla zaman gecirildiginde olusabilir.
- * Eger kernel modda intterruptlar acik ve kernel moddayken counter bittiginde
- * kernel registerlariyla task switch yapilirsa bu durum hic meydana gelmez.
- */
-			} while (task_curr->counter < task_curr->priority/2);
+			task_next->counter = task_next->priority;
 
-/*
- * Sleep, pause, wait gibi sistem cagrilarinda task counteri bitmeden task
- * switch yapilmakta. Bu durumda sonra task counter birikip buyuk bir degere
- * ulasabilir. Bu problemi cozmek icin counter limiti kullanildi.
- *
- * Burada task counter limiti, oncelik seviyesine esit olarak kullanildi.
- */
-			if (task_curr->counter > task_curr->priority)
-				task_curr->counter = task_curr->priority;
-
-			ASSERT(task_curr->state == Task::State_running);
-			cr3_load(task_curr->pgdir.pgdir_pa);
-
-			/* kernel modda switch yapilmissa devam et */
-			if (task_curr->kernel_mode) {
-				// printf(">> kernel mode switch\n");
-				task_curr->run_count++;
-				task_curr->kernel_mode = 0;
-				task_curr->registers_kernel.regs.eax = 0;
-				task_trapret(&task_curr->registers_kernel);
-			}
-
-			/* yeni gelen signalleri kontrol et */
-			check_signals();
-
+			ASSERT(task_next->state == Task::State_running);
 		} else {
 			/* hic runnable task yoksa */
-			task_curr = NULL;
+			// FIXME: --
+			// task_curr = NULL;
 			/* kesme gelene kadar bekle */
 			sti();
 			asm("hlt");
@@ -132,8 +93,23 @@ void schedule() {
 		}
 	} while (first_priority_level == NULL);
 
-	/* secilmis task'i calistir */
-	task_curr->run_count++;
+	switch_to_task(task_next);
+
+	ASSERT(!(eflags_read() & FL_IF));
+	check_signals();
+
+	/* signal gelmis ve task registerlari kayitli degilse, kaydet. */
+	if (task_curr->signal.pending && !task_curr->registers_saved) {
+		// FIXME: gecici kontrol
+		ASSERT(!task_curr->trap_in_signal);
+		task_curr->save_new_registers();
+	}
+}
+
+
+void run_first_task() {
+	task_curr = task_id_ht.get(1);
+	cr3_load(task_curr->pgdir.pgdir_pa);
 	task_trapret(task_curr->saved_registers());
 }
 
@@ -170,20 +146,19 @@ asmlink void do_timer(Trapframe *tf) {
 	task_curr->counter--;
 	// printf(">> counter: %d\n", task_curr->counter);
 
-// FIXME: task switch degistiginde, kernel modda da task switch yapilabilir
 	if ((tf->cs & 3) == 3) {
-		/* user modda timer kesmesi */
 		task_curr->time_user++;
-		// printf(">> do_timer (user mode)\n");
-/* task'in suresi dolduysa (counter'i bittiyse) task switch yap */
+
+		//FIXME: kernel modda da task switch yapilmali
+		/* task'in suresi dolduysa (counter'i bittiyse) task switch yap */
 		if (task_curr->counter < 0)
 			schedule();
+
 	} else {
-		/* kernel modda timer kesmesi */
 		ASSERT(tf != current_registers());
 		task_curr->time_kernel++;
-		// printf(">> do_timer (kernel mode)\n");
 	}
+
 }
 
 asmlink void sys_alarm() {
@@ -343,97 +318,35 @@ asmlink void sys_sleep() {
 	}
 	task_sleep_list.push_back(&task_curr->list_node);
 
-	eflags_load(eflags);
-
 	task_curr->state = Task::State_interruptible;
 	task_curr->sleep = jiffies_to_seconds() + seconds;
+
+	eflags_load(eflags);
 
 	kernel_mode_task_switch();
 
 	int r = task_curr->sleep - jiffies_to_seconds();
 
-	ASSERT(task_curr->registers_saved);
-	// FIXME: registerlar task_curr->registers() ile ulasilmali
-#if 0
 	return set_return(task_curr->registers(), (r < 1) ? 0 : r);
-#else
-	if (task_curr->trap_in_signal)
-		set_return(&task_curr->registers_signal, (r < 1) ? 0 : r);
-	else
-		set_return(&task_curr->registers_user, (r < 1) ? 0 : r);
-
-	set_return(tf, (r < 1) ? 0 : r);
-#endif
 }
 
-#if 0
-// TODO: kernel_mode_task_switch fonksiyonu yerine
 void switch_to_task(Task *newtask) {
-/*
- * schedule icerisinden bu fonksiyon calistirilmali. Kernel_mode ve normal task
- * switch ayrimi kaldirilip, sadece bu fonksiyon ile task switch yapilmali.
- *
- * task switch su sekilde yapilmali:
- * - registerlar processin kernel stackine basilir
- * - yeni task'in kernel stacki yuklenir
- * - registerlar kernel stackinden alinir (yeni processin registerlari)
- * - cr3 load (onceki adimda da yapilabilir)
- * bu sekilde yapildiginda eip ile ugrasilmaz, eip kaldigi yerden yeni process
- * ile devam eder
- *
- * sunlar kaldirilmali:
- * - task::registers_kernel
- * - task::kernel_mode
- */
-}
-#endif
+	ASSERT(!(eflags_read() & FL_IF));
 
+	task_curr->k_esp = esp_read();
+	cr3_load(newtask->pgdir.pgdir_pa);
+	esp_load(newtask->k_esp);
+	task_curr = newtask;
 
-void kernel_mode_task_switch() {
-	uint32_t eflags = eflags_read();
-	cli();
-
-	push_registers(&task_curr->registers_kernel.regs);
-	/* FIXME: asagidaki kod gercek makinada calismiyor, neden acaba? */
-	// asm("pushal");
-	// task_curr->registers_kernel.regs = *(PushRegs*)esp_read();
-	// asm("popal");
-
-	task_curr->registers_kernel.es = es_read();
-	task_curr->registers_kernel.ds = ds_read();
-
-	uint32_t eip = read_eip();
-	if (eip != 0) {
-		task_curr->registers_kernel.eip = eip;
-		task_curr->registers_kernel.cs = cs_read();
-		task_curr->registers_kernel.eflags = eflags_read();
-		task_curr->registers_kernel.esp = esp_read();
-		task_curr->registers_kernel.ss = ss_read();
-
-		task_curr->kernel_mode = 1;
-		schedule();
-	} else {
-		/* kernel modda iret yapildiginda esp yuklenmiyor, burdan yukluyoruz */
-		esp_load(task_curr->registers_kernel.esp);
-
-		/* task signal sebebiyle uyandirilmis olabilir, signalleri kontrol et */
-		check_signals();
-		// FIXME: schedule registerlari kaydetti
-		ASSERT(task_curr->registers_saved);
-#if 0
-		// FIXME: registerlar kayitli degilse kaydedilmeli
-		if (task_curr->signal.pending) {
-			/*
-			 * once signal calistirilacak, bu fonksiyon calistirilmadan onceki
-			 * user registerlari stackde duruyor, onlari kaydet
-			 */
-			if (!task_curr->registers_saved)
-				task_curr->save_new_registers();
-		}
-#endif
+	task_curr->run_count++;
+	if (newtask->ran==0) {
+		/* task ilk kez calisiyorsa, user modda baslat */
+		newtask->ran = 1;
+		task_trapret(newtask->saved_registers());
 	}
-/*
- * buradan trapret yapilamaz, cunku yarim kalan sistem cagrisi tamamlanmali
- */
-	eflags_load(eflags);
+}
+
+// FIXME: fonksiyonu sil
+void kernel_mode_task_switch() {
+	schedule();
 }

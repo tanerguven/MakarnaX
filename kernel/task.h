@@ -56,7 +56,6 @@ struct Task {
 	/* Trapframe registers; */
 	Trapframe registers_user;
 	Trapframe registers_signal;
-	Trapframe registers_kernel;
 
 	int32_t id;
 	Task* parent;
@@ -64,6 +63,9 @@ struct Task {
 	uint32_t run_count;
 
 	PageDirInfo pgdir;
+
+	/* task switch yapilirken, kernel stack icin esp degeri kaydediliyor */
+	uint32_t k_esp;
 
 	uint32_t time_start, time_end, time_user, time_kernel;
 	int32_t counter;
@@ -73,10 +75,10 @@ struct Task {
 
 	//
 	uint32_t free: 1;
-	uint32_t kernel_mode: 1;
 	uint32_t waiting_child: 1;
 	uint32_t trap_in_signal: 1;
 	uint32_t registers_saved: 1;
+	uint32_t ran: 1;
 	uint32_t __ : 27;
 	//
 
@@ -137,7 +139,7 @@ inline void Task::init() {
 	time_start = time_user = time_kernel = time_end = 0;
 	run_count = counter = 0;
 	alarm = 0;
-	free = kernel_mode = waiting_child = 0;
+	free = ran = waiting_child = 0;
 	signal.init();
 	wait_notify_next = NULL;
 
@@ -168,6 +170,5 @@ inline void Task::save_new_registers() {
 		registers_user = *current_registers();
 	registers_saved = 1;
 }
-
 
 #endif /* TASK_H_ */
