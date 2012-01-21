@@ -137,6 +137,9 @@ void test() {
 #if TEST == MAKARNAX_TEST_signal
 	/* signal testi */
 	test_program(signaltest,test1);
+#endif
+
+#if TEST == MAKARNAX_TEST_signal2
 	test_program(signaltest,test2);
 #endif
 
@@ -210,4 +213,7 @@ void test() {
 	test_program(processmemtest,brktest);
 #endif
 
+#if TEST == MAKARNAX_TEST_signal7
+	test_program(signaltest,test7);
+#endif
 }
