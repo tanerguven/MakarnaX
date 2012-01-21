@@ -242,6 +242,7 @@ static void push_stack() {
 	ASSERT(r > -1);
 	copy_stack(MMAP_KERNEL_STACK_BASE - 0x2000);
 	task_curr->kstack_esp[task_curr->kstack_c] = esp_read() - 0x2000;
+	task_curr->ssleep[task_curr->kstack_c] = task_curr->sleep;
 	task_curr->kstack[task_curr->kstack_c]->refcount_inc();
 	task_curr->kstack_c++;
 }
@@ -251,6 +252,7 @@ static void pop_stack() {
 	task_curr->kstack_c--;
 	// printf(">> pop stack from %d\n", task_curr->kstack_c);
 	ASSERT(task_curr->kstack_c > -1);
+	task_curr->sleep = task_curr->ssleep[task_curr->kstack_c];
 	task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c],
 								 MMAP_KERNEL_STACK_BASE - 0x2000,
 								 PTE_P | PTE_W);
