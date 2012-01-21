@@ -151,9 +151,6 @@ inline int page_alloc(Page **p) {
 	int r;
 	ASSERT(!(eflags_read() & FL_IF));
 
-	/* uint32_t eflags = eflags_read(); */
-	/* cli(); */
-
 	*p = freePageList.getFirst();
 	if (*p) {
 		ASSERT((*p)->free);
@@ -164,16 +161,11 @@ inline int page_alloc(Page **p) {
 		r = -ENOMEM;
 	}
 
-	/* eflags_load(eflags); */
-
 	return r;
 }
 
 /* girilen frame adresini boş listesine ekler */
 static inline void page_free(Page *p) {
-	/* uint32_t eflags = eflags_read(); */
-	/* cli(); */
-
 	ASSERT(!(eflags_read() & FL_IF));
 
 	ASSERT(p->type == Page::Type_available);
@@ -183,23 +175,19 @@ static inline void page_free(Page *p) {
 		p->free = true;
 		freePageList.insert(p);
 	}
-
-	/* eflags_load(eflags); */
 }
 
 inline int Page::refcount_dec() {
-	/* uint32_t eflags = eflags_read(); */
-	/* cli(); */
 	ASSERT(!(eflags_read() & FL_IF));
 
 	ASSERT(!free);
 	ASSERT(this->index() != 0);
 	nextFreeIndexOrRefCount--;
 	int rc = this->refcount_get();
+	ASSERT(rc > -1);
 	if (rc == 0)
 		page_free(this);
 
-	/* eflags_load(eflags); */
 	return rc;
 }
 
