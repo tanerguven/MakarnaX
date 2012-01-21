@@ -231,6 +231,9 @@ asmlink void trap_handler(Trapframe *tf) {
 
 	const bool user_mode_trap = (tf->cs & 3) == 3;
 
+	if (task_curr)
+		task_curr->popped_kstack = 0;
+
 	if (tf->trapno >= IRQ_OFFSET && tf->trapno < 48) {
 		ASSERT(!(eflags_read() & FL_IF));
 		irq_handlers[tf->trapno-IRQ_OFFSET].fn(tf);
@@ -257,23 +260,6 @@ asmlink void trap_handler(Trapframe *tf) {
 	/* user mode */
 	ASSERT(task_curr);
 
-	/*
-	 * trapin nerden geldigi bilgisini sakliyoruz (signal-user)
-	 * Registerlar kaydedilmesi gerektigi zaman bu bilgiye gore
-	 * registers_signal ya da registers_user'a kaydedilecek
-	 */
-	task_curr->trap_in_signal = (task_curr->signal.pending) ? 1 : 0;
-
-	if (task_curr->trap_in_signal) {
-		/*
-		 * signal fonksiyonu icinden gelen cagrilarda registerlari kaydet
-		 * FIXME: kaydetmeyince run-signal duzgun calismiyor, sebebini arastir
-		 */
-		task_curr->save_new_registers();
-	} else {
-		task_curr->registers_saved = 0;
-	}
-
 	if (tf->trapno == T_SYSCALL) {
 		do_syscall(tf->regs.eax);
 		goto return_trap_handler;
@@ -288,17 +274,6 @@ asmlink void trap_handler(Trapframe *tf) {
 return_trap_handler:
 	cli(); // interruptlar disable olmazsa tuhaf hatalar oluyor
 	ASSERT(task_curr && task_curr->state == Task::State_running);
-
-	// FIXME: counter 0'in altina dusemez
-	// ASSERT(task_curr->counter > -1);
-
-	if (task_curr->signal.pending)
-		return task_trapret(&task_curr->registers_signal);
-
-	if (!task_curr->registers_saved)
-		return task_trapret(current_registers());
-
-	return task_trapret(&task_curr->registers_user);
 }
 
 void do_error(Trapframe* tf) {

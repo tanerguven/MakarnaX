@@ -63,9 +63,16 @@ enum SignalHandler {
 	SIG_ERR = -1,
 };
 
+void copy_stack(uint32_t addr);
+static void push_stack();
+static void pop_stack();
+
 int send_signal(uint32_t sig, Task* t) {
 	if (!t || sig > 32)
 		return -EINVAL;
+
+	if (t->signal.pending & _S(sig))
+		return 0;
 
 	t->signal.sig |= _S(sig);
 
@@ -110,15 +117,11 @@ void check_signals() {
 	ASSERT(task_curr->pgdir.pgdir_pa == cr3_read());
 
 	if (task_curr->signal.sig) {
-		uint32_t* esp;
-
-		/* signal registeri ilk kez kullaniliyorsa, user registerini kopyala */
-		if (task_curr->signal.pending == 0)
-			task_curr->registers_signal = task_curr->registers_user;
-		esp = (uint32_t*)uaddr2kaddr(task_curr->registers_signal.esp);
+		Trapframe *tf = NULL;
 
 		// FIXME: 32'lik dongu yerine daha mantikli bir cozum bulunmali
 		for (int sig = 31 ; (sig > 0) && (task_curr->signal.sig) ; sig--) {
+
 			if (task_curr->signal.sig & _S(sig)) {
 
 				if (task_curr->signal.action[sig].handler == SIG_DFL) {
@@ -145,6 +148,17 @@ void check_signals() {
 					PANIC("--");
 				}
 
+				push_stack();
+/*
+ * pop signal stack sonrasi buradan devam ediliyor, asagidaki kontrol signal
+ * tamamlandiktan sonra buradan cikip normal calismaya devam etmesi icin
+ */
+				if (!task_curr->signal.sig)
+					return;
+
+				tf = current_registers();
+				uint32_t *esp = (uint32_t*)uaddr2kaddr(tf->esp);
+
 				task_curr->signal.sig &= ~_S(sig);
 				task_curr->signal.pending |= _S(sig);
 
@@ -153,12 +167,12 @@ void check_signals() {
 				 * return eip degerine belirlenmis page fault adresini ata.
 				 * Bu adreste paga fault olunca signal_return fonksiyonu calisir
 				 */
-				esp[-1] = task_curr->registers_signal.eip; //bir onceki eip
+				esp[-1] = tf->eip; //bir onceki eip
 				esp[-2] = sig;
 				esp[-3] = va2uaddr(0xfffffffe); // fault eip
 				esp-=3;
-				task_curr->registers_signal.esp = kaddr2uaddr((uint32_t)esp);
-				task_curr->registers_signal.eip = task_curr->signal.action[sig].handler;
+				tf->esp = kaddr2uaddr((uint32_t)esp);
+				tf->eip = task_curr->signal.action[sig].handler;
 			}
 		}
 	}
@@ -180,6 +194,9 @@ void signal_return(Trapframe *tf) {
 	task_curr->signal.pending &= ~_S(esp[0]); //signal tamamlandi, biti sifirla
 	tf->eip = esp[1];
 	tf->esp += 8;
+
+	/* pop ile push yapilan yere atlaniyor :) */
+	pop_stack();
 }
 
 asmlink void sys_signal() {
@@ -195,4 +212,49 @@ asmlink void sys_signal() {
 	task_curr->signal.action[signum].handler = handler;
 
 	return set_return(tf, 0);
+}
+
+// FIXME: uygun yere tasi
+void copy_stack(uint32_t addr) {
+	ASSERT(isRounded(addr));
+
+	memcpy((void*)va2kaddr(addr),
+		   (void*)va2kaddr(MMAP_KERNEL_STACK_BASE), 0x1000);
+
+	for (uint32_t* ebp = (uint32_t*)ebp_read() ;
+		 va2kaddr(MMAP_KERNEL_STACK_TOP) - (uint32_t)ebp < 0x1000 ;
+		 ebp = (uint32_t*)*ebp)
+	{
+		*(uint32_t*)(addr + ((uint32_t)ebp % 0x1000)) = *ebp - 0x2000;
+	};
+}
+
+static void push_stack() {
+	// printf(">> push stack to %d\n", task_curr->kstack_c);
+	ASSERT(task_curr->kstack_c < 32);
+	ASSERT(!task_curr->popped_kstack);
+	int r;
+	r = page_alloc(&task_curr->kstack[task_curr->kstack_c]);
+	ASSERT(r > -1);
+	r = task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c],
+									 MMAP_KERNEL_STACK_BASE - 0x2000,
+									 PTE_P | PTE_W);
+	ASSERT(r > -1);
+	copy_stack(MMAP_KERNEL_STACK_BASE - 0x2000);
+	task_curr->kstack_esp[task_curr->kstack_c] = esp_read() - 0x2000;
+	task_curr->kstack[task_curr->kstack_c]->refcount_inc();
+	task_curr->kstack_c++;
+}
+
+static void pop_stack() {
+	ASSERT(!task_curr->popped_kstack);
+	task_curr->kstack_c--;
+	// printf(">> pop stack from %d\n", task_curr->kstack_c);
+	ASSERT(task_curr->kstack_c > -1);
+	task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c],
+								 MMAP_KERNEL_STACK_BASE - 0x2000,
+								 PTE_P | PTE_W);
+	task_curr->kstack[task_curr->kstack_c]->refcount_dec();
+	task_curr->popped_kstack = 1;
+	esp_load(task_curr->kstack_esp[task_curr->kstack_c]);
 }

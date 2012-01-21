@@ -53,9 +53,12 @@ struct Task {
 	ChildList_t::node_t childlist_node;
 	TaskIdHashTable_t::node_t id_hash_node;
 
-	/* Trapframe registers; */
+	// FIXME: sadece process ilk kez calisana kadar kullaniliyor, kaldirilacak
 	Trapframe registers_user;
-	Trapframe registers_signal;
+
+	Page* kstack[32];
+	uint32_t kstack_esp[32];
+	int kstack_c;
 
 	int32_t id;
 	Task* parent;
@@ -76,9 +79,8 @@ struct Task {
 	//
 	uint32_t free: 1;
 	uint32_t waiting_child: 1;
-	uint32_t trap_in_signal: 1;
-	uint32_t registers_saved: 1;
 	uint32_t ran: 1;
+	uint32_t popped_kstack: 1;
 	uint32_t __ : 27;
 	//
 
@@ -98,10 +100,7 @@ struct Task {
 	SharedMemList_t shared_mem_list;
 
 	inline void init();
-	inline Trapframe* saved_registers();
 	inline Trapframe* registers();
-	inline void save_new_registers();
-
 };
 
 
@@ -128,9 +127,11 @@ inline Task* SharedMemDesc::task() {
 
 
 inline Trapframe* current_registers() {
-	return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_TOP - sizeof(Trapframe));
+	if (task_curr->popped_kstack)
+		return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_TOP - 0x2000 - sizeof(Trapframe));
+	else
+		return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_TOP - sizeof(Trapframe));
 }
-
 
 inline void Task::init() {
 	list_node.init();
@@ -148,27 +149,14 @@ inline void Task::init() {
 	run_before_switch_f = NULL;
 }
 
-inline Trapframe* Task::saved_registers() {
-	if (signal.pending)
-		return &registers_signal;
-
-	return &registers_user;
-}
-
 inline Trapframe* Task::registers() {
-	if (registers_saved)
-		return (trap_in_signal) ? &registers_signal : &registers_user;
-
-	ASSERT(task_curr == this);
-	return current_registers();
-}
-
-inline void Task::save_new_registers() {
-	if (trap_in_signal)
-		registers_signal = *current_registers();
-	else
-		registers_user = *current_registers();
-	registers_saved = 1;
+	if (!ran)
+		return &registers_user;
+	ASSERT(task_curr->ran);
+	if (task_curr == this)
+		return current_registers();
+	PANIC("task->registers() hatali");
+	return NULL;
 }
 
 #endif /* TASK_H_ */

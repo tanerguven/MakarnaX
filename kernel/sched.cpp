@@ -98,22 +98,23 @@ void schedule() {
 	ASSERT(!(eflags_read() & FL_IF));
 	check_signals();
 
-	/* signal gelmis ve task registerlari kayitli degilse, kaydet. */
-	if (task_curr->signal.pending && !task_curr->registers_saved) {
-		// FIXME: gecici kontrol
-		ASSERT(!task_curr->trap_in_signal);
-		task_curr->save_new_registers();
-	}
+	/* signal yokken push yapilmis stack olmamali */
+	ASSERT(!(!task_curr->signal.pending && task_curr->kstack_c != 0));
 }
 
 
 void run_first_task() {
 	task_curr = task_id_ht.get(1);
 	cr3_load(task_curr->pgdir.pgdir_pa);
-	task_trapret(task_curr->saved_registers());
+	task_trapret(&task_curr->registers_user);
 }
 
 asmlink void sys_pause() {
+
+	/* birden fazla signal varsa, pause sonrakinin calismasini engellememeli */
+	if (task_curr->kstack_c > 1)
+		return;
+
 	Trapframe *tf = task_curr->registers();
 
 	remove_from_runnable_list(task_curr);
@@ -289,7 +290,6 @@ void check_sleep_list() {
 		task_sleep_list.erase(&t->list_node);
 		ASSERT(t->list_node.is_free());
 		t->sleep = 0;
-		set_return(t->saved_registers(), 0);
 		t->state = Task::State_running;
 		add_to_runnable_list(t);
 	}
@@ -342,7 +342,7 @@ void switch_to_task(Task *newtask) {
 	if (newtask->ran==0) {
 		/* task ilk kez calisiyorsa, user modda baslat */
 		newtask->ran = 1;
-		task_trapret(newtask->saved_registers());
+		task_trapret(&newtask->registers_user);
 	}
 }
 
