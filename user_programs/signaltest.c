@@ -16,6 +16,7 @@ int test3();
 int test4();
 int test5();
 int test6();
+int test7();
 
 struct {
 	const char *name;
@@ -28,6 +29,7 @@ struct {
 	{"test4", "test4 - pause + signal", test4},
 	{"test5", "test5 - sleep + signal", test5},
 	{"test6", "test6 - pause + 3 signal", test6},
+	{"test7", "test7", test7},
 };
 #define TEST_COUNT (sizeof(tests)/sizeof(tests[0]))
 
@@ -330,5 +332,69 @@ int test6() {
 		printf("PARENT: OK\n");
 
 		sleep(3);
+	}
+}
+
+/**********************************************
+ * test 7
+ **********************************************/
+
+void test7_h1(int sig) {
+	int r;
+	printf("test7_h1 basladi\n");
+	r = sleep(100);
+	printf("test7_h1 bitti r:%d\n", r);
+}
+
+void test7_h2(int sig) {
+	int r;
+	printf("test7_h2\n");
+	r = sleep(10);
+	printf("test7_h2 bitti r:%d\n", r);
+}
+
+inline void send_sig(int sig, int pid) {
+	int r;
+	printf("PARENT: sendign %d\n", sig);
+	r = kill(pid, sig);
+	if (r < 0)
+		printf("sys_kill err: %d\n", r);
+}
+
+int test7() {
+	int pid;
+	int r;
+
+	if ((pid = fork()) < 0) {
+		printf("fork error\n");
+		return -2;
+	}
+
+	if (pid == 0) {
+		printf("child\n");
+		signal(SIGHUP, test7_h1);
+		signal(SIGINT, test7_h1);
+		signal(SIGQUIT, test7_h2);
+		signal(SIGUSR1, test7_h2);
+
+		r = pause();
+		printf("pause r: %d\n", r);
+
+		while (1);
+
+	} else {
+		sleep(1);
+		send_sig(SIGHUP, pid);
+		sleep(1);
+		send_sig(SIGHUP, pid);
+		sleep(1);
+		send_sig(SIGHUP, pid);
+		sleep(1);
+		send_sig(SIGINT, pid);
+		sleep(1);
+		send_sig(SIGQUIT, pid);
+		sleep(1);
+		send_sig(SIGUSR1, pid);
+		sleep(100);
 	}
 }

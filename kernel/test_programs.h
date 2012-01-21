@@ -64,5 +64,7 @@ extern int load_program(uint32_t addres);
 #define MAKARNAX_TEST_ipc_shmfork 17
 #define MAKARNAX_TEST_stack 18
 #define MAKARNAX_TEST_brktest 19
+#define MAKARNAX_TEST_signal7 20
+#define MAKARNAX_TEST_signal2 21
 
 #endif /* TEST_PROGRAMS_H_ */
