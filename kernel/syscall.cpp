@@ -142,7 +142,6 @@ asmlink void sys_cputs() {
 int console_getc();
 
 asmlink void sys_cgetc() {
-
 	sleep_interruptible(&console_input_list);
 
 	return set_return(task_curr->registers(), console_getc());

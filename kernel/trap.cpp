@@ -229,43 +229,36 @@ asmlink void trap_handler(Trapframe *tf) {
 	 * devam eder. (traphandler.S, trapret)
 	 */
 
-	/*
-	 * Donanim kesmelerinde task struct'daki registerlar degistirilmiyor.
-	 * Schedule yapilacagi zaman, "schedule()" fonksiyonundan once  "tf",
-	 * "registers()"a kopyalanmali (do_timer vb.)
-	 */
+	const bool user_mode_trap = (tf->cs & 3) == 3;
+
+	if (task_curr)
+		task_curr->popped_kstack = 0;
+
 	if (tf->trapno >= IRQ_OFFSET && tf->trapno < 48) {
 		ASSERT(!(eflags_read() & FL_IF));
 		irq_handlers[tf->trapno-IRQ_OFFSET].fn(tf);
+/*
+* user modda donanim kesmesi olduysa task switch yapilabilir (timer).
+* taskin signal durumlarindan dolayi return_trap_handler ile devam edilmeli
+*/
+		if (user_mode_trap)
+			goto return_trap_handler;
+
+		/* kernel moddaki donanim kesmelerinde kaldigi yerden devam eder */
 		return;
 	}
 
-	if ((tf->cs & 3) == 3) {
-		/* user mode */
-		ASSERT(task_curr);
-
-		/*
-		 * trapin nerden geldigi bilgisini sakliyoruz (signal-user)
-		 * Registerlar kaydedilmesi gerektigi zaman bu bilgiye gore
-		 * registers_signal ya da registers_user'a kaydedilecek
-		 */
-		if (task_curr->signal.pending)
-			task_curr->trap_in_signal = 1;
-		else
-			task_curr->trap_in_signal = 0;
-
-		task_curr->registers_saved = 0;
-
-	} else {
-		/*
-		 * donanim kesmeleri ve page fault haricindekiler kernel modda
-		 * calismayacak.
-		 */
-		if (tf->trapno == T_PGFLT)
-			do_page_fault(tf);
+	/* fonksiyonun devamina kernel mod traplarindan ulasilmamali */
+	if (!user_mode_trap) {
 		printf("trapno: %d\n", tf->trapno);
+		print_trapframe(tf);
+		printf("cr2: %08x\n", cr2_read());
 		PANIC("kernel mode trap");
+		return;
 	}
+
+	/* user mode */
+	ASSERT(task_curr);
 
 	if (tf->trapno == T_SYSCALL) {
 		do_syscall(tf->regs.eax);
@@ -281,19 +274,6 @@ asmlink void trap_handler(Trapframe *tf) {
 return_trap_handler:
 	cli(); // interruptlar disable olmazsa tuhaf hatalar oluyor
 	ASSERT(task_curr && task_curr->state == Task::State_running);
-
-	if (task_curr->counter < 0) {
-		/* kernel modda zamanini tuketmisse task degistir */
-		schedule();
-	} else {
-		if (!task_curr->registers_saved)
-			return task_trapret(current_registers());
-
-		if (task_curr->signal.pending)
-			return task_trapret(&task_curr->registers_signal);
-
-		return task_trapret(&task_curr->registers_user);
-	}
 }
 
 void do_error(Trapframe* tf) {
@@ -330,14 +310,7 @@ void do_page_fault(Trapframe *tf) {
 	int r;
 	uint32_t fault_va = cr2_read();
 
-	if ((tf->cs & 3) != 3) {
-		/* page fault user mod disinda olduysa */
-		printf(">> Kernelde bug olabilir\n");
-		print_trapframe(tf);
-		printf("fault_va: %08x\n", fault_va);
-		PANIC("page fault in kernel");
-		return;
-	}
+	ASSERT((tf->cs & 3) == 3);
 
 	/* programin sonlanmasi durumu */
 	if (tf->eip == va2uaddr(0xffffffff)) {

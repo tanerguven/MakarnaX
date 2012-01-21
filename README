@@ -123,7 +123,7 @@ DERLEMEK:
 
   gcc 4.4 : calisiyor
   gcc 4.5 : calisiyor
-  gcc 4.6 : hatali (bug listesinde yaziyor)
+  gcc 4.6 : calisiyor
 
 CALISTIRMAK:
 

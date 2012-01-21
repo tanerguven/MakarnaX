@@ -125,6 +125,20 @@ static void task_delete_vm(Task *t) {
 	ASSERT(t->pgdir.count_kernel == 0);
 }
 
+int task_create_kernel_stack(Task *t) {
+	int r;
+	Page *p;
+
+	r = page_alloc(&p);
+	if (r < 0)
+		return r;
+	r = t->pgdir.page_insert(p, MMAP_KERNEL_STACK_BASE, PTE_P | PTE_W);
+	if (r < 0)
+		return r;
+
+	return 0;
+}
+
 void task_free_kernel_stack(Task* t) {
 	ASSERT(!(eflags_read() & FL_IF));
 
@@ -147,6 +161,13 @@ void task_free_kernel_stack(Task* t) {
 	if (va > 0) {
 		ASSERT( tmp_page_free(kaddr2va(va)) == 0);
 		t->pgdir.count_kernel--;
+	}
+
+	for (int i = 0 ; i < t->kstack_c ; i++) {
+		t->kstack[i]->refcount_dec();
+		ASSERT(t->kstack[i]->refcount_get() < 2);
+		page_free(t->kstack[i]);
+		t->kstack[i] = NULL;
 	}
 }
 
@@ -400,8 +421,7 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 	// printf(">> load_icode OK\n");
 
 	/* process icin kernel stack */
-	err = task->pgdir.page_alloc_insert(MMAP_KERNEL_STACK_TOP - 0x1000,
-										PTE_P | PTE_W);
+	err = task_create_kernel_stack(task);
 	if (err < 0)
 		goto bad_task_create;
 	/* */
@@ -435,11 +455,11 @@ asmlink void sys_getpid(void) {
 }
 
 
+// TODO: registers_users'i kaldir
+// TODO: fork kurallari duzenlenmeli (neler kopyalanacak, neler kopyalanmayacak?)
 asmlink void sys_fork() {
 	uint32_t eflags = eflags_read();
 	cli();
-
-	task_curr->save_new_registers();
 
 	int r;
 	Task *t;
@@ -483,11 +503,9 @@ asmlink void sys_fork() {
 
 	/* process icin kernel stack */
 	mem_before_kernel_stack = mem_free();
-	r = t->pgdir.page_alloc_insert(MMAP_KERNEL_STACK_TOP - 0x1000,
-								   PTE_P | PTE_W);
+	r = task_create_kernel_stack(t);
 	if (r < 0)
 		goto bad_fork_create_kernel_stack;
-	ASSERT(r == 1);
 	/* */
 
 	/* signal */
@@ -501,6 +519,7 @@ asmlink void sys_fork() {
 		goto bad_fork;
 
 	/* fork fonksiyonundan childa 0, parenta child_id donecek */
+	t->registers_user = *task_curr->registers();
 	t->registers_user.regs.eax = 0;
 	t->time_start = jiffies;
 
