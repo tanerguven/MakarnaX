@@ -78,7 +78,7 @@ struct Page {
 	};
 
 	inline Page(Type type, uint32_t refCount)
-		: nextFreeIndexOrRefCount(refCount), type(type) {}
+		: nextFreeIndexOrRefCount(refCount), free(0), type(type) {}
 
 	inline Page* nextFree()
 		{ return (free) ? (pages + nextFreeIndexOrRefCount) : 0; }
