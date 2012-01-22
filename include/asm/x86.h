@@ -93,6 +93,8 @@
 /** Page fault occured while in user mode */
 #define FEC_U		0x4
 
+inline uint32_t ebp_read() __attribute__ ((always_inline));
+inline uint32_t esp_read() __attribute__ ((always_inline));
 
 inline uint32_t ebp_read(void) {
 	uint32_t ebp;
@@ -235,7 +237,24 @@ static inline void idt_load(uint32_t p) {
 	asm volatile("lidt (%0)\n\t" :: "r"(p));
 }
 
-extern uint32_t read_eip() __attribute__ ((noinline));
+inline uint32_t read_eip() __attribute__ ((always_inline));
+
+#if 0
+/* baska bir read_eip yontemi, optimizasyonlardan dolayi yanlis calisabiliyor */
+inline uint32_t read_eip() {
+	uint32_t eip;
+	asm volatile("movl $., %0" : "=r"(eip));
+	return eip;
+}
+#endif
+
+inline uint32_t read_eip() {
+	uint32_t eip;
+	asm volatile("call 1f\n\t"
+				 "1: pop %0"
+				 : "=r"(eip));
+	return eip;
+}
 
 static inline void cli() {
 	asm("cli");

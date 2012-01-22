@@ -447,13 +447,3 @@ static int command_memdebug(int argc, char **argv) {
 
 	return 0;
 }
-
-/*
- * cagiran fonksiyonun ebp'sinin okunabilmesi icin inline olmamali.
- * bu fonkisyonu cagirilirken ebp stacke basiliyor, fonksiyon stackden okuyor.
- */
-uint32_t read_eip() {
-	uint32_t callerpc;
-	asm volatile("movl 4(%%ebp), %0" : "=r" (callerpc));
-	return callerpc;
-}
