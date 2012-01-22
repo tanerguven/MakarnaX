@@ -248,26 +248,11 @@ inline uint32_t read_eip() {
 }
 #endif
 
-#if 0
-/* bu fonksiyon calisiyor ama cagirildigi yere atlanmasi zor */
 inline uint32_t read_eip() {
 	uint32_t eip;
 	asm volatile("call 1f\n\t"
-				 "1: pop %0"
+				 "1: pop %0" // bu satir 2 kere calisiyor
 				 : "=r"(eip));
-	return eip;
-}
-#endif
-
-inline uint32_t read_eip() {
-	uint32_t eip;
-	asm volatile(
-		"push %%eax\n\t"
-		"call 1f\n\t"
-		"1: pop %%eax\n\t"
-		"mov %%eax, %0\n\t"
-		"pop %%eax\n\t"
-		: "=r"(eip));
 	return eip;
 }
 

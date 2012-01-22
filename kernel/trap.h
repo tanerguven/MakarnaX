@@ -146,6 +146,8 @@ struct IretRegs_1 {
 	uint32_t eip;
 	uint16_t cs; uint16_t __cs;
 	uint32_t eflags;
+// FIXME: gecici cozum
+	uint32_t eip_2;
 } __attribute__((packed));
 
 inline void iret(void *iret_regs) {

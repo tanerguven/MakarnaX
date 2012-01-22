@@ -245,11 +245,14 @@ static void push_stack() {
 	uint32_t eip;
 
 	ASSERT(!task_curr->popped_kstack);
+	// printf(">> push stack to %d\n", task_curr->sigstack.size()+1);
 	ASSERT(task_curr->sigstack.size() < 32);
-	// printf(">> push stack\n");
 
 	/* stackin kopyalanacagi page */
 	SignalState *s = (SignalState*)kmalloc(sizeof(SignalState));
+	s->list_node.init();
+	ASSERT(s->list_node.is_free());
+
 	r = page_alloc(&s->stack);
 	ASSERT(r > -1);
 	r = task_curr->pgdir.page_insert(s->stack,
@@ -271,12 +274,12 @@ static void push_stack() {
 
 	/* pop_stack fonksiyonundan buraya atlaniyor  */
 	eip = read_eip();
-	if (eip == 0) {
+	if (eip == 1) {
 		/* pop stack, esp degerini ebp'ye yukledi, geri yukluyoruz */
 		asm volatile(
 			"mov %ebp, %esp\n\t"
 			"pop %ebp\n\t"
-			"popal");
+			"popal\n\t");
 		// FIXME: ebp degerinden stack icin kullanilan offset cikarilmali mi?
 
 		return;
@@ -287,8 +290,10 @@ static void push_stack() {
 	s->regs_iret.cs = cs_read();
 	s->regs_iret.eflags = eflags_read();
 	s->regs_iret.eip = eip;
+	s->regs_iret.eip_2 = 1;
 
-	task_curr->sigstack.push_front(&s->list_node);
+	ASSERT( s->list_node.is_free() );
+	ASSERT( task_curr->sigstack.push_front(&s->list_node) );
 }
 
 static void pop_stack() {
@@ -296,7 +301,7 @@ static void pop_stack() {
 
 	ASSERT(!task_curr->popped_kstack);
 	ASSERT(task_curr->sigstack.size() > 0);
-	// printf(">> pop stack from %d\n", task_curr->kstack_c);
+	// printf(">> pop stack from %d\n", task_curr->sigstack.size());
 
 	SignalState *s = task_curr->sigstack.front();
 	r = task_curr->sigstack.pop_front();
@@ -312,9 +317,11 @@ static void pop_stack() {
 
 	asm volatile(
 		"mov %0, %%ebp\n\t"
-		"mov $0, %%eax\n\t"
 		:: "r" (s->esp));
-	iret(&s->regs_iret);
+
+	// FIXME: gecici cozum (regs_iret.eip)
+	iret(&s->regs_iret.eip);
+	while(1);
 }
 
 /* task_free_kernel_stack tarafindan kullaniliyor */

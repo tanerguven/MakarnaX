@@ -11,7 +11,7 @@ struct SignalState {
 	SignalStack_t::node_t list_node;
 
 	IretRegs_1 regs_iret;
-};
+} __attribute__((packed));
 
 struct SignalAction {
 	uint32_t handler;
