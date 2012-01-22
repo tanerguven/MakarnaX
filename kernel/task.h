@@ -56,10 +56,7 @@ struct Task {
 	// FIXME: sadece process ilk kez calisana kadar kullaniliyor, kaldirilacak
 	Trapframe registers_user;
 
-	// TODO: bunlar struct seklinde saklanmali ve gerektiginde bellek kullanmali
-	SignalState kstack[32];
-	int kstack_c;
-	//
+	SignalStack_t sigstack;
 
 	int32_t id;
 	Task* parent;
@@ -148,6 +145,7 @@ inline void Task::init() {
 	/* shared_mem_list.init(); //shm_fork */
 	id_hash_node.init();
 	run_before_switch_f = NULL;
+	sigstack.init();
 }
 
 inline Trapframe* Task::registers() {

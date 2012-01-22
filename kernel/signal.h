@@ -6,13 +6,9 @@ define_list(struct SignalState, SignalStack_t);
 struct SignalState {
 	Page* stack;
 	uint32_t esp;
-	uint32_t ebp;
 
 	uint32_t sleep;
 	SignalStack_t::node_t list_node;
-
-	/* signal tamamlandiginda 1 */
-	uint32_t ok;
 
 	IretRegs_1 regs_iret;
 };

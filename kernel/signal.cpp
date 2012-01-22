@@ -32,6 +32,11 @@ asmlink void do_exit(int);
 extern void notify_parent(Task *t);
 //
 
+// kmalloc.cpp
+extern void* kmalloc(size_t size);
+extern void kfree(void* ptr);
+//
+
 #define _S(x) (1<<x)
 
 /* SIGKILL VE SIGSTOP haricindekiler */
@@ -63,7 +68,8 @@ enum SignalHandler {
 	SIG_ERR = -1,
 };
 
-void copy_stack(uint32_t addr);
+set_list_offset(struct SignalState, SignalStack_t, list_node);
+
 static void push_stack();
 static void pop_stack();
 
@@ -220,81 +226,107 @@ void copy_stack(uint32_t addr) {
 
 	memcpy((void*)va2kaddr(addr),
 		   (void*)va2kaddr(MMAP_KERNEL_STACK_BASE), 0x1000);
-
+#if 1
+/*
+ * FIXME: bu kisima gcc-4.6 ile derlendiginde gerek yok, derleyici versiyonuna
+ * gore kullanilmali
+ */
 	for (uint32_t* ebp = (uint32_t*)ebp_read() ;
 		 va2kaddr(MMAP_KERNEL_STACK_TOP) - (uint32_t)ebp < 0x1000 ;
 		 ebp = (uint32_t*)*ebp)
 	{
-		*(uint32_t*)(addr + ((uint32_t)ebp % 0x1000)) = *ebp - 0x2000;
+		*(uint32_t*)(va2kaddr(addr) + ((uint32_t)ebp % 0x1000)) = *ebp - 0x2000;
 	};
+#endif
 }
 
 static void push_stack() {
 	int r;
+	uint32_t eip;
 
 	ASSERT(!task_curr->popped_kstack);
-	ASSERT(task_curr->kstack_c < 32);
+	ASSERT(task_curr->sigstack.size() < 32);
 	// printf(">> push stack\n");
 
 	/* stackin kopyalanacagi page */
-	r = page_alloc(&task_curr->kstack[task_curr->kstack_c].stack);
+	SignalState *s = (SignalState*)kmalloc(sizeof(SignalState));
+	r = page_alloc(&s->stack);
 	ASSERT(r > -1);
-	r = task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c].stack,
+	r = task_curr->pgdir.page_insert(s->stack,
 									 MMAP_KERNEL_STACK_BASE - 0x2000,
 									 PTE_P | PTE_W);
 	ASSERT(r > -1);
-	task_curr->kstack[task_curr->kstack_c].stack->refcount_inc();
+	s->stack->refcount_inc();
 
+	/* stack'e registerlar kaydedilip kopyalaniyor */
+	asm volatile(
+		"pushal\n\t"
+		"push %ebp\n\t");
+	s->esp = esp_read() - 0x2000;
 	copy_stack(MMAP_KERNEL_STACK_BASE - 0x2000);
+	asm volatile(
+		"pop %ebp\n\t"
+		"popal\n\t");
+	/* */
 
-	/*
-	 * FIXME: gecici cozum
-	 * task_curr->kstack[task_curr->kstack_c].ok = 0 yapmiyoruz, cunku asagidaki
-	 * if'te kontrol var. compilerin her zaman 0'a esit oldugunu dusunerek
-	 * optimizasyon yapmasini engelliyoruz :)
-	 */
-	memset(&task_curr->kstack[task_curr->kstack_c].ok, 0,
-		   sizeof(task_curr->kstack[task_curr->kstack_c].ok));
+	/* pop_stack fonksiyonundan buraya atlaniyor  */
+	eip = read_eip();
+	if (eip == 0) {
+		/* pop stack, esp degerini ebp'ye yukledi, geri yukluyoruz */
+		asm volatile(
+			"mov %ebp, %esp\n\t"
+			"pop %ebp\n\t"
+			"popal");
+		// FIXME: ebp degerinden stack icin kullanilan offset cikarilmali mi?
 
-	uint32_t eip = read_eip();
-/*
- * burasi pop_stack yapildiginda tekrar calisiyor, asagidaki if pop_stack ile
- * 2. calisma durumu icin. (ilk calismada icin yukarida ok degiskenini 0 yaptik)
- */
-	if (task_curr->kstack[task_curr->kstack_c].ok) {
-		ebp_load(task_curr->kstack[task_curr->kstack_c].ebp);
-		esp_load(task_curr->kstack[task_curr->kstack_c].esp);
-		// printf(">> pop stack OK\n");
 		return;
 	}
 
-	task_curr->kstack[task_curr->kstack_c].esp = esp_read() - 0x2000;
-	task_curr->kstack[task_curr->kstack_c].ebp = ebp_read() - 0x2000;
+	s->sleep = task_curr->sleep;
 
-	task_curr->kstack[task_curr->kstack_c].sleep = task_curr->sleep;
+	s->regs_iret.cs = cs_read();
+	s->regs_iret.eflags = eflags_read();
+	s->regs_iret.eip = eip;
 
-	task_curr->kstack[task_curr->kstack_c].regs_iret.cs = cs_read();
-	task_curr->kstack[task_curr->kstack_c].regs_iret.eflags = eflags_read();
-	task_curr->kstack[task_curr->kstack_c].regs_iret.eip = eip;
-
-	task_curr->kstack_c++;
+	task_curr->sigstack.push_front(&s->list_node);
 }
 
 static void pop_stack() {
+	int r;
+
 	ASSERT(!task_curr->popped_kstack);
-	task_curr->kstack_c--;
-	ASSERT(task_curr->kstack_c > -1);
+	ASSERT(task_curr->sigstack.size() > 0);
 	// printf(">> pop stack from %d\n", task_curr->kstack_c);
 
-	task_curr->sleep = task_curr->kstack[task_curr->kstack_c].sleep;
-	task_curr->kstack[task_curr->kstack_c].ok = 1;
+	SignalState *s = task_curr->sigstack.front();
+	r = task_curr->sigstack.pop_front();
+	ASSERT( r == 1 );
 
-	task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c].stack,
+	task_curr->sleep = s->sleep;
+	task_curr->pgdir.page_insert(s->stack,
 								 MMAP_KERNEL_STACK_BASE - 0x2000,
 								 PTE_P | PTE_W);
-	task_curr->kstack[task_curr->kstack_c].stack->refcount_dec();
+	s->stack->refcount_dec();
 
 	task_curr->popped_kstack = 1;
 
-	iret(&task_curr->kstack[task_curr->kstack_c].regs_iret);
+	asm volatile(
+		"mov %0, %%ebp\n\t"
+		"mov $0, %%eax\n\t"
+		:: "r" (s->esp));
+	iret(&s->regs_iret);
+}
+
+/* task_free_kernel_stack tarafindan kullaniliyor */
+void free_sigstack() {
+	while (task_curr->sigstack.size() > 0) {
+		SignalState *s = task_curr->sigstack.front();
+		task_curr->sigstack.pop_front();
+
+		s->stack->refcount_dec();
+		ASSERT(s->stack->refcount_get() < 2);
+		page_free(s->stack);
+
+		kfree(s);
+	}
 }

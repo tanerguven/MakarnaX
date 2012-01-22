@@ -42,6 +42,10 @@ extern void* kmalloc(size_t size);
 extern void kfree(void* ptr);
 //
 
+// signal.cpp
+void free_sigstack();
+//
+
 /*
  * TODO: signal almis bir process, signal fonksiyonunda fork yaparsa ?
  * TODO: zombie tasklar icin bir cozum
@@ -163,12 +167,7 @@ void task_free_kernel_stack(Task* t) {
 		t->pgdir.count_kernel--;
 	}
 
-	for (int i = 0 ; i < t->kstack_c ; i++) {
-		t->kstack[i].stack->refcount_dec();
-		ASSERT(t->kstack[i].stack->refcount_get() < 2);
-		page_free(t->kstack[i].stack);
-		t->kstack[i].stack = NULL;
-	}
+	free_sigstack();
 }
 
 /**

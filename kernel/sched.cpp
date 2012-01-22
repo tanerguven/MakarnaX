@@ -99,7 +99,7 @@ void schedule() {
 	check_signals();
 
 	/* signal yokken push yapilmis stack olmamali */
-	ASSERT(!(!task_curr->signal.pending && task_curr->kstack_c != 0));
+	ASSERT(!(!task_curr->signal.pending && task_curr->sigstack.size() != 0));
 }
 
 
@@ -112,7 +112,7 @@ void run_first_task() {
 asmlink void sys_pause() {
 
 	/* birden fazla signal varsa, pause sonrakinin calismasini engellememeli */
-	if (task_curr->kstack_c > 1)
+	if (task_curr->sigstack.size() > 1)
 		return;
 
 	Trapframe *tf = task_curr->registers();
