@@ -164,10 +164,10 @@ void task_free_kernel_stack(Task* t) {
 	}
 
 	for (int i = 0 ; i < t->kstack_c ; i++) {
-		t->kstack[i]->refcount_dec();
-		ASSERT(t->kstack[i]->refcount_get() < 2);
-		page_free(t->kstack[i]);
-		t->kstack[i] = NULL;
+		t->kstack[i].stack->refcount_dec();
+		ASSERT(t->kstack[i].stack->refcount_get() < 2);
+		page_free(t->kstack[i].stack);
+		t->kstack[i].stack = NULL;
 	}
 }
 

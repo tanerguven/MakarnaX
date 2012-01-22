@@ -230,33 +230,71 @@ void copy_stack(uint32_t addr) {
 }
 
 static void push_stack() {
-	// printf(">> push stack to %d\n", task_curr->kstack_c);
-	ASSERT(task_curr->kstack_c < 32);
-	ASSERT(!task_curr->popped_kstack);
 	int r;
-	r = page_alloc(&task_curr->kstack[task_curr->kstack_c]);
+
+	ASSERT(!task_curr->popped_kstack);
+	ASSERT(task_curr->kstack_c < 32);
+	// printf(">> push stack\n");
+
+	/* stackin kopyalanacagi page */
+	r = page_alloc(&task_curr->kstack[task_curr->kstack_c].stack);
 	ASSERT(r > -1);
-	r = task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c],
+	r = task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c].stack,
 									 MMAP_KERNEL_STACK_BASE - 0x2000,
 									 PTE_P | PTE_W);
 	ASSERT(r > -1);
+	task_curr->kstack[task_curr->kstack_c].stack->refcount_inc();
+
 	copy_stack(MMAP_KERNEL_STACK_BASE - 0x2000);
-	task_curr->kstack_esp[task_curr->kstack_c] = esp_read() - 0x2000;
-	task_curr->ssleep[task_curr->kstack_c] = task_curr->sleep;
-	task_curr->kstack[task_curr->kstack_c]->refcount_inc();
+
+	/*
+	 * FIXME: gecici cozum
+	 * task_curr->kstack[task_curr->kstack_c].ok = 0 yapmiyoruz, cunku asagidaki
+	 * if'te kontrol var. compilerin her zaman 0'a esit oldugunu dusunerek
+	 * optimizasyon yapmasini engelliyoruz :)
+	 */
+	memset(&task_curr->kstack[task_curr->kstack_c].ok, 0,
+		   sizeof(task_curr->kstack[task_curr->kstack_c].ok));
+
+	uint32_t eip = read_eip();
+/*
+ * burasi pop_stack yapildiginda tekrar calisiyor, asagidaki if pop_stack ile
+ * 2. calisma durumu icin. (ilk calismada icin yukarida ok degiskenini 0 yaptik)
+ */
+	if (task_curr->kstack[task_curr->kstack_c].ok) {
+		ebp_load(task_curr->kstack[task_curr->kstack_c].ebp);
+		esp_load(task_curr->kstack[task_curr->kstack_c].esp);
+		// printf(">> pop stack OK\n");
+		return;
+	}
+
+	task_curr->kstack[task_curr->kstack_c].esp = esp_read() - 0x2000;
+	task_curr->kstack[task_curr->kstack_c].ebp = ebp_read() - 0x2000;
+
+	task_curr->kstack[task_curr->kstack_c].sleep = task_curr->sleep;
+
+	task_curr->kstack[task_curr->kstack_c].regs_iret.cs = cs_read();
+	task_curr->kstack[task_curr->kstack_c].regs_iret.eflags = eflags_read();
+	task_curr->kstack[task_curr->kstack_c].regs_iret.eip = eip;
+
 	task_curr->kstack_c++;
 }
 
 static void pop_stack() {
 	ASSERT(!task_curr->popped_kstack);
 	task_curr->kstack_c--;
-	// printf(">> pop stack from %d\n", task_curr->kstack_c);
 	ASSERT(task_curr->kstack_c > -1);
-	task_curr->sleep = task_curr->ssleep[task_curr->kstack_c];
-	task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c],
+	// printf(">> pop stack from %d\n", task_curr->kstack_c);
+
+	task_curr->sleep = task_curr->kstack[task_curr->kstack_c].sleep;
+	task_curr->kstack[task_curr->kstack_c].ok = 1;
+
+	task_curr->pgdir.page_insert(task_curr->kstack[task_curr->kstack_c].stack,
 								 MMAP_KERNEL_STACK_BASE - 0x2000,
 								 PTE_P | PTE_W);
-	task_curr->kstack[task_curr->kstack_c]->refcount_dec();
+	task_curr->kstack[task_curr->kstack_c].stack->refcount_dec();
+
 	task_curr->popped_kstack = 1;
-	esp_load(task_curr->kstack_esp[task_curr->kstack_c]);
+
+	iret(&task_curr->kstack[task_curr->kstack_c].regs_iret);
 }

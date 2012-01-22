@@ -141,6 +141,24 @@ struct GateDesc {
 	uint32_t off_31_16 : 16;
 };
 
+// TODO: register structlari baska bir yere tasinabilir
+struct IretRegs_1 {
+	uint32_t eip;
+	uint16_t cs; uint16_t __cs;
+	uint32_t eflags;
+} __attribute__((packed));
+
+inline void iret(void *iret_regs) {
+/*
+ * task register struct'i stack olarak kullanilip pop ile registerlar
+ * yukleniyor. (popal, es, ds, iret)
+ */
+	asm volatile("movl %0,%%esp\n\t"
+				 "iret\n\t"
+				 :: "g" (iret_regs) : "memory");
+	while(1);
+}
+
 /* jos : inc/trap.h */
 struct PushRegs {
 	/* pusha ile stacke basilan registerlar */

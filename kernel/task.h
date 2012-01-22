@@ -57,9 +57,7 @@ struct Task {
 	Trapframe registers_user;
 
 	// TODO: bunlar struct seklinde saklanmali ve gerektiginde bellek kullanmali
-	Page* kstack[32];
-	uint32_t kstack_esp[32];
-	uint32_t ssleep[32];
+	SignalState kstack[32];
 	int kstack_c;
 	//
 
