@@ -70,7 +70,18 @@ void *kmalloc(size_t size) {
 				uygun_sizeno = i;
 			if (sizes[i].list.size() > 0) {
 				b = sizes[i].list.front();
-				sizes[i].list.pop_front();
+				ASSERT(b->header.sizeno == i);
+#if 0
+/*
+ * TODO: cok tuhaf bir bug, liste degeri degisiyor. Baska bir fonksiyon yanlis
+ * bellek adresine yaziyor olabilir.
+ */
+				ASSERT(b->list_node.__list == &sizes[i].list);
+# else
+				//FIXME: gecici cozum
+				b->list_node.__list = &sizes[i].list;
+#endif
+				ASSERT( sizes[i].list.pop_front() );
 				break;
 			}
 		}
@@ -93,11 +104,15 @@ void *kmalloc(size_t size) {
 	}
 
 	ASSERT(b);
+	ASSERT(b->list_node.is_free());
 
+#if 1
+	// split ozelligi kapatilabilir
 	for ( ; i > uygun_sizeno ; i--) {
 		ASSERT(b->header.sizeno == i);
 		b = b->split();
 	}
+#endif
 
 	b->set_used();
 
@@ -110,14 +125,18 @@ void kfree(void *v) {
 
 	FreeBlock *fb = bh->fb();
 	fb->set_free();
+	ASSERT(fb->list_node.__list == NULL);
 
+#if 1
+	// split ozelligi kapatilabilir
 	while ((fb->header.sizeno < LAST_SIZENO+1) && fb->pair()->header.is_free() &&
 		   (fb->pair()->header.sizeno == fb->header.sizeno)) {
 		fb = fb->merge();
 	}
+#endif
 
+	ASSERT(fb->list_node.is_free());
 	if (fb->header.sizeno <= LAST_SIZENO) {
-		ASSERT(fb->list_node.is_free());
 		bool b = sizes[fb->header.sizeno].list.push_front(&fb->list_node);
 		ASSERT(b);
 	} else {
@@ -142,7 +161,7 @@ void FreeBlock::init() {
 	list_node.init();
 
 	FreeBlock* b = split();
-	sizes[b->header.sizeno].list.push_back(&b->list_node);
+	ASSERT( sizes[b->header.sizeno].list.push_back(&b->list_node) );
 }
 
 FreeBlock* FreeBlock::split() {
