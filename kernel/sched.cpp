@@ -48,6 +48,8 @@ void schedule_init() {
 
 void schedule() {
 	cli();
+	ASSERT(task_curr);
+	// printf(">> [%d] schedule\n", task_curr->id);
 
 	if (task_curr && task_curr->run_before_switch_f) {
 		task_curr->run_before_switch_f(task_curr->run_before_switch_f_p);
@@ -79,13 +81,17 @@ void schedule() {
 
 			ASSERT(task_next->state == Task::State_running);
 		} else {
+			Task *t = task_curr;
 			/* hic runnable task yoksa */
-			// FIXME: --
-			// task_curr = NULL;
+
+			/* FIXME: task_curr = NULL, optimizasyonu engellemek icin memset */
+			memset(&task_curr, 0, sizeof(Task*));
+
 			/* kesme gelene kadar bekle */
 			sti();
 			asm("hlt");
 			cli();
+			task_curr = t;
 		}
 	} while (first_priority_level == NULL);
 
@@ -96,6 +102,10 @@ void schedule() {
 
 	/* signal yokken push yapilmis stack olmamali */
 	ASSERT(!(!task_curr->signal.pending && task_curr->sigstack.size() != 0));
+
+	// FIXME: signal oldugunda, sleep return 2 kere oluyor ???
+
+	// printf(">> [%d] schedule OK\n", task_curr->id);
 }
 
 
@@ -122,7 +132,7 @@ asmlink void sys_pause() {
 	 */
 	set_return(tf, -1);
 
-	kernel_mode_task_switch();
+	schedule();
 }
 
 asmlink void sys_yield() {
@@ -140,22 +150,20 @@ asmlink void do_timer(Trapframe *tf) {
 		return;
 	}
 
+	ASSERT(task_curr && task_curr->state == Task::State_running);
+
 	task_curr->counter--;
-	// printf(">> counter: %d\n", task_curr->counter);
 
 	if ((tf->cs & 3) == 3) {
 		task_curr->time_user++;
-
-		//FIXME: kernel modda da task switch yapilmali
-		/* task'in suresi dolduysa (counter'i bittiyse) task switch yap */
-		if (task_curr->counter < 0)
-			schedule();
-
 	} else {
 		ASSERT(tf != current_registers());
 		task_curr->time_kernel++;
 	}
 
+	/* task'in suresi dolduysa (counter'i bittiyse) task switch yap */
+	if (task_curr->counter < 0)
+		schedule();
 }
 
 asmlink void sys_alarm() {
@@ -227,7 +235,7 @@ void sleep_interruptible(TaskList_t *list) {
 
 	task_curr->state = Task::State_interruptible;
 
-	kernel_mode_task_switch();
+	schedule();
 }
 
 /** bir kaynak uzerinde sleep yapan tasklardan ilkini uyandirir */
@@ -255,7 +263,7 @@ void sleep_uninterruptible(TaskList_t *list) {
 
 	list->push_back(&task_curr->list_node);
 
-	kernel_mode_task_switch();
+	schedule();
 }
 
 void wakeup_uninterruptible(TaskList_t *list) {
@@ -319,7 +327,8 @@ asmlink void sys_sleep() {
 
 	eflags_load(eflags);
 
-	kernel_mode_task_switch();
+	schedule();
+	// printf(">> [%d] sleep return\n", task_curr->id);
 
 	int r = task_curr->sleep - jiffies_to_seconds();
 
@@ -328,6 +337,7 @@ asmlink void sys_sleep() {
 
 void switch_to_task(Task *newtask) {
 	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT(task_curr);
 
 	task_curr->k_esp = esp_read();
 	cr3_load(newtask->pgdir.pgdir_pa);
@@ -340,9 +350,4 @@ void switch_to_task(Task *newtask) {
 		newtask->ran = 1;
 		task_trapret(&newtask->registers_user);
 	}
-}
-
-// FIXME: fonksiyonu sil
-void kernel_mode_task_switch() {
-	schedule();
 }

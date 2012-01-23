@@ -27,7 +27,6 @@ extern void wakeup_interruptible(TaskList_t *list);
 extern void sleep_uninterruptible(TaskList_t *list);
 extern void wakeup_uninterruptible(TaskList_t *list);
 
-extern void kernel_mode_task_switch();
 extern void schedule();
 
 extern TaskList_t __task_runnable_queue[41];

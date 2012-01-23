@@ -137,7 +137,7 @@ asmlink void sys_wait() {
 
 	eflags_load(eflags);
 
-	kernel_mode_task_switch();
+	schedule();
 
 	task_curr->waiting_child = 0;
 	Task *t = task_curr->wait_notify_next;
