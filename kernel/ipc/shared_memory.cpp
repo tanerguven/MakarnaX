@@ -22,28 +22,15 @@
 #include "../trap.h"
 #include "../task.h"
 
-// kmalloc.cpp
-extern void *kmalloc(size_t size);
-extern void kfree(void *v);
-extern size_t kmalloc_size(size_t size);
-//
+#include "../kernel.h"
 
 /*
  * kaynaklar
  * http://linux.die.net/man/2/shmget
  */
 
-struct HI_SharedMemId {
-	static const ptr_t offset_struct;
-	static const ptr_t offset_id;
-};
-typedef IdHashTable<struct SharedMemInfo, HI_SharedMemId> SharedMemIdHT_t;
-
-struct HI_SharedMemKey {
-	static const ptr_t offset_struct;
-	static const ptr_t offset_id;
-};
-typedef IdHashTable<struct SharedMemInfo, HI_SharedMemKey> SharedMemKeyHT_t;
+define_id_hash(struct SharedMemInfo, SharedMemIdHT_t);
+define_id_hash(struct SharedMemInfo, SharedMemKeyHT_t);
 
 struct SharedMemInfo {
 	key_t id;
@@ -355,17 +342,7 @@ uint32_t mem_shm() {
 	return size >> 10;
 }
 
-const ptr_t LI_SharedMem::offset_node_value =
-	(ptr_t)offsetof(SharedMemDesc,list_node);
-const ptr_t LI_SharedMem_Task::offset_node_value =
-	(ptr_t)offsetof(SharedMemDesc,info_task_list_node);
-
-const ptr_t HI_SharedMemId::offset_struct =
-	(ptr_t)offsetof(SharedMemInfo,id_hash_node);
-const ptr_t HI_SharedMemId::offset_id =
-	(ptr_t)(offsetof(SharedMemInfo,id_hash_node) - offsetof(SharedMemInfo,id));
-
-const ptr_t HI_SharedMemKey::offset_struct =
-	(ptr_t)offsetof(SharedMemInfo,key_hash_node);
-const ptr_t HI_SharedMemKey::offset_id =
-	(ptr_t)(offsetof(SharedMemInfo,key_hash_node) - offsetof(SharedMemInfo,key));
+set_id_hash_offset(struct SharedMemInfo, SharedMemIdHT_t, id_hash_node, id);
+set_id_hash_offset(struct SharedMemInfo, SharedMemKeyHT_t, key_hash_node, key);
+set_list_offset(struct SharedMemDesc, SharedMemList_t, list_node);
+set_list_offset(struct SharedMemDesc, SharedMem_Task_List_t, info_task_list_node);

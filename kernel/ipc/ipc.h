@@ -23,15 +23,8 @@
 
 #include "../task.h"
 
-struct LI_SharedMem {
-	static const ptr_t offset_node_value;
-};
-typedef List_2<struct SharedMemDesc, LI_SharedMem> SharedMemList_t;
-
-struct LI_SharedMem_Task {
-	static const ptr_t offset_node_value;
-};
-typedef List_2<struct SharedMemDesc, LI_SharedMem_Task> SharedMem_Task_List_t;
+define_list(struct SharedMemDesc, SharedMemList_t);
+define_list(struct SharedMemDesc, SharedMem_Task_List_t);
 
 struct SharedMemDesc {
 	uint32_t start; // user address

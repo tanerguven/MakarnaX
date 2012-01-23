@@ -35,6 +35,8 @@
 #include <stdio.h>
 using namespace std;
 
+#include "signal.h"
+
 /* traphandler.S dosyasinda tanimli fonksiyonlar */
 asmlink void divide_error(void);
 asmlink void debug();
@@ -75,10 +77,6 @@ asmlink void do_timer(Trapframe*);
 
 // keyboard.cpp
 asmlink void do_irq_keyboard(Trapframe*);
-//
-
-// signal.cpp
-void signal_return(Trapframe *tf);
 //
 
 // syscall.cpp

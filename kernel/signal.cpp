@@ -23,6 +23,8 @@
 #include <errno.h>
 #include <signal.h>
 
+#include "kernel.h"
+
 /*
  * TODO: signal mask eklenmeli
  */
@@ -30,11 +32,6 @@
 // task_exit.cpp
 asmlink void do_exit(int);
 extern void notify_parent(Task *t);
-//
-
-// kmalloc.cpp
-extern void* kmalloc(size_t size);
-extern void kfree(void* ptr);
 //
 
 #define _S(x) (1<<x)

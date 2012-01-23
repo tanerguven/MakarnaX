@@ -1,6 +1,10 @@
 #ifndef _SIGNAL_H_
 #define _SIGNAL_H_
 
+extern void signal_return(struct Trapframe *tf);
+extern int send_signal(uint32_t sig, struct Task* t);
+extern void check_signals();
+
 define_list(struct SignalState, SignalStack_t);
 
 struct SignalState {

@@ -32,12 +32,6 @@
 extern void task_free(struct Task *t);
 //
 
-// signal.cpp
-int send_signal(uint32_t sig, Task* t);
-//
-
-
-
 /*
  * TODO: parent prosesin, child prosesten once sonlanmasi durumu
  * TODO: birden fazla child prosesin ayni anda sonlanmasi durumunda bilgi

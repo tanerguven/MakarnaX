@@ -22,11 +22,7 @@
 #include "../task.h"
 #include "../sched.h"
 
-
-// kmalloc.cpp
-extern void *kmalloc(size_t size);
-extern void kfree(void *v);
-//
+#include "../kernel.h"
 
 /*
  * TODO: SemInfo icin alinan bellek geri verilmeli

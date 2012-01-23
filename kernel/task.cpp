@@ -33,13 +33,10 @@
 #include <stdio.h>
 using namespace std;
 
+#include "kernel.h"
+
 // task_exit.cpp
 extern void task_kill(Task*);
-//
-
-// kmalloc.cpp
-extern void* kmalloc(size_t size);
-extern void kfree(void* ptr);
 //
 
 // signal.cpp

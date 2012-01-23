@@ -23,11 +23,7 @@
 #include "time.h"
 
 #include <signal.h>
-
-// signal.cpp
-extern int send_signal(uint32_t sig, Task* t);
-extern void check_signals();
-//
+#include "signal.h"
 
 void check_alarm();
 void check_sleep_list();
