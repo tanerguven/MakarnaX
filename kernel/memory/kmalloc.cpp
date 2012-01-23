@@ -213,6 +213,8 @@ static void test3();
 static void test4();
 static void compare_total_count();
 
+static void bugtest();
+
 static void *x[100];
 static BlockHeader *bh[100];
 static FreeBlock *fb[100];
@@ -245,7 +247,19 @@ void test_kmalloc() {
 	test4();
 	// printf("test 4 OK\n");
 
+#if 0
+	bugtest();
+#endif
 	return;
+}
+
+// TODO: kmalloctaki bug
+static void bugtest() {
+	printf("bug test\n");
+	uint32_t *s = (uint32_t*)kmalloc(100);
+	s[2] = 0x12345678;
+	kfree(s);
+	while(1);
 }
 
 #if 0

@@ -1,3 +1,3 @@
  - tlb_invalidate duzgun calismiyor, gecici cozumler uretildi
- - ic ice signallerde sleep hatali calisiyor. 1 tane sleep degiskeni var ve
-sleep degeri kayboluyor (signal7 testi)
+ - gcc 4.6 ile derlendiginde kernel monitor - backtrace calismiyor
+ - kmalloc hatali calisiyor
