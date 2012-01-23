@@ -67,6 +67,7 @@ struct Task {
 
 	/* task switch yapilirken, kernel stack icin esp degeri kaydediliyor */
 	uint32_t k_esp;
+	uint32_t k_eip;
 
 	uint32_t time_start, time_end, time_user, time_kernel;
 	int32_t counter;

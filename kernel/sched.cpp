@@ -338,16 +338,37 @@ asmlink void sys_sleep() {
 void switch_to_task(Task *newtask) {
 	ASSERT(!(eflags_read() & FL_IF));
 	ASSERT(task_curr);
+	// printf(">> %d switch to %d\n", task_curr->id, newtask->id);
 
 	task_curr->k_esp = esp_read();
-	cr3_load(newtask->pgdir.pgdir_pa);
-	esp_load(newtask->k_esp);
 	task_curr = newtask;
 
+	if (newtask->k_eip) {
+		// FIXME: inline assemblyde bir degiskeni oyup degistirme nasil olur?
+		asm volatile(
+			"push %0\n\t"
+			"push %1\n\t"
+			:: "r"(task_curr->k_esp), "r"(task_curr->k_eip));
+
+		task_curr->k_eip = 0;
+
+		asm volatile(
+			"pop %%ebp\n\t" // ebp, eip degerini gecici olarak sakliyor
+			"pop %%esp\n\t" //esp_load
+			"mov %0, %%cr3\n\t" // cr3_load
+			"push $1\n\t"
+			"push %%ebp\n\t"
+			"ret\n\t"
+			:: "r" (task_curr->pgdir.pgdir_pa));
+	}
+
+	cr3_load(task_curr->pgdir.pgdir_pa);
+	esp_load(task_curr->k_esp);
+
 	task_curr->run_count++;
-	if (newtask->ran==0) {
+	if (task_curr->ran==0) {
 		/* task ilk kez calisiyorsa, user modda baslat */
-		newtask->ran = 1;
-		task_trapret(&newtask->registers_user);
+		task_curr->ran = 1;
+		task_trapret(&task_curr->registers_user);
 	}
 }

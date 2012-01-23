@@ -459,6 +459,9 @@ asmlink void sys_fork() {
 
 	int r;
 	Task *t;
+	Page *p;
+	uint32_t va;
+	uint32_t eip;
 
 	/* debug only */
 	uint32_t mem_before_setup_vm = 0,
@@ -497,13 +500,6 @@ asmlink void sys_fork() {
 	t->pgdir.count_stack = task_curr->pgdir.count_stack;
 	/* */
 
-	/* process icin kernel stack */
-	mem_before_kernel_stack = mem_free();
-	r = task_create_kernel_stack(t);
-	if (r < 0)
-		goto bad_fork_create_kernel_stack;
-	/* */
-
 	/* signal */
 	/*
 	 * Signal handler fonksiyonundan fork yapilirsa ne yapilmali ?
@@ -514,21 +510,46 @@ asmlink void sys_fork() {
 	if (r < 0)
 		goto bad_fork;
 
-	/* fork fonksiyonundan childa 0, parenta child_id donecek */
-	t->registers_user = *task_curr->registers();
-	t->registers_user.regs.eax = 0;
 	t->time_start = jiffies;
-
 	t->id = next_task_id++;
 	ASSERT( task_id_ht.put(&t->id_hash_node) == 0);
 
 	task_curr->childs.push_back(&t->childlist_node);
 
+	ASSERT(!(eflags_read() & FL_IF));
+
 	/* runnable listesine ekle */
 	t->state = Task::State_running;
 	add_to_runnable_list(t);
 
-	return set_return(task_curr->registers(), t->id);
+	/* child icin return degeri 0 */
+	set_return(task_curr->registers(), 0);
+	/* kernel stackini kopyala */
+	r = tmp_page_alloc_map(&p, &va, PTE_P | PTE_W);
+	ASSERT(r > -1);
+
+	r = t->pgdir.page_insert(p, MMAP_KERNEL_STACK_BASE, PTE_P | PTE_W);
+	ASSERT(r == 2);
+
+	memcpy((void*)va2kaddr(va),
+		   (void*)va2kaddr(MMAP_KERNEL_STACK_BASE), 0x1000);
+	r = tmp_page_free(va);
+	ASSERT(r == 1);
+
+	t->k_esp = esp_read();
+	t->ran = 1;
+	/* */
+
+	eip = read_eip();
+	if (eip == 1)
+		return;
+
+	t->k_eip = eip;
+
+	/* paret incin return degeri child id */
+	set_return(task_curr->registers(), t->id);
+
+	return;
 
 bad_fork_create_kernel_stack:
 	task_free_kernel_stack(t);

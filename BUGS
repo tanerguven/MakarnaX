@@ -1,3 +1,3 @@
  - tlb_invalidate duzgun calismiyor, gecici cozumler uretildi
  - gcc 4.6 ile derlendiginde kernel monitor - backtrace calismiyor
- - kmalloc hatali calisiyor
+ - fork testinde bellek yetmedigi zaman panic oluyor
