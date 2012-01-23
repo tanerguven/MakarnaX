@@ -269,6 +269,7 @@ static void push_stack() {
 		return;
 
 	s->eip = eip;
+	s->sleep = task_curr->sleep;
 
 	ASSERT( s->list_node.is_free() );
 	ASSERT( task_curr->sigstack.push_front(&s->list_node) );
