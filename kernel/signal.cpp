@@ -300,10 +300,7 @@ static void pop_stack() {
 	esp = s->esp;
 	eip = s->eip;
 
-#if 0
-	// TODO: kmalloc bug'i cozuldukten sonra burasini etkinlestir
 	kfree(s);
-#endif
 
 	esp_load(esp);
 	asm volatile(

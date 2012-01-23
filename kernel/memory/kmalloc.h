@@ -135,6 +135,7 @@ struct FreeBlock {
 		ASSERT(!header.is_free());
 		header.__set_free();
 		header.ph()->count_used.add(header.sizeno, -1);
+		list_node.set_free();
 	}
 
 	inline void* addr() {

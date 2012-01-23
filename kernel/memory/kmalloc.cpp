@@ -247,19 +247,7 @@ void test_kmalloc() {
 	test4();
 	// printf("test 4 OK\n");
 
-#if 0
-	bugtest();
-#endif
 	return;
-}
-
-// TODO: kmalloctaki bug
-static void bugtest() {
-	printf("bug test\n");
-	uint32_t *s = (uint32_t*)kmalloc(100);
-	s[2] = 0x12345678;
-	kfree(s);
-	while(1);
 }
 
 #if 0
