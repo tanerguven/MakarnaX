@@ -261,36 +261,17 @@ static void push_stack() {
 	ASSERT(r > -1);
 	s->stack->refcount_inc();
 
-	/* stack'e registerlar kaydedilip kopyalaniyor */
-	asm volatile(
-		"pushal\n\t"
-		"push %ebp\n\t");
+	// FIXME: ebp degerinden stack icin kullanilan offset cikarilmali mi?
 	s->esp = esp_read() - 0x2000;
 	copy_stack(MMAP_KERNEL_STACK_BASE - 0x2000);
-	asm volatile(
-		"pop %ebp\n\t"
-		"popal\n\t");
-	/* */
 
 	/* pop_stack fonksiyonundan buraya atlaniyor  */
+	/* hatirlatma: registerlarin tamami yuklenmedi, burada islem yapilmamali */
 	eip = read_eip();
-	if (eip == 1) {
-		/* pop stack, esp degerini ebp'ye yukledi, geri yukluyoruz */
-		asm volatile(
-			"mov %ebp, %esp\n\t"
-			"pop %ebp\n\t"
-			"popal\n\t");
-		// FIXME: ebp degerinden stack icin kullanilan offset cikarilmali mi?
-
+	if (eip == 1)
 		return;
-	}
 
-	s->sleep = task_curr->sleep;
-
-	s->regs_iret.cs = cs_read();
-	s->regs_iret.eflags = eflags_read();
-	s->regs_iret.eip = eip;
-	s->regs_iret.eip_2 = 1;
+	s->eip = eip;
 
 	ASSERT( s->list_node.is_free() );
 	ASSERT( task_curr->sigstack.push_front(&s->list_node) );
@@ -298,29 +279,38 @@ static void push_stack() {
 
 static void pop_stack() {
 	int r;
+	uint32_t esp, eip;
+	SignalState *s;
 
 	ASSERT(!task_curr->popped_kstack);
 	ASSERT(task_curr->sigstack.size() > 0);
 	// printf(">> pop stack from %d\n", task_curr->sigstack.size());
 
-	SignalState *s = task_curr->sigstack.front();
+	s = task_curr->sigstack.front();
 	r = task_curr->sigstack.pop_front();
 	ASSERT( r == 1 );
 
+	task_curr->popped_kstack = 1;
 	task_curr->sleep = s->sleep;
 	task_curr->pgdir.page_insert(s->stack,
 								 MMAP_KERNEL_STACK_BASE - 0x2000,
 								 PTE_P | PTE_W);
 	s->stack->refcount_dec();
 
-	task_curr->popped_kstack = 1;
+	esp = s->esp;
+	eip = s->eip;
 
+#if 0
+	// TODO: kmalloc bug'i cozuldukten sonra burasini etkinlestir
+	kfree(s);
+#endif
+
+	esp_load(esp);
 	asm volatile(
-		"mov %0, %%ebp\n\t"
-		:: "r" (s->esp));
-
-	// FIXME: gecici cozum (regs_iret.eip)
-	iret(&s->regs_iret.eip);
+		"push $1\n\t"
+		"push %0\n\t"
+		"ret\n\t"
+		:: "r" (eip));
 	while(1);
 }
 

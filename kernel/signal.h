@@ -6,11 +6,10 @@ define_list(struct SignalState, SignalStack_t);
 struct SignalState {
 	Page* stack;
 	uint32_t esp;
+	uint32_t eip;
 
 	uint32_t sleep;
 	SignalStack_t::node_t list_node;
-
-	IretRegs_1 regs_iret;
 } __attribute__((packed));
 
 struct SignalAction {
