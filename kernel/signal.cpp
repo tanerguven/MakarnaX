@@ -80,18 +80,16 @@ int send_signal(uint32_t sig, Task* t) {
 	t->signal.sig |= _S(sig);
 
 	if (t->state == Task::State_interruptible) {
-		if (task_curr->signal.action[sig].handler == SIG_DFL) {
-/*
- * FIXME: signal handler default ve ignore olursa taski uyandirmali miyiz?
- * wait icin uyandirmak gerekiyor, child signal aldiginda SIGCHLD uyanmali
- * diger durumlar ?
- */
-			if ((SIG_DI | SIG_DC) & _S(sig)) {
-				t->state = Task::State_running;
-				add_to_runnable_list(t);
-				return 0;
-			}
+#if 0
+		if ((task_curr->signal.action[sig].handler == SIG_DFL)
+			&& (SIG_DI | SIG_DC) & _S(sig)) {
+			/*
+			 * TODO: bu durumda task uyandirilmadan devam edilmeli mi?
+			 * wait child icin, SIGCHLD ile uyanmasi gerekiyor.
+			 * simdilik tum durumlarda task uyandiriliyor.
+			 */
 		}
+#endif
 		uint32_t eflags = eflags_read();
 		cli();
 		/* taski bekledigi listeden sil ve uyandir */
