@@ -415,6 +415,8 @@ bad_tmp_page_alloc_map__page_alloc:
 }
 
 int tmp_page_free(uint32_t va) {
+	ASSERT(!(eflags_read() & FL_IF));
+
 	// FIXME: MAMP_KERNEL_TMP_PAGE_TOP
 	ASSERT(va >= MMAP_KERNEL_TMP_PAGE_BASE && va < MMAP_KERNEL_TOP);
 

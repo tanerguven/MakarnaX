@@ -55,6 +55,7 @@ size_t kmalloc_size(size_t size) {
 }
 
 void *kmalloc(size_t size) {
+	ASSERT(!(eflags_read() & FL_IF));
 	int i;
 	int uygun_sizeno = -1;
 	FreeBlock *b = NULL;
@@ -71,16 +72,6 @@ void *kmalloc(size_t size) {
 			if (sizes[i].list.size() > 0) {
 				b = sizes[i].list.front();
 				ASSERT(b->header.sizeno == i);
-#if 0
-/*
- * TODO: cok tuhaf bir bug, liste degeri degisiyor. Baska bir fonksiyon yanlis
- * bellek adresine yaziyor olabilir.
- */
-				ASSERT(b->list_node.__list == &sizes[i].list);
-# else
-				//FIXME: gecici cozum
-				b->list_node.__list = &sizes[i].list;
-#endif
 				ASSERT( sizes[i].list.pop_front() );
 				break;
 			}
@@ -120,12 +111,13 @@ void *kmalloc(size_t size) {
 }
 
 void kfree(void *v) {
+	ASSERT(!(eflags_read() & FL_IF));
+
 	BlockHeader *bh = BlockHeader::bh(v);
 	ASSERT(bh->flags() == BlockFlag_used);
 
 	FreeBlock *fb = bh->fb();
 	fb->set_free();
-	ASSERT(fb->list_node.__list == NULL);
 
 #if 1
 	// split ozelligi kapatilabilir
@@ -246,11 +238,6 @@ static PH_count c[2];
 static PH_count cu[2];
 
 void test_kmalloc() {
-	// printf("%d\n", sizeof(PageHeader));
-	// return 0;
-
-	// page_header_test();
-
 	test1();
 	// printf("test 1 OK\n");
 
