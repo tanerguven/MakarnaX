@@ -1,3 +1,2 @@
  - tlb_invalidate duzgun calismiyor, gecici cozumler uretildi
  - gcc 4.6 ile derlendiginde kernel monitor - backtrace calismiyor
- - kmalloc'da tuhaf bir bug var

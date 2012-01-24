@@ -53,10 +53,7 @@ struct Task {
 	ChildList_t::node_t childlist_node;
 	TaskIdHashTable_t::node_t id_hash_node;
 
-	// FIXME: sadece process ilk kez calisana kadar kullaniliyor, kaldirilacak
-	Trapframe registers_user;
-
-	SignalStack_t sigstack;
+	/* registers: kernel stack uzerinden kullaniliyor */
 
 	int32_t id;
 	Task* parent;
@@ -65,9 +62,8 @@ struct Task {
 
 	PageDirInfo pgdir;
 
-	/* task switch yapilirken, kernel stack icin esp degeri kaydediliyor */
-	uint32_t k_esp;
-	uint32_t k_eip;
+	/* task switch icin degiskenler */
+	uint32_t k_esp, k_ebp, k_eip;
 
 	uint32_t time_start, time_end, time_user, time_kernel;
 	int32_t counter;
@@ -78,11 +74,11 @@ struct Task {
 	//
 	uint32_t free: 1;
 	uint32_t waiting_child: 1;
-	uint32_t ran: 1;
 	uint32_t popped_kstack: 1;
-	uint32_t __ : 27;
+	uint32_t __ : 29;
 	//
 
+	SignalStack_t sigstack;
 	SignalInfo signal;
 	uint32_t alarm;
 	AlarmList_t::node_t alarm_list_node;
@@ -140,7 +136,7 @@ inline void Task::init() {
 	time_start = time_user = time_kernel = time_end = 0;
 	run_count = counter = 0;
 	alarm = 0;
-	free = ran = waiting_child = 0;
+	free = waiting_child = 0;
 	signal.init();
 	wait_notify_next = NULL;
 
@@ -151,9 +147,6 @@ inline void Task::init() {
 }
 
 inline Trapframe* Task::registers() {
-	if (!ran)
-		return &registers_user;
-	ASSERT(task_curr->ran);
 	if (task_curr == this)
 		return current_registers();
 	PANIC("task->registers() hatali");

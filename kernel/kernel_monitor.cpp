@@ -373,7 +373,8 @@ static int command_taskinfo(int argc, char **argv) {
 	printf("parent id:%d  ", (t->parent) ? t->parent->id : 0);
 	printf("status:%d  ", t->state);
 	printf("run count:%d\n", t->run_count);
-	printf("eip:0x%08x  esp:0x%08x\n", t->registers_user.eip, t->registers_user.esp);
+	// FIXME: baska bir yontemle bu registerlara ulasilabilmeli
+	// printf("eip:0x%08x  esp:0x%08x\n", t->registers_user.eip, t->registers_user.esp);
 	printf("time_start: %d\n", t->time_start);
 	printf("time_end: %d\n", t->time_end);
 	printf("time_kernel: %d\n", t->time_kernel);

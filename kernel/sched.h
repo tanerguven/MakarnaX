@@ -35,7 +35,8 @@ inline void add_to_runnable_list(Task* t) {
 	uint32_t eflags = eflags_read();
 	cli();
 	ASSERT(t->state == Task::State_running);
-	__task_runnable_queue[t->priority].push_back(&t->list_node);
+	ASSERT(t->list_node.is_free());
+	ASSERT( __task_runnable_queue[t->priority].push_back(&t->list_node) );
 	eflags_load(eflags);
 }
 
@@ -44,7 +45,8 @@ inline void remove_from_runnable_list(Task* t) {
 	cli();
 	ASSERT(t->list_node.__list == &__task_runnable_queue[t->priority]);
 	ASSERT(t->state == Task::State_running);
-	__task_runnable_queue[t->priority].erase(&t->list_node);
+	ASSERT( __task_runnable_queue[t->priority].erase(&t->list_node)
+			!= __task_runnable_queue[t->priority].error());
 	eflags_load(eflags);
 }
 

@@ -25,9 +25,12 @@
 #include <signal.h>
 #include "signal.h"
 
+// task.cpp
+extern void switch_to_task(Task *newtask);
+//
+
 void check_alarm();
 void check_sleep_list();
-void switch_to_task(Task *newtask) __attribute__ ((noinline));
 
 /** runnable (ready) queue) */
 TaskList_t __task_runnable_queue[41];
@@ -109,12 +112,6 @@ void schedule() {
 }
 
 
-void run_first_task() {
-	task_curr = task_id_ht.get(1);
-	cr3_load(task_curr->pgdir.pgdir_pa);
-	task_trapret(&task_curr->registers_user);
-}
-
 asmlink void sys_pause() {
 
 	/* birden fazla signal varsa, pause sonrakinin calismasini engellememeli */
@@ -150,7 +147,7 @@ asmlink void do_timer(Trapframe *tf) {
 		return;
 	}
 
-	ASSERT(task_curr && task_curr->state == Task::State_running);
+	ASSERT(task_curr->state == Task::State_running);
 
 	task_curr->counter--;
 
@@ -328,47 +325,9 @@ asmlink void sys_sleep() {
 	eflags_load(eflags);
 
 	schedule();
-	// printf(">> [%d] sleep return\n", task_curr->id);
+	// printf(">> [%d] sleep return %d\n", task_curr->id, task_curr->sleep);
 
 	int r = task_curr->sleep - jiffies_to_seconds();
 
 	return set_return(task_curr->registers(), (r < 1) ? 0 : r);
-}
-
-void switch_to_task(Task *newtask) {
-	ASSERT(!(eflags_read() & FL_IF));
-	ASSERT(task_curr);
-	// printf(">> %d switch to %d\n", task_curr->id, newtask->id);
-
-	task_curr->k_esp = esp_read();
-	task_curr = newtask;
-
-	if (newtask->k_eip) {
-		// FIXME: inline assemblyde bir degiskeni oyup degistirme nasil olur?
-		asm volatile(
-			"push %0\n\t"
-			"push %1\n\t"
-			:: "r"(task_curr->k_esp), "r"(task_curr->k_eip));
-
-		task_curr->k_eip = 0;
-
-		asm volatile(
-			"pop %%ebp\n\t" // ebp, eip degerini gecici olarak sakliyor
-			"pop %%esp\n\t" //esp_load
-			"mov %0, %%cr3\n\t" // cr3_load
-			"push $1\n\t"
-			"push %%ebp\n\t"
-			"ret\n\t"
-			:: "r" (task_curr->pgdir.pgdir_pa));
-	}
-
-	cr3_load(task_curr->pgdir.pgdir_pa);
-	esp_load(task_curr->k_esp);
-
-	task_curr->run_count++;
-	if (task_curr->ran==0) {
-		/* task ilk kez calisiyorsa, user modda baslat */
-		task_curr->ran = 1;
-		task_trapret(&task_curr->registers_user);
-	}
 }

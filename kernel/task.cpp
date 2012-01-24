@@ -52,6 +52,11 @@ void free_sigstack();
 void parse_cmd(char *cmd, int *argc, char *argv[10]);
 //
 
+void switch_to_task(Task *newtask) __attribute__ ((noinline));
+void __task_first_run() __attribute__ ((noreturn));
+
+extern "C" void task_first_run();
+
 /* liste tipleri icin nodlarin offset degerleri */
 set_list_offset(struct Task, AlarmList_t, alarm_list_node);
 set_list_offset(struct Task, ChildList_t, childlist_node);
@@ -96,7 +101,8 @@ static int task_setup_vm(Task *t, PageDirInfo *parent_pgdir) {
 	t->pgdir.count_kernel++;
 
 	/* Kernel adres uzayini dogrudan task adres uzayina bagla */
-	t->pgdir.link_pgtables(parent_pgdir, MMAP_KERNEL_BASE, MMAP_KERNEL_STACK_BASE);
+	err = t->pgdir.link_pgtables(parent_pgdir, MMAP_KERNEL_BASE, MMAP_KERNEL_STACK_BASE);
+	ASSERT(err == 0);
 
 	return 0;
 }
@@ -140,6 +146,27 @@ int task_create_kernel_stack(Task *t) {
 	return 0;
 }
 
+int task_copy_kernel_stack(Task *t) {
+	int r;
+	Page *p;
+	uint32_t va;
+
+	r = tmp_page_alloc_map(&p, &va, PTE_P | PTE_W);
+	if (r < 0)
+		return r;
+	r = t->pgdir.page_insert(p, MMAP_KERNEL_STACK_BASE, PTE_P | PTE_W);
+	if (r < 0) {
+		ASSERT( tmp_page_free(va) == 0);
+		return r;
+	}
+
+	memcpy((void*)va2kaddr(va),
+		   (void*)va2kaddr(MMAP_KERNEL_STACK_BASE), 0x1000);
+
+	ASSERT( tmp_page_free(va) == 1);
+	return 0;
+}
+
 void task_free_kernel_stack(Task* t) {
 	ASSERT(!(eflags_read() & FL_IF));
 
@@ -171,7 +198,7 @@ void task_free_kernel_stack(Task* t) {
  * kernele gomulmus binary programi process'in adres uzayina yukleyen
  * fonksiyon. (exec cagrisinda yapilan islem)
  */
-static int load_icode(Task *t, uint32_t prog_addr, const char *cmd) {
+static int load_icode(Task *t, Trapframe *registers, uint32_t prog_addr, const char *cmd) {
 	ASSERT(!(eflags_read() & FL_IF));
 
 	int err;
@@ -222,7 +249,7 @@ static int load_icode(Task *t, uint32_t prog_addr, const char *cmd) {
 	t->pgdir.start_brk = t->pgdir.end_brk = last_addr;
 
 	/* processin program counterina programin baslangic adresini ata */
-	t->registers_user.eip = header->entry;
+	registers->eip = header->entry;
 
 	/* process icin stack alani olustur */
 	err = t->pgdir.page_alloc_insert(MMAP_USER_STACK_TOP - 0x1000,
@@ -252,7 +279,7 @@ static int load_icode(Task *t, uint32_t prog_addr, const char *cmd) {
 	esp[-3] = va2uaddr(0xffffffff); /* return eip */
 	esp -= 3;
 
-	t->registers_user.esp = kaddr2uaddr((uint32_t)esp);
+	registers->esp = kaddr2uaddr((uint32_t)esp);
 	//
 
 	cr3_load(old_cr3);
@@ -341,9 +368,12 @@ void free_zombie_tasks() {
 void task_create(void* program_addr, const char* cmd, int priority) {
 	ASSERT(!(eflags_read() & FL_IF));
 
-	int err;
+	int err, r;
 	Task *task;
 	PageDirInfo *pgdir;
+	Trapframe registers;
+	Page *p;
+	uint32_t va;
 
 	if (task_alloc(&task) < 0)
 		goto bad_task_create;
@@ -363,16 +393,16 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 	task->state = Task::State_not_runnable;
 	task->run_count = 0;
 	task->priority = priority;
-	memset(&(task->registers_user), 0, sizeof(task->registers_user));
+	// memset(&(task->registers_user), 0, sizeof(task->registers_user));
 
-	task->registers_user.ds = GD_UD | 3;
-	task->registers_user.es = GD_UD | 3;
-	task->registers_user.ss = GD_UD | 3;
-	task->registers_user.cs = GD_UT | 3;
+	registers.ds = GD_UD | 3;
+	registers.es = GD_UD | 3;
+	registers.ss = GD_UD | 3;
+	registers.cs = GD_UT | 3;
 
 	/* user modda interruptlar aktif */
-	task->registers_user.eflags = 0;
-	task->registers_user.eflags |= FL_IF;
+	registers.eflags = 0;
+	registers.eflags |= FL_IF;
 
 	// memory/virtual.cpp
 	extern PageDirInfo kernel_dir;
@@ -411,15 +441,23 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 		ASSERT(rc == 2);
 	}
 
-	err = load_icode(task, (uint32_t)program_addr, cmd);
+	err = load_icode(task, &registers, (uint32_t)program_addr, cmd);
 	if (err < 0)
 		goto bad_task_create;
 	// printf(">> load_icode OK\n");
 
 	/* process icin kernel stack */
-	err = task_create_kernel_stack(task);
-	if (err < 0)
-		goto bad_task_create;
+	r = tmp_page_alloc_map(&p, &va, PTE_P | PTE_W);
+	ASSERT(r > -1);
+	r = task->pgdir.page_insert(p, MMAP_KERNEL_STACK_BASE, PTE_P | PTE_W);
+	ASSERT(r == 2);
+
+	memcpy((void*)va2kaddr(va+0x1000-sizeof(Trapframe)), &registers, sizeof(Trapframe));
+
+	task->k_esp = va2kaddr(MMAP_KERNEL_STACK_TOP) - sizeof(Trapframe);
+
+	task->k_eip = (uint32_t)task_first_run;
+	tmp_page_free(va);
 	/* */
 
 	task->shared_mem_list.init();
@@ -459,9 +497,8 @@ asmlink void sys_fork() {
 
 	int r;
 	Task *t;
-	Page *p;
-	uint32_t va;
 	uint32_t eip;
+	int e = 0; // error (bad_fork_* icin)
 
 	/* debug only */
 	uint32_t mem_before_setup_vm = 0,
@@ -508,63 +545,136 @@ asmlink void sys_fork() {
 
 	r = ipc_fork(t);
 	if (r < 0)
-		goto bad_fork;
+		goto bad_fork_ipc;
 
-	t->time_start = jiffies;
-	t->id = next_task_id++;
-	ASSERT( task_id_ht.put(&t->id_hash_node) == 0);
-
-	task_curr->childs.push_back(&t->childlist_node);
-
-	ASSERT(!(eflags_read() & FL_IF));
-
-	/* runnable listesine ekle */
-	t->state = Task::State_running;
-	add_to_runnable_list(t);
-
-	/* child icin return degeri 0 */
+	/*
+	 * kernel stackini kopyala
+	 * child return degeri 0 (registers stackde bulunuyor)
+	 */
 	set_return(task_curr->registers(), 0);
-	/* kernel stackini kopyala */
-	r = tmp_page_alloc_map(&p, &va, PTE_P | PTE_W);
-	ASSERT(r > -1);
-
-	r = t->pgdir.page_insert(p, MMAP_KERNEL_STACK_BASE, PTE_P | PTE_W);
-	ASSERT(r == 2);
-
-	memcpy((void*)va2kaddr(va),
-		   (void*)va2kaddr(MMAP_KERNEL_STACK_BASE), 0x1000);
-	r = tmp_page_free(va);
-	ASSERT(r == 1);
-
-	t->k_esp = esp_read();
-	t->ran = 1;
+	mem_before_kernel_stack = mem_free();
+	r = task_copy_kernel_stack(t);
+	if (r < 0)
+		goto bad_fork_copy_kernel_stack;
 	/* */
 
+	/* burasi 2 kere calisiyor */
 	eip = read_eip();
 	if (eip == 1)
 		return;
 
 	t->k_eip = eip;
+	t->k_esp = esp_read();
+	t->k_ebp = ebp_read();
+	t->time_start = jiffies;
+	t->id = next_task_id++;
+	ASSERT( task_id_ht.put(&t->id_hash_node) == 0);
+	/* child listesine ekle */
+	ASSERT( task_curr->childs.push_back(&t->childlist_node) );
+	/* runnable listesine ekle */
+	t->state = Task::State_running;
+	add_to_runnable_list(t);
 
 	/* paret incin return degeri child id */
 	set_return(task_curr->registers(), t->id);
 
 	return;
 
-bad_fork_create_kernel_stack:
+bad_fork_copy_kernel_stack:
+	if (e++ == 0)
+		printf("!! bad_fork_copy_kernel_stack\n");
 	task_free_kernel_stack(t);
 	ASSERT(mem_free() == mem_before_kernel_stack);
+bad_fork_ipc:
+	// TODO: --
 bad_fork_copy_vm_user:
+	if (e++ == 0)
+		printf("!! bad_fork_copy_vm_user\n");
 	task_free_vm_user(t);
 	ASSERT(mem_free() == mem_before_copy_pages);
 bad_fork_setup_vm:
+	if (e++ == 0)
+		printf("!! bad_fork_setup_vm\n");
 	task_delete_vm(t);
 	ASSERT(mem_free() == mem_before_setup_vm);
 	kfree(t);
 	t = NULL;
 bad_fork_task_alloc:
+	if (e++ == 0)
+		printf("!! bad_fork_task_alloc\n");
 	ASSERT(t == NULL);
-bad_fork:
+// bad_fork:
 	eflags_load(eflags);
 	return set_return(task_curr->registers(), -1);
+}
+
+/** sadece task create tarafindan kullaniliyor */
+void __task_first_run() {
+	asm("task_first_run:"
+		"pop %eax\n\t"
+		"jmp trapret");
+	PANIC("--");
+}
+
+/** ilk processi baslatan fonksiyon */
+void run_first_task() {
+	task_curr = task_id_ht.get(1);
+	task_curr->k_eip = 0; // user modda baslayacak
+	cr3_load(task_curr->pgdir.pgdir_pa);
+	esp_load(task_curr->k_esp);
+
+	asm("jmp trapret");
+	PANIC("--");
+}
+
+void switch_to_task(Task *newtask) {
+	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT(task_curr);
+	// printf(">> %d switch to %d\n", task_curr->id, newtask->id);
+
+	/* eski processin bilgilerini kaydediyoruz */
+	task_curr->k_esp = esp_read();
+	task_curr->k_ebp = ebp_read();
+	/* */
+
+	task_curr = newtask;
+	task_curr->run_count++;
+
+/*
+ * UYARI: stack degistirilirken ve degistirildikten sonra yerel degiskenler
+ * kullanilmamali. Degiskenler stack uzerinden kullaniliyor olabilir.
+ */
+
+	/* task create ve fork sonrasi ilk calisma icin */
+	if (newtask->k_eip) {
+		asm volatile(
+			"movl (%0), %%eax\n\t"
+			"movl %1, %%esp\n\t" // esp_load
+			"movl %2, %%ebp\n\t" // ebp load
+			"movl %3, %%cr3\n\t" // cr3_load
+			"pushl $1\n\t" // read_eip() icin return degeri 1
+			"pushl %%eax\n\t" // ret ile yuklenecek program counter
+			"movl $0, (%0)\n\t"
+			"ret"
+			:
+			: "r"(&task_curr->k_eip),
+			  "r"(task_curr->k_esp),
+			  "r"(task_curr->k_ebp),
+			  "r"(task_curr->pgdir.pgdir_pa)
+			: "eax"
+			);
+	}
+
+	/* yeni process'in page_directory'si ve stack'i yukleniyor */
+	asm volatile(
+		"movl %0, %%cr3\n\t" // cr3_load
+		"movl %1, %%esp\n\t" // esp_load
+		"movl %2, %%ebp\n\t" // ebp_load
+		:
+		: "r"(task_curr->pgdir.pgdir_pa),
+		  "r"(task_curr->k_esp),
+		  "r"(task_curr->k_ebp)
+		);
+
+	/* bu satirdan yeni process ile devam ediliyor */
 }
