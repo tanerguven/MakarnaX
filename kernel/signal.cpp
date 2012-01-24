@@ -80,16 +80,19 @@ int send_signal(uint32_t sig, Task* t) {
 	t->signal.sig |= _S(sig);
 
 	if (t->state == Task::State_interruptible) {
-#if 0
 		if ((task_curr->signal.action[sig].handler == SIG_DFL)
 			&& (SIG_DI | SIG_DC) & _S(sig)) {
-			/*
-			 * TODO: bu durumda task uyandirilmadan devam edilmeli mi?
-			 * wait child icin, SIGCHLD ile uyanmasi gerekiyor.
-			 * simdilik tum durumlarda task uyandiriliyor.
-			 */
+/*
+ * TODO: bu durumda task uyandirilmali mi? Bu durumlar arastirilmali.
+ * Linux'da testler:
+ * - sleep durumunda SIGCHLD ile uyanmiyor
+ * - wait child durumunda SIGCHLD ile uyaniyor
+ */
+			/* FIXME: gecici cozum, wait child durumunda degilse ignore yap */
+			if (!t->waiting_child)
+				return 0;
 		}
-#endif
+
 		uint32_t eflags = eflags_read();
 		cli();
 		/* taski bekledigi listeden sil ve uyandir */
