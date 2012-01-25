@@ -83,6 +83,11 @@ asmlink void do_irq_keyboard(Trapframe*);
 asmlink void do_syscall(int no);
 //
 
+
+// kernel_monitor.cpp
+extern bool kernel_monitor_running;
+//
+
 // fonksiyon prototipleri
 void do_error(Trapframe*);
 void do_unknown(Trapframe*);
@@ -233,6 +238,10 @@ asmlink void trap_handler(Trapframe *tf) {
 		task_curr->popped_kstack = 0;
 
 	if (tf->trapno >= IRQ_OFFSET && tf->trapno < 48) {
+		/* kernel monitor calisiyorsa, donanim kesmeleri devre disi */
+		if (kernel_monitor_running)
+			return;
+
 		ASSERT(!(eflags_read() & FL_IF));
 		irq_handlers[tf->trapno-IRQ_OFFSET].fn(tf);
 /*

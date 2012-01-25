@@ -38,6 +38,12 @@ TaskList_t __task_runnable_queue[41];
 AlarmList_t task_alarm_list;
 TaskList_t task_sleep_list;
 
+/**
+ * task_curr = NULL durumunda, kullanilan page directory'i saklar.
+ * diger durumlarda NULL
+ */
+PageDirInfo *pgdir_curr = NULL;
+
 void schedule_init() {
 	task_alarm_list.init();
 	task_sleep_list.init();
@@ -84,9 +90,10 @@ void schedule() {
 
 			ASSERT(task_next->state == Task::State_running);
 		} else {
-			Task *t = task_curr;
 			/* hic runnable task yoksa */
-
+			Task *t = task_curr;
+			if (task_curr)
+				pgdir_curr = &task_curr->pgdir;
 			/* FIXME: task_curr = NULL, optimizasyonu engellemek icin memset */
 			memset(&task_curr, 0, sizeof(Task*));
 
@@ -95,6 +102,7 @@ void schedule() {
 			asm("hlt");
 			cli();
 			task_curr = t;
+			memset(&pgdir_curr, 0, sizeof(&pgdir_curr));
 		}
 	} while (first_priority_level == NULL);
 

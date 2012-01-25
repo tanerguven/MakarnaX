@@ -45,6 +45,8 @@ extern size_t kmalloc_size(size_t size);
 
 uint32_t free_memory_start;
 
+bool kernel_monitor_running = false;
+
 static const char* task_state_name[] = {
 	"running",
 	"interruptible",
@@ -59,10 +61,9 @@ static int command_kernelinfo(int argc, char** argv);
 static int command_sysinfo(int argc, char **argv);
 static int command_info(int argc, char **argv);
 static int command_create(int argc, char **argv);
-static int command_schedule(int argc, char **argv);
+static int command_continue(int argc, char **argv);
 static int command_tasks(int argc, char **argv);
 static int command_taskinfo(int argc, char **argv);
-static int command_continue(int argc, char **argv);
 static int command_memdebug(int argc, char **argv);
 
 struct Command {
@@ -79,7 +80,6 @@ Command commands[] = {
 	{ "sysinfo", "si", "", command_sysinfo },
 	{ "info", "i", "", command_info },
 	{ "create", "cr", "create process", command_create },
-	{ "schedule", "s","schedule", command_schedule },
 	{ "tasks", "ts", "", command_tasks },
 	{ "task", "t", "task info", command_taskinfo },
 	{ "continue", "c", "continue", command_continue },
@@ -139,13 +139,18 @@ int runcmd(char *cmd) {
 
 
 void start_kernel_monitor() {
-	while (1) {
+	uint32_t eflags = eflags_read();
+	cli();
+	kernel_monitor_running = true;
+	while (kernel_monitor_running) {
+		ASSERT(!(eflags_read() & FL_IF));
 		printf("\n");
 		char *buf = readline("$:");
 		if (buf) {
 			runcmd(buf);
 		}
 	}
+	eflags_load(eflags);
 }
 
 static int command_help(int argc, char** argv) {
@@ -329,11 +334,6 @@ static int command_create(int argc, char **argv) {
 	return 0;
 }
 
-static int command_schedule(int argc, char **argv) {
-	schedule();
-	return 0;
-}
-
 static int command_tasks(int argc, char **argv) {
 	printf("current task: %8d\n", (task_curr) ? task_curr->id : 0);
 
@@ -402,11 +402,7 @@ static int command_taskinfo(int argc, char **argv) {
 }
 
 static int command_continue(int argc, char **argv) {
-	/* calisan task kaldigi yerden devam etsin */
-	if (task_curr && task_curr->state == Task::State_running)
-		task_trapret(task_curr->registers());
-	else
-		printf(">> Current task not runnable. Try schedule command\n");
+	kernel_monitor_running = false;
 	return 0;
 }
 

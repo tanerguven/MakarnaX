@@ -1,2 +1,4 @@
  - tlb_invalidate duzgun calismiyor, gecici cozumler uretildi
  - gcc 4.6 ile derlendiginde kernel monitor - backtrace calismiyor
+ - kernel monitor acilmadan once bir process getc ile bekliyorsa kernel
+monitorden donuldugunde getc yanlis karakter donduruyor.

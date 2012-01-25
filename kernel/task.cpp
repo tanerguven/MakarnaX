@@ -40,7 +40,8 @@ extern void task_kill(Task*);
 //
 
 // signal.cpp
-void free_sigstack();
+extern void free_sigstack();
+extern void copy_stack(uint32_t addr);
 //
 
 /*
@@ -393,8 +394,8 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 	task->state = Task::State_not_runnable;
 	task->run_count = 0;
 	task->priority = priority;
-	// memset(&(task->registers_user), 0, sizeof(task->registers_user));
 
+	memset(&registers, 0, sizeof(registers));
 	registers.ds = GD_UD | 3;
 	registers.es = GD_UD | 3;
 	registers.ss = GD_UD | 3;
@@ -419,26 +420,16 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 		goto bad_task_create;
 	// printf(">> task_setup_vm OK\n");
 
-	if (task->id != 1) {
-		/*
-		 * load_icode yeni processin adres uzayini kullanacagi icin gecici
-		 * olarak simdiki processin kernel stackini yeni processe bagla
-		 */
+	// FIXME: --
+	extern PageDirInfo *pgdir_curr;
+	if (pgdir_curr) {
+		task->pgdir.link_pages(pgdir_curr, MMAP_KERNEL_STACK_BASE,
+							   MMAP_KERNEL_STACK_TOP, PTE_P | PTE_W);
+	}
 
-		Task *t = task_curr;
-		if (task_curr == NULL) {
-			/* task_curr NULL ise task(1)'in adres uzayi kullaniliyordur */
-			t = task_id_ht.get(1);
-			ASSERT(t);
-		}
-		ASSERT(&t->pgdir == pgdir);
-
-		VA_t va = VA_t(MMAP_KERNEL_STACK_TOP - 0x1000);
-		PTE_t *pte = t->pgdir.page_get(va);
-		Page* p = &pages[pageIndex(pte->physAddr())];
-		ASSERT(!p->free);
-		int rc = task->pgdir.page_insert(p, va, PTE_P | PTE_W);
-		ASSERT(rc == 2);
+	if (task_curr) {
+		task->pgdir.link_pages(&task_curr->pgdir, MMAP_KERNEL_STACK_BASE,
+							   MMAP_KERNEL_STACK_TOP, PTE_P | PTE_W);
 	}
 
 	err = load_icode(task, &registers, (uint32_t)program_addr, cmd);
@@ -448,7 +439,7 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 
 	/* process icin kernel stack */
 	r = tmp_page_alloc_map(&p, &va, PTE_P | PTE_W);
-	ASSERT(r > -1);
+	ASSERT(r == 0);
 	r = task->pgdir.page_insert(p, MMAP_KERNEL_STACK_BASE, PTE_P | PTE_W);
 	ASSERT(r == 2);
 

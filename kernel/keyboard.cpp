@@ -57,6 +57,10 @@
 extern void console_interrupt(int (*proc)());
 //
 
+// kernel_monitor.cpp
+extern void start_kernel_monitor();
+//
+
 /** kbd controller status port(I) */
 #define	KBSTATP 0x64
 /** kbd data in buffer */
@@ -242,7 +246,8 @@ int keyboard_getc(void) {
 
 	if (!(~shift & (CTL | ALT)) && c == KEY_DEL) {
 		/* debug modu */
-		PANIC(">> Debug Mode");
+		printf(">> debug mode: \n");
+		start_kernel_monitor();
 	}
 
 	return c;
