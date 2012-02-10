@@ -31,6 +31,7 @@ extern void* USER_PROGRAM(signaltest);
 extern void* USER_PROGRAM(init);
 extern void* USER_PROGRAM(ipctest);
 extern void* USER_PROGRAM(processmemtest);
+extern void* USER_PROGRAM(kill);
 
 extern int load_program(uint32_t addres);
 

@@ -103,6 +103,10 @@ int send_signal(uint32_t sig, Task* t) {
 		eflags_load(eflags);
 	} else if (t->state == Task::State_running) {
 		// FIXME: ?
+
+	} else if (t->state == Task::State_zombie) {
+		/* bekleyen prosese kill yapilinca gerceklesiyor */
+
 	} else {
 		/*
  		 * FIXME: --

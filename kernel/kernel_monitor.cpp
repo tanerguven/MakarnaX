@@ -303,6 +303,7 @@ static UserProgram user_programs[] = {
 	{ "sys_dongu", &USER_PROGRAM(sys_dongu) },
 	{ "signaltest", &USER_PROGRAM(signaltest) },
 	{ "ipctest", &USER_PROGRAM(ipctest) },
+	{ "kill", &USER_PROGRAM(kill) },
 };
 
 static const size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);
