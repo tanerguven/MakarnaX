@@ -55,6 +55,33 @@ void schedule_init() {
 	printf(">> schedule init OK\n");
 }
 
+Task* find_runnable_task() {
+	Task *task_next = NULL;
+	TaskList_t *first_priority_level;
+
+	/* process olan en yuksek oncelikli listeyi bul */
+	first_priority_level = NULL;
+	for (int i = 40 ; i > 0 ; i--) {
+		if (__task_runnable_queue[i].size() > 0) {
+			first_priority_level = &__task_runnable_queue[i];
+			break;
+		}
+	}
+
+	if (first_priority_level) {
+		/* runnable listesinden task bul ve zaman ekle */
+		task_next = first_priority_level->front();
+		first_priority_level->pop_front();
+		first_priority_level->push_back(&task_next->list_node);
+
+		task_next->counter = task_next->priority;
+
+		ASSERT(task_next->state == Task::State_running);
+	}
+
+	return task_next;
+}
+
 void schedule() {
 	cli();
 	ASSERT(task_curr);
@@ -66,31 +93,23 @@ void schedule() {
 	}
 
 	Task *task_next = NULL;
-	TaskList_t *first_priority_level;
+
 	do {
+/*
+ * TODO: check alarm ve sleep'i bunlari do_timer icerisinde tasimak daha
+ * mantikli gibi. Bu fonksiyonlar timer ile ilgili, timer saat degistiginde
+ * calisiyor. Schedule her zaman timer ile calismiyor.
+ */
 		check_alarm();
 		check_sleep_list();
 
-		/* process olan en yuksek oncelikli listeyi bul */
-		first_priority_level = NULL;
-		for (int i = 40 ; i > 0 ; i--) {
-			if (__task_runnable_queue[i].size() > 0) {
-				first_priority_level = &__task_runnable_queue[i];
-				break;
-			}
-		}
+		task_next = find_runnable_task();
 
-		if (first_priority_level) {
-			/* runnable listesinden task bul ve zaman ekle */
-			task_next = first_priority_level->front();
-			first_priority_level->pop_front();
-			first_priority_level->push_back(&task_next->list_node);
+		if (task_next) {
+			break;
 
-			task_next->counter = task_next->priority;
-
-			ASSERT(task_next->state == Task::State_running);
 		} else {
-			/* hic runnable task yoksa */
+			/* kuyruklarin tamami bossa (islemciyi bekleyen proses yoksa) */
 			Task *t = task_curr;
 			if (task_curr)
 				pgdir_curr = &task_curr->pgdir;
@@ -104,7 +123,8 @@ void schedule() {
 			task_curr = t;
 			memset(&pgdir_curr, 0, sizeof(&pgdir_curr));
 		}
-	} while (first_priority_level == NULL);
+
+	} while (1);
 
 	switch_to_task(task_next);
 
@@ -232,8 +252,9 @@ void check_alarm() {
 
 /** bir kaynak uzerinde sleep yapar */
 void sleep_interruptible(TaskList_t *list) {
-	ASSERT(task_curr->state == Task::State_running);
 	cli();
+
+	ASSERT(task_curr->state == Task::State_running);
 
 	remove_from_runnable_list(task_curr);
 	list->push_back(&task_curr->list_node);
@@ -261,7 +282,6 @@ void wakeup_interruptible(TaskList_t *list) {
 void sleep_uninterruptible(TaskList_t *list) {
 	ASSERT(!(eflags_read() & FL_IF));
 	ASSERT(task_curr->state == Task::State_running);
-	ASSERT(!(eflags_read() & FL_IF));
 
 	remove_from_runnable_list(task_curr);
 	task_curr->state = Task::State_uninterruptible;

@@ -171,6 +171,7 @@ void check_signals() {
 				 * return eip degerine belirlenmis page fault adresini ata.
 				 * Bu adreste paga fault olunca signal_return fonksiyonu calisir
 				 */
+				// TODO: galiba tf->eip kullanilmiyor, bunu eski yontemde kullanmistim
 				esp[-1] = tf->eip; //bir onceki eip
 				esp[-2] = sig;
 				esp[-3] = va2uaddr(0xfffffffe); // fault eip

@@ -518,7 +518,7 @@ asmlink void sys_fork() {
 	if (r < 0)
 		goto bad_fork_copy_vm_user;
 
-	/* shared memory kismini kopyalama, shm_fork fonksiyonunun isi */
+	/* shared memory kismini kopyalama, shm_fork fonksiyonu kopyalayacak  */
 
 	r = t->pgdir.copy_pages(&task_curr->pgdir, MMAP_USER_SHARED_MEM_TOP , MMAP_USER_TOP);
 	if (r < 0)
