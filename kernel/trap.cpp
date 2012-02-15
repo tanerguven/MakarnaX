@@ -30,12 +30,9 @@
 #include <asm/x86.h>
 
 #include "sched.h"
-
-#include "panic.h"
-#include <stdio.h>
-using namespace std;
-
 #include "signal.h"
+
+#include "kernel.h"
 
 /* traphandler.S dosyasinda tanimli fonksiyonlar */
 asmlink void divide_error(void);
