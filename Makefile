@@ -19,6 +19,7 @@ PROGRAMS = \
 	user_programs/ipctest.bin \
 	user_programs/processmemtest.bin \
 	user_programs/kill.bin \
+	user_programs/fs.bin \
 
 ######################################
 #	env variables

@@ -29,20 +29,21 @@ extern void init_console();
 extern int memory_init();
 extern void init_traps();
 extern void task_init();
-extern void task_create(void* program_addr, const char *cmd, int priority);
+extern struct Task* task_create(void* program_addr, const char *cmd, int priority);
 extern void schedule_init();
 extern void run_first_task();
 extern void start_kernel_monitor();
 extern void picirq_init();
 extern void timer_init();
 extern void ipc_init();
-
+extern void init_vfs(struct Task *init_task);
 
 extern uint32_t free_memory_start;
 
 void test();
 
 asmlink int main() {
+	struct Task* init_task;
 
 	init_console();
 	printf("\n");
@@ -67,7 +68,9 @@ asmlink int main() {
 
 	free_memory_start = mem_free();
 
-	task_create(&USER_PROGRAM(init), "init", 1);
+	init_task = task_create(&USER_PROGRAM(init), "init", 1);
+
+	init_vfs(init_task);
 
 #ifdef TEST
 	printf("teste baslamak icin bir tusa basin\n");
@@ -216,4 +219,13 @@ void test() {
 #if TEST == MAKARNAX_TEST_signal7
 	test_program(signaltest,test7);
 #endif
+
+#if TEST == MAKARNAX_TEST_fs_openfile
+	test_program(fs,openfile);
+#endif
+
+#if TEST == MAKARNAX_TEST_fs_readfile
+	test_program(fs,readfile);
+#endif
+
 }

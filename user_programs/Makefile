@@ -21,6 +21,7 @@ PROGRAMS = \
 	ipctest.bin \
 	processmemtest.bin \
 	kill.bin \
+	fs.bin \
 
 all: $(PROGRAMS)
 
@@ -59,6 +60,9 @@ processmemtest.bin: processmemtest.o
 
 kill.bin: kill.o
 	$(LD) -T"link.ld" -o kill.bin kill.o $(LIBS)
+
+fs.bin: fs.o
+	$(LD) -T"link.ld" -o fs.bin fs.o $(LIBS)
 
 clean:
 	rm -f *.o *.bin

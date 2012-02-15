@@ -94,6 +94,13 @@ struct Task {
 
 	SharedMemList_t shared_mem_list;
 
+	struct DirEntry * pwd;
+	struct DirEntry * root;
+	/* struct inode * executable; */
+
+	// FIXME: simdilik sadece 1 dosya acabilir
+	struct File *opened_file;
+
 	inline void init();
 	inline Trapframe* registers();
 };
@@ -144,6 +151,7 @@ inline void Task::init() {
 	id_hash_node.init();
 	run_before_switch_f = NULL;
 	sigstack.init();
+	opened_file = NULL;
 }
 
 inline Trapframe* Task::registers() {

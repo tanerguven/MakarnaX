@@ -98,3 +98,20 @@ asmlink int brk(void *addr) {
 asmlink void *sbrk(unsigned int increment) {
 	return (void*)syscall(SYS_sbrk, 0, increment, 0, 0, 0, 0);
 }
+
+asmlink int open(const char *filename, int flags, int mode) {
+	return (int)syscall(SYS_open, 0, (uint32_t)filename, (uint32_t)flags,
+				   (uint32_t)mode, 0, 0);
+}
+
+asmlink int close(unsigned int fd) {
+	return (int)syscall(SYS_close, 0, (uint32_t)fd, 0, 0, 0, 0);
+}
+
+asmlink size_t read(unsigned int fd, char *buf, unsigned int count) {
+	return syscall(SYS_read, 0, fd, (uint32_t)buf, count, 0, 0);
+}
+
+asmlink int readdir(unsigned int fd, struct dirent *dirent, unsigned int count) {
+	return syscall(SYS_readdir, 0, fd, (uint32_t)dirent, count, 0, 0);
+}

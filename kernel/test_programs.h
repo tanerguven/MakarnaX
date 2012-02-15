@@ -32,6 +32,7 @@ extern void* USER_PROGRAM(init);
 extern void* USER_PROGRAM(ipctest);
 extern void* USER_PROGRAM(processmemtest);
 extern void* USER_PROGRAM(kill);
+extern void* USER_PROGRAM(fs);
 
 extern int load_program(uint32_t addres);
 
@@ -67,5 +68,7 @@ extern int load_program(uint32_t addres);
 #define MAKARNAX_TEST_brktest 19
 #define MAKARNAX_TEST_signal7 20
 #define MAKARNAX_TEST_signal2 21
+#define MAKARNAX_TEST_fs_openfile 22
+#define MAKARNAX_TEST_fs_readfile 23
 
 #endif /* TEST_PROGRAMS_H_ */

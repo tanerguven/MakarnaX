@@ -304,6 +304,7 @@ static UserProgram user_programs[] = {
 	{ "signaltest", &USER_PROGRAM(signaltest) },
 	{ "ipctest", &USER_PROGRAM(ipctest) },
 	{ "kill", &USER_PROGRAM(kill) },
+	{ "fs", &USER_PROGRAM(fs) },
 };
 
 static const size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);

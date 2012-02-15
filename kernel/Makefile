@@ -24,10 +24,15 @@ OBJS = \
 	ipc/ipc.o\
 	ipc/semaphore.o\
 	ipc/shared_memory.o\
+	fs/vfs.o\
+	fs/file.o\
+	fs/superblock.o\
+	fs/denemefs/file.o\
+	fs/denemefs/superblock.o\
 
 all: $(OBJS)
 	$(LD) -r -o kernel.O $(OBJS)
 
 clean:
-	rm -f *.o memory/*.o ipc/*.o;
+	find . -name "*.o" | xargs rm -f
 	rm -f kernel.O;

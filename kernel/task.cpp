@@ -366,7 +366,7 @@ void free_zombie_tasks() {
 	}
 }
 
-void task_create(void* program_addr, const char* cmd, int priority) {
+Task* task_create(void* program_addr, const char* cmd, int priority) {
 	ASSERT(!(eflags_read() & FL_IF));
 
 	int err, r;
@@ -453,12 +453,15 @@ void task_create(void* program_addr, const char* cmd, int priority) {
 
 	task->shared_mem_list.init();
 
+	if (task->id != 1)
+		task->pwd = task->root = task_id_ht.get(1)->root;
+
 	task->state = Task::State_running;
 	ASSERT(task->list_node.is_free());
 
 	add_to_runnable_list(task);
-	printf(">> task %08x created\n", task->id);
-	return;
+	printf(">> task %d created\n", task->id);
+	return task;
 
 bad_task_create:
 	PANIC("task create error");
@@ -482,6 +485,7 @@ asmlink void sys_getpid(void) {
 
 // TODO: registers_users'i kaldir
 // TODO: fork kurallari duzenlenmeli (neler kopyalanacak, neler kopyalanmayacak?)
+// TODO: file fork
 asmlink void sys_fork() {
 	uint32_t eflags = eflags_read();
 	cli();

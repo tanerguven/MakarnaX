@@ -52,6 +52,11 @@ asmlink void sys_dongu();
 asmlink void sys_sleep();
 asmlink void sys_sbrk();
 
+asmlink void sys_open();
+asmlink void sys_close();
+asmlink void sys_read();
+asmlink void sys_readdir();
+
 /* */
 
 void sys_nosys() {
@@ -64,8 +69,8 @@ void sys_nosys() {
 
 void (*syscalls[])() = {
 	sys_nosys, /* 0 */
-	sys_exit, sys_fork, sys_nosys, sys_nosys, sys_nosys, /* 5 */
-	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_exit, sys_fork, sys_read, sys_nosys, sys_open, /* 5 */
+	sys_close, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_getpid,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
@@ -101,7 +106,7 @@ void (*syscalls[])() = {
 void (*syscalls_2[])() = {
 	sys_nosys, /* 1000 */
 	sys_cputs, sys_cgetc, sys_yield, sys_wait, sys_dongu, /* 1005 */
-	sys_sleep, sys_sbrk
+	sys_sleep, sys_sbrk, sys_readdir
 };
 
 #define N_SYSCALLS_2 (sizeof(syscalls_2)/sizeof(syscalls_2[0]))

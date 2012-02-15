@@ -29,6 +29,14 @@ extern void sys_yield();
 extern void sys_dongu();
 
 /******************************
+ * File System
+ ******************************/
+extern int open(const char *filename, int flags, int mode);
+extern int close(unsigned int fd);
+extern size_t read(unsigned int fd, char *buf, unsigned int count);
+extern int readdir(unsigned int fd, struct dirent *dirent, unsigned int count);
+
+/******************************
  * Shared Memory
  ******************************/
 struct shmid_ds {};
