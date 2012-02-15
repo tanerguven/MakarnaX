@@ -26,10 +26,7 @@
 #include "task.h"
 #include "sched.h"
 #include <errno.h>
-
-//
-asmlink void do_exit(int);
-//
+#include "kernel.h"
 
 // console.cpp
 extern TaskList_t console_input_list;
@@ -107,13 +104,15 @@ void (*syscalls_2[])() = {
 	sys_sleep, sys_sbrk
 };
 
+#define N_SYSCALLS_2 (sizeof(syscalls_2)/sizeof(syscalls_2[0]))
+
 asmlink void do_syscall(uint32_t no) {
 	if (no < sizeof(syscalls)) {
 		syscalls[no]();
 		return;
 	}
 
-	if (no > 1000 && no < (1000 + sizeof(syscalls_2))) {
+	if (no > 1000 && no < (1000 + N_SYSCALLS_2)) {
 		syscalls_2[no-1000]();
 		return;
 	}

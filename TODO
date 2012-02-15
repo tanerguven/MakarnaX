@@ -2,12 +2,12 @@
 
 - Türkçe klavye
 - user panic fonksiyonu
-- kernel monitor fonksiyonlari (kill ...)
 - ASSERT kullanimlari gozden gecirilmeli gereksizleri temizlenmeli
 ya da ASSERT_D yapilmali
 
 - interruptlarin kritik yerlerde disable yapildiginin kontrolu
 - copy-on-write fork
+- tarih-saat kavramlari (dosya sisteminde gerekli)
 - shell programi
 
 - kullanici programlarinin ciktilarini Linux ile karsilastiran program

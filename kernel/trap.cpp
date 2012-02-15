@@ -67,10 +67,6 @@ asmlink void syscall_trap(); /* 0x80 */
 extern SegmentDesc gdt[];
 //
 
-// task_exit.cpp
-asmlink void do_exit(int code);
-//
-
 // sched.cpp
 asmlink void do_timer(Trapframe*);
 //

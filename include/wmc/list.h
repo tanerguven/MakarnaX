@@ -41,4 +41,11 @@ typedef List_2<type_t, LI_##list_t> list_t;
 #define set_list_offset(type_t,list_t,node_name) \
 const ptr_t LI_##list_t::offset_node_value =(ptr_t)offsetof(type_t,node_name);
 
+/**
+ * type_t icerisinde tanimlandiginda kullanmak icin
+ * type_t::LI_list_t seklinde
+ */
+#define set_list_offset_2(type_t,list_t,node_name)					\
+const ptr_t type_t::LI_##list_t::offset_node_value =(ptr_t)offsetof(type_t,node_name);
+
 #endif /* _WMC_LIST_H_ */

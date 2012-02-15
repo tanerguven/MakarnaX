@@ -30,7 +30,6 @@
  */
 
 // task_exit.cpp
-asmlink void do_exit(int);
 extern void notify_parent(Task *t);
 //
 
