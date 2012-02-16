@@ -4,8 +4,9 @@
 #include "../vfs.h"
 
 struct Deneme_subdentry {
-	int n;
-	struct Deneme_inode *d[100];
+	int n; // dentry count
+	uint32_t no[16]; // dentry ino
+	char name[16][32]; // dentry name
 };
 
 struct Deneme_inode {
@@ -13,22 +14,14 @@ struct Deneme_inode {
 		FT_FILE = 1,
 		FT_DIR = 2,
 	};
-
-	struct inode inode;
-	char name[100];
-	void *data;
 	FileType ft;
+	size_t size;
+	void *data;
 };
 
-extern int denemefs_lookup(struct DirEntry *dir, struct DirEntry *r);
+extern int denemefs_lookup(struct DirEntry*, const char*, uint32_t*);
 extern int denemefs_read_super(struct SuperBlock* sb);
 
-inline struct Deneme_inode* inode_to_deneme(struct inode *inode) {
-	return (Deneme_inode*)inode;
-}
-
-inline struct inode * deneme_to_inode(struct Deneme_inode* di) {
-	return (struct inode*)di;
-}
+extern struct Deneme_inode* inode_to_deneme(struct inode *inode);
 
 #endif /* _DENEMEFS_H_ */

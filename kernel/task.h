@@ -33,6 +33,7 @@
 #include "ipc/ipc.h"
 
 #define DEFAULT_PRIORITY 3
+#define TASK_MAX_FILE_NR 32
 
 define_list(struct Task, AlarmList_t);
 define_list(struct Task, ChildList_t);
@@ -97,9 +98,7 @@ struct Task {
 	struct DirEntry * pwd;
 	struct DirEntry * root;
 	/* struct inode * executable; */
-
-	// FIXME: simdilik sadece 1 dosya acabilir
-	struct File *opened_file;
+	struct File *files[TASK_MAX_FILE_NR];
 
 	inline void init();
 	inline Trapframe* registers();
@@ -151,7 +150,6 @@ inline void Task::init() {
 	id_hash_node.init();
 	run_before_switch_f = NULL;
 	sigstack.init();
-	opened_file = NULL;
 }
 
 inline Trapframe* Task::registers() {

@@ -44,6 +44,14 @@ extern void free_sigstack();
 extern void copy_stack(uint32_t addr);
 //
 
+// fs/vfs.cpp
+extern struct File* dup_file(struct File *src);
+//
+
+// fs/file.cpp
+void task_curr_free_files();
+//
+
 /*
  * TODO: signal almis bir process, signal fonksiyonunda fork yaparsa ?
  * TODO: zombie tasklar icin bir cozum
@@ -328,9 +336,9 @@ static int task_alloc(Task **t) {
 void task_free(Task *t) {
 	ASSERT(!(eflags_read() & FL_IF));
 	ASSERT(t == task_curr);
-	// printf(">> task %08x: free task %08x\n", task_curr ? task_curr->id : 0, t->id);
 
 	ipc_task_free(t);
+	task_curr_free_files();
 
 	uint32_t count_brk = (t->pgdir.end_brk - t->pgdir.start_brk) / 0x1000;
 	ASSERT(t->pgdir.count_stack + t->pgdir.count_program + count_brk == t->pgdir.count_user);
@@ -553,6 +561,15 @@ asmlink void sys_fork() {
 		goto bad_fork_copy_kernel_stack;
 	/* */
 
+	/* dosya bilgilerini kopyala */
+	for (int i = 0 ; i < TASK_MAX_FILE_NR ; i++) {
+		if (task_curr->files[i])
+			t->files[i] = dup_file(task_curr->files[i]);
+		else
+			t->files[i] = NULL;
+	}
+	/* */
+
 	/* burasi 2 kere calisiyor */
 	eip = read_eip();
 	if (eip == 1)
@@ -570,7 +587,7 @@ asmlink void sys_fork() {
 	t->state = Task::State_running;
 	add_to_runnable_list(t);
 
-	/* paret incin return degeri child id */
+	/* parent incin return degeri child id */
 	set_return(task_curr->registers(), t->id);
 
 	return;

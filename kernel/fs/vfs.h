@@ -13,28 +13,41 @@ struct SuperBlock {
 struct inode {
 	uint32_t ino;
 	SuperBlock *superblock;
-
-	// uid, gid
-
-	uint32_t size; // file size
-
+	int ref_count;
 	struct inode_operations *op;
-	// last access time
-	// last modify time
-	// last change time
+
+	inline void init(uint32_t ino, SuperBlock *sb, struct inode_operations *op) {
+		this->ino = ino;
+		this->superblock = sb;
+		this->ref_count = 0;
+		this->op = op;
+	}
 };
 
 /**
  * directory entry, dizin ya da dosya
  */
 struct DirEntry {
+	define_list(DirEntry, Subdirs);
+	Subdirs::node_t node_subdirs;
 
 	int mounted;
 	struct inode *inode;
 	char name[256];
 
+	struct DirEntry * parent;
+	Subdirs subdirs;
+
 	inline void init() {
 		mounted = 0;
+		parent = NULL;
+		node_subdirs.init();
+		subdirs.init();
+	}
+
+	inline void add_subdir(struct DirEntry *dir) {
+		subdirs.push_back(&dir->node_subdirs);
+		dir->parent = this;
 	}
 };
 
@@ -55,9 +68,9 @@ struct File_operations {
 struct inode_operations {
 
 	/*
-	 * dir icerisinde r->name isimli dosyayi arar, r icerisinde dondurur
+	 * dir icerisinde name isimli dosyayi arar, *no ile ino dondurur
 	 */
-	int (*lookup)(struct DirEntry *dir, struct DirEntry *r);
+	int (*lookup)(struct DirEntry *dir, const char* name, uint32_t *no);
 };
 
 

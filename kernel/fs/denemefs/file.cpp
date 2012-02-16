@@ -4,7 +4,11 @@
 
 #include "denemefs.h"
 
-int denemefs_lookup(struct DirEntry *dir, struct DirEntry *r) {
+#include "../../kernel.h"
+
+extern struct Deneme_inode di[];
+
+int denemefs_lookup(struct DirEntry *dir, const char *name, uint32_t *no) {
 
 	Deneme_inode *inode = inode_to_deneme(dir->inode);
 
@@ -13,10 +17,9 @@ int denemefs_lookup(struct DirEntry *dir, struct DirEntry *r) {
 
 	Deneme_subdentry *sd = (Deneme_subdentry*)inode->data;
 	for (int i = 0 ; i < sd->n ; i++) {
-		if ( strcmp(sd->d[i]->name, r->name) == 0) {
-			r->inode = (struct inode*)sd->d[i];
+		if ( strcmp(sd->name[i], name) == 0) {
+			*no = sd->no[i];
 			return 0;
-			break;
 		}
 	}
 
@@ -32,7 +35,7 @@ uint32_t denemefs_read(struct inode *inode, uint32_t offset, char *buf,
 		return -1;
 
 	const char *src = ((char*)in->data) + offset;
-	for(i = 0 ; i < in->inode.size  && size > 0 ; i++, size--) {
+	for(i = 0 ; i < in->size  && size > 0 ; i++, size--) {
 		buf[i] = src[i];
 	}
 
