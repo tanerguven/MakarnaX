@@ -217,9 +217,9 @@ static int load_icode(Task *t, Trapframe *registers, uint32_t prog_addr, const c
 	 * program kodlarini processin adres uzayina yukleyebilmek icin, gecici
 	 * olarak yeni processin pagedir'ini yukle.
 	 */
-	uint32_t old_cr3 = cr3_read();
+	uint32_t old_cr3; read_reg(%cr3, old_cr3);
 	ASSERT(old_cr3 != t->pgdir.pgdir_pa);
-	cr3_load(t->pgdir.pgdir_pa);
+	load_reg(%cr3, t->pgdir.pgdir_pa);
 
 	/* programın binarisinin adresi, elf header'ı */
 	Elf32_Ehdr *header = (Elf32_Ehdr*)prog_addr;
@@ -291,7 +291,7 @@ static int load_icode(Task *t, Trapframe *registers, uint32_t prog_addr, const c
 	registers->esp = kaddr2uaddr((uint32_t)esp);
 	//
 
-	cr3_load(old_cr3);
+	load_reg(%cr3, old_cr3);
 	return 0;
 }
 
@@ -473,6 +473,7 @@ Task* task_create(void* program_addr, const char* cmd, int priority) {
 
 bad_task_create:
 	PANIC("task create error");
+	return NULL;
 }
 
 void task_init() {
@@ -576,8 +577,8 @@ asmlink void sys_fork() {
 		return;
 
 	t->k_eip = eip;
-	t->k_esp = esp_read();
-	t->k_ebp = ebp_read();
+	read_reg(%esp, t->k_esp);
+	read_reg(%ebp, t->k_ebp);
 	t->time_start = jiffies;
 	t->id = next_task_id++;
 	ASSERT( task_id_ht.put(&t->id_hash_node) == 0);
@@ -632,8 +633,8 @@ void __task_first_run() {
 void run_first_task() {
 	task_curr = task_id_ht.get(1);
 	task_curr->k_eip = 0; // user modda baslayacak
-	cr3_load(task_curr->pgdir.pgdir_pa);
-	esp_load(task_curr->k_esp);
+	load_reg(%cr3, task_curr->pgdir.pgdir_pa);
+	load_reg(%esp, task_curr->k_esp);
 
 	asm("jmp trapret");
 	PANIC("--");
@@ -645,8 +646,8 @@ void switch_to_task(Task *newtask) {
 	// printf(">> %d switch to %d\n", task_curr->id, newtask->id);
 
 	/* eski processin bilgilerini kaydediyoruz */
-	task_curr->k_esp = esp_read();
-	task_curr->k_ebp = ebp_read();
+	read_reg(%esp, task_curr->k_esp);
+	read_reg(%ebp, task_curr->k_ebp);
 	/* */
 
 	task_curr = newtask;

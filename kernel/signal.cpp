@@ -121,7 +121,8 @@ int send_signal(uint32_t sig, Task* t) {
 
 void check_signals() {
 	ASSERT(!(eflags_read() & FL_IF));
-	ASSERT(task_curr->pgdir.pgdir_pa == cr3_read());
+	uint32_t cr3; read_reg(%cr3, cr3);
+	ASSERT(task_curr->pgdir.pgdir_pa == cr3);
 
 	if (task_curr->signal.sig) {
 		Trapframe *tf = NULL;
@@ -233,8 +234,8 @@ void copy_stack(uint32_t addr) {
  * FIXME: bu kisima gcc-4.6 ile derlendiginde gerek yok, derleyici versiyonuna
  * gore kullanilmali
  */
-	for (uint32_t* ebp = (uint32_t*)ebp_read() ;
-		 va2kaddr(MMAP_KERNEL_STACK_TOP) - (uint32_t)ebp < 0x1000 ;
+	uint32_t *ebp; read_reg(%ebp, ebp);
+	for ( ; va2kaddr(MMAP_KERNEL_STACK_TOP) - (uint32_t)ebp < 0x1000 ;
 		 ebp = (uint32_t*)*ebp)
 	{
 		*(uint32_t*)(va2kaddr(addr) + ((uint32_t)ebp % 0x1000)) = *ebp - 0x2000;
@@ -264,7 +265,8 @@ static void push_stack() {
 	s->stack->refcount_inc();
 
 	// FIXME: ebp degerinden stack icin kullanilan offset cikarilmali mi?
-	s->esp = esp_read() - 0x2000;
+	read_reg(%esp, s->esp);
+	s->esp -= 0x2000;
 	copy_stack(MMAP_KERNEL_STACK_BASE - 0x2000);
 
 	/* pop_stack fonksiyonundan buraya atlaniyor  */
@@ -305,7 +307,7 @@ static void pop_stack() {
 
 	kfree(s);
 
-	esp_load(esp);
+	load_reg(%esp, esp);
 	asm volatile(
 		"push $1\n\t"
 		"push %0\n\t"

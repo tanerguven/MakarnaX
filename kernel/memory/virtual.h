@@ -355,7 +355,8 @@ inline int PageDirInfo::page_remove(VA_t va, int invl) {
 
  	// FIXME: --
 	extern PageDirInfo kernel_dir;
-	if (invl && (this == &kernel_dir || cr3_read() == pgdir_pa))
+	uint32_t cr3; read_reg(%cr3,cr3);
+	if (invl && (this == &kernel_dir || cr3 == pgdir_pa))
 		tlb_invalidate(v);
 	/*  else { */
 	/* 	printf(">> not tlb_invalidate %08x\n", va); */

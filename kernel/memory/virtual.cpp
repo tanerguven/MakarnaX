@@ -126,13 +126,13 @@ void vm_init() {
 			}
 		}
 	}
-	cr3_load(kernel_dir.pgdir_pa);
+	load_reg(%cr3, kernel_dir.pgdir_pa);
 
 	/* enable paging */
-	uint32_t cr0 = cr0_read();
+	uint32_t cr0; read_reg(%cr0, cr0);
 	cr0 |= CR0_PE|CR0_PG|CR0_AM|CR0_NE|CR0_TS|CR0_EM|CR0_MP|CR0_WP;
 	cr0 &= ~(CR0_TS|CR0_EM);
-	cr0_load(cr0);
+	load_reg(%cr0, cr0);
 	printf(">> cr0 OK\n");
 	/* */
 
@@ -147,11 +147,11 @@ void vm_init() {
 	gdt[GD_UD >> 3].set_seg(STA_W, MMAP_SEG_USER_BASE, 0xffffffff, 3);
 	gdt[GD_TSS >> 3].set_segNull();
 	gdt_load((uint32_t)&gdt_pd);
-	gs_set(GD_UD | 3);
-	fs_set(GD_UD | 3);
-	es_set(GD_KD);
-	ds_set(GD_KD);
-	ss_set(GD_KD);
+	load_reg(%gs, GD_UD | 3);
+	load_reg(%fs, GD_UD | 3);
+	load_reg(%es, GD_KD);
+	load_reg(%ds, GD_KD);
+	load_reg(%ss, GD_KD);
 	cs_set(GD_KT);
 	asm volatile("lldt %%ax" :: "a" (0));
 	printf(">> segmentation OK\n");
@@ -268,8 +268,8 @@ static inline int copy_page(PageDirInfo *dest, PageDirInfo *src, uint32_t va, in
 /** hatada errno, normalde 0 dondurur */
 int PageDirInfo::copy_pages(PageDirInfo *src, uint32_t start, uint32_t end) {
 	ASSERT(!(eflags_read() & FL_IF));
-
-	if (src->pgdir_pa == cr3_read()) {
+	uint32_t cr3; read_reg(%cr3,cr3);
+	if (src->pgdir_pa == cr3) {
 		for (uint32_t i = start ; i < end ; i+=0x1000) {
 			PTE_t *pte = src->page_get(i);
 

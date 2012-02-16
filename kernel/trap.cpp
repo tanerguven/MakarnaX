@@ -252,7 +252,8 @@ asmlink void trap_handler(Trapframe *tf) {
 	if (!user_mode_trap) {
 		printf("trapno: %d\n", tf->trapno);
 		print_trapframe(tf);
-		printf("cr2: %08x\n", cr2_read());
+		uint32_t cr2; read_reg(%cr2, cr2);
+		printf("cr2: %08x\n", cr2);
 		PANIC("kernel mode trap");
 		return;
 	}
@@ -308,7 +309,7 @@ void do_page_fault(Trapframe *tf) {
 	ASSERT(!(eflags_read() & FL_IF));
 
 	int r;
-	uint32_t fault_va = cr2_read();
+	uint32_t fault_va; read_reg(%cr2, fault_va);
 
 	ASSERT((tf->cs & 3) == 3);
 

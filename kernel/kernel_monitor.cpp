@@ -216,11 +216,10 @@ static int command_backtrace(int argc, char **argv) {
 	 * saklanıyor
 	 */
 
-	printf("ebp: %08x\n", ebp_read());
-	printf("ebp: %08x\n", ebp_read());
+	uint32_t *ebp; read_reg(%ebp, ebp);
+	printf("ebp: %08x\n", ebp);
 
-	for (uint32_t* ebp = (uint32_t*)ebp_read() ;
-		 (va2kaddr(MMAP_KERNEL_STACK_TOP) - (uint32_t)ebp) < 0x1000 ;
+	for ( ; (va2kaddr(MMAP_KERNEL_STACK_TOP) - (uint32_t)ebp) < 0x1000 ;
 		 ebp = (uint32_t*)*ebp)
 	{
 		uint32_t eip = *(ebp+1);

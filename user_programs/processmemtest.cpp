@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 }
 
 int stacktest() {
-	uint32_t esp = esp_read();
+	uint32_t esp; read_reg(%esp, esp);
 	if (esp > 0xefff0000) {
 		return stacktest();
 	}

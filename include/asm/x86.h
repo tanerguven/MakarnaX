@@ -93,56 +93,11 @@
 /** Page fault occured while in user mode */
 #define FEC_U		0x4
 
-inline uint32_t ebp_read() __attribute__ ((always_inline));
-inline uint32_t esp_read() __attribute__ ((always_inline));
+#define read_reg(reg,v) \
+	asm volatile("movl %"#reg", %0" : "=r"(v))
 
-inline uint32_t ebp_read(void) {
-	uint32_t ebp;
-	asm volatile("movl %%ebp,%0" : "=r" (ebp));
-	return ebp;
-}
-
-inline void ebp_load(uint32_t ebp) {
-	asm volatile ("movl %0, %%ebp\n\t" :: "r" (ebp));
-}
-
-inline uint32_t esp_read(void) {
-	uint32_t esp;
-	asm volatile("movl %%esp,%0" : "=r" (esp));
-	return esp;
-}
-
-inline void esp_load(uint32_t esp) {
-	asm volatile ("movl %0, %%esp\n\t" :: "r" (esp));
-}
-
-inline uint32_t ss_read(void) {
-	uint32_t ss;
-	asm volatile("movl %%ss,%0" : "=r" (ss));
-	return ss;
-}
-
-inline uint32_t es_read(void) {
-	uint32_t es;
-	asm volatile("movl %%es,%0" : "=r" (es));
-	return es;
-}
-
-inline uint32_t ds_read(void) {
-	uint32_t ds;
-	asm volatile("movl %%ds,%0" : "=r" (ds));
-	return ds;
-}
-
-inline uint32_t cs_read(void) {
-	uint32_t cs;
-	asm volatile("movl %%cs,%0" : "=r" (cs));
-	return cs;
-}
-
-inline void cr3_load(uint32_t pa) {
-	asm volatile ("movl %0, %%cr3\n\t" :: "r" (pa));
-}
+#define load_reg(reg,v) \
+	asm volatile("movl %0, %"#reg :: "r"(v))
 
 static inline void cr3_reload() {
 	asm volatile (""
@@ -151,12 +106,6 @@ static inline void cr3_reload() {
 				  "mov %eax, %cr3\n\t"
 				  "pop %eax\n\t"
 	);
-}
-
-inline uint32_t cr3_read() {
-	uint32_t cr3;
-	asm volatile("movl %%cr3,%0" : "=r" (cr3));
-	return cr3;
 }
 
 #ifdef __CONF_CPU_invlpg
@@ -174,22 +123,6 @@ static inline void tlb_invalidate(uint32_t addr) {
 #endif
 }
 
-inline uint32_t cr2_read() {
-	uint32_t cr2;
-	asm volatile("movl %%cr2,%0" : "=r" (cr2));
-	return cr2;
-}
-
-static inline void cr0_load(uint32_t val) {
-	asm volatile("movl %0,%%cr0" : : "r" (val));
-}
-
-static inline uint32_t cr0_read(void) {
-	uint32_t val;
-	asm volatile("movl %%cr0,%0" : "=r" (val));
-	return val;
-}
-
 inline void gdt_load(uint32_t p) {
 	asm("lgdt (%0)\n\t" :: "r"(p));
 }
@@ -202,26 +135,6 @@ static inline uint32_t eflags_read() {
 
 static inline void  eflags_load(uint32_t eflags) {
 	asm volatile("pushl %0; popfl" :: "r" (eflags));
-}
-
-inline void gs_set(uint16_t seg) {
-	asm volatile("movw %%ax,%%gs" :: "a" (seg));
-}
-
-inline void fs_set(uint16_t seg) {
-	asm volatile("movw %%ax,%%fs" :: "a" (seg));
-}
-
-inline void es_set(uint16_t seg) {
-	asm volatile("movw %%ax,%%es" :: "a" (seg));
-}
-
-inline void ds_set(uint16_t seg) {
-	asm volatile("movw %%ax,%%ds" :: "a" (seg));
-}
-
-inline void ss_set(uint16_t seg) {
-	asm volatile("movw %%ax,%%ss" :: "a" (seg));
 }
 
 /* segment sabit sayı olması gerektiği için, inline fonksiyonda yazamıyoruz */
