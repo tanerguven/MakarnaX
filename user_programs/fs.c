@@ -43,22 +43,59 @@ int openfile() {
 
 	r = open("dosya1", 0, 0);
 	printf("r %d\n", r);
+
+	r = close(r);
+	printf("close r: %d\n", r);
 	return 0;
 }
 
 
 int readfile() {
 	int r;
-
-	r = open("dosya1", 0, 0);
-	if (r < 0)
-		return r;
-
+	int fd1, fd2;
 	char buf[1000];
-	r = read(0, &buf, 10);
 
+	/* dosya1 isimli dosyayi ac */
+	printf("open dosya1\n");
+	fd1 = open("dosya1", 0, 0);
+	if (fd1 < 0)
+		return fd1;
+	printf("fd1: %d\n", fd1);
+
+	r = read(fd1, &buf, 10);
 	printf("r %d\n", r);
 	printf("buf: %s\n", buf);
+
+	/* forktest programini dosya olarak ac */
+	printf("\nopen forktest\n");
+	fd2 = open("forktest", 0, 0);
+	if (fd2 < 0)
+		return fd2;
+	printf("fd2: %d\n", fd2);
+
+	r = read(fd2, &buf, 10);
+	printf("r %d\n", r);
+	printf("buf: %s\n", buf);
+
+	printf("\nclose dosya1\n");
+	r = close(fd1);
+	if (r < 0) {
+		printf("! close dosya1\n");
+		return r;
+	}
+
+	printf("open dosya2\n");
+	fd1 = open("dosya2", 0, 0);
+	if (fd1 < 0)
+		return fd1;
+	printf("fd1: %d\n", fd1);
+
+	r = read(fd1, &buf, 10);
+	printf("r %d\n", r);
+	printf("buf: %s\n", buf);
+
+	close(fd1);
+	close(fd2);
 
 	return 0;
 }
