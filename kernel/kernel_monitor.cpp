@@ -289,25 +289,21 @@ static int command_info(int argc, char **argv) {
 	return 0;
 }
 
-struct UserProgram {
-	const char *name;
-	void *addr;
+TestProgram user_programs[] = {
+	{ "yield", &USER_PROGRAM(yield), &USER_PROGRAM_END(yield) },
+	{ "hello", &USER_PROGRAM(hello), &USER_PROGRAM_END(hello) },
+	{ "divide_error", &USER_PROGRAM(divide_error), &USER_PROGRAM_END(divide_error) },
+	{ "forktest", &USER_PROGRAM(forktest), &USER_PROGRAM_END(forktest) },
+	{ "dongu", &USER_PROGRAM(dongu), &USER_PROGRAM_END(dongu) },
+	{ "sys_dongu", &USER_PROGRAM(sys_dongu), &USER_PROGRAM_END(sys_dongu) },
+	{ "signaltest", &USER_PROGRAM(signaltest), &USER_PROGRAM_END(signaltest) },
+	{ "ipctest", &USER_PROGRAM(ipctest), &USER_PROGRAM_END(ipctest) },
+	{ "kill", &USER_PROGRAM(kill), &USER_PROGRAM_END(kill) },
+	{ "fs", &USER_PROGRAM(fs), &USER_PROGRAM_END(fs) },
 };
 
-static UserProgram user_programs[] = {
-	{ "yield", &USER_PROGRAM(yield) },
-	{ "hello", &USER_PROGRAM(hello) },
-	{ "divide_error", &USER_PROGRAM(divide_error) },
-	{ "forktest", &USER_PROGRAM(forktest) },
-	{ "dongu", &USER_PROGRAM(dongu) },
-	{ "sys_dongu", &USER_PROGRAM(sys_dongu) },
-	{ "signaltest", &USER_PROGRAM(signaltest) },
-	{ "ipctest", &USER_PROGRAM(ipctest) },
-	{ "kill", &USER_PROGRAM(kill) },
-	{ "fs", &USER_PROGRAM(fs) },
-};
-
-static const size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);
+// FIXME: const
+size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);
 
 static int command_create(int argc, char **argv) {
 	if (argc > 1) {

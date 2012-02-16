@@ -16,10 +16,7 @@ struct Deneme_inode {
 
 	struct inode inode;
 	char name[100];
-	union {
-		char data[1000];
-		Deneme_subdentry subdentry;
-	};
+	void *data;
 	FileType ft;
 };
 

@@ -20,22 +20,43 @@
 
 #include <types.h>
 
+struct TestProgram {
+	const char *name;
+	void *addr;
+	void *end;
+};
+extern TestProgram user_programs[];
+extern size_t nr_user_programs;
+
 #define USER_PROGRAM(x) _binary_user_programs_##x##_bin_start
+#define USER_PROGRAM_END(x) _binary_user_programs_##x##_bin_end
+
 extern void* USER_PROGRAM(divide_error);
+extern void* USER_PROGRAM_END(divide_error);
 extern void* USER_PROGRAM(hello);
+extern void* USER_PROGRAM_END(hello);
 extern void* USER_PROGRAM(yield);
+extern void* USER_PROGRAM_END(yield);
 extern void* USER_PROGRAM(forktest);
+extern void* USER_PROGRAM_END(forktest);
 extern void* USER_PROGRAM(dongu);
+extern void* USER_PROGRAM_END(dongu);
 extern void* USER_PROGRAM(sys_dongu);
+extern void* USER_PROGRAM_END(sys_dongu);
 extern void* USER_PROGRAM(signaltest);
+extern void* USER_PROGRAM_END(signaltest);
 extern void* USER_PROGRAM(init);
+extern void* USER_PROGRAM_END(init);
 extern void* USER_PROGRAM(ipctest);
+extern void* USER_PROGRAM_END(ipctest);
 extern void* USER_PROGRAM(processmemtest);
+extern void* USER_PROGRAM_END(processmemtest);
 extern void* USER_PROGRAM(kill);
+extern void* USER_PROGRAM_END(kill);
 extern void* USER_PROGRAM(fs);
+extern void* USER_PROGRAM_END(fs);
 
 extern int load_program(uint32_t addres);
-
 
 #define DEFAULT_PRIORITY 3
 
