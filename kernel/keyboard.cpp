@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Taner Guven <tanerguven@gmail.com>
+ * Copyright (C) 2011,2012 Taner Guven <tanerguven@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,15 +43,13 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "kernel.h"
 
 #include <types.h>
 #include <asm/io.h>
 #include <asm/x86.h>
 
-#include <stdio.h>
 #include <string.h>
-
-#include "panic.h"
 
 // console.cpp
 extern void console_interrupt(int (*proc)());

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Taner Guven <tanerguven@gmail.com>
+ * Copyright (C) 2011,2012 Taner Guven <tanerguven@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,10 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "panic.h"
+#include "kernel.h"
 
 #include <types.h>
-#include <stdio.h>
 
 #include <kernel/syscall.h>
 
@@ -227,4 +226,16 @@ asmlink void sys_sbrk() {
 
 	eflags_load(eflags);
 	return set_return(tf, -1);
+}
+
+uint32_t user_to_kernel_check(uint32_t base, uint32_t limit, int rw) {
+	int perm = (rw) ? PTE_W | PTE_U : PTE_U;
+	if ( task_curr->pgdir.verify_user_addr((const void*)base, limit, perm) < 0 ) {
+		printf(">> user addr not verified: 0x%08x - 0x%08x\n", base,
+			   base+limit);
+		do_exit(111);
+		PANIC("user_to_kernel");
+	}
+
+	return uaddr2kaddr(base);
 }

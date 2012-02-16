@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Taner Guven <tanerguven@gmail.com>
+ * Copyright (C) 2011,2012 Taner Guven <tanerguven@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,10 @@
 #define _MEMORY_PHYSICAL_H_
 #include <asm/x86.h>
 
+#include "../kernel.h"
+
 #include <types.h>
 #include <genel_fonksiyonlar.h>
-#include "../panic.h"
 #include <errno.h>
 
 /* link.ld */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Taner Guven <tanerguven@gmail.com>
+ * Copyright (C) 2011,2012 Taner Guven <tanerguven@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@
 #include <asm/x86.h>
 #include <stdio.h>
 using namespace std;
-
-#include "panic.h"
 
 #include "test_programs.h"
 #include "memory/physical.h"

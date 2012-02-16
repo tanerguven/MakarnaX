@@ -15,10 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "../kernel.h"
 #include <string.h>
-#include <stdio.h>
-using namespace std;
-#include "../panic.h"
 
 #include <types.h>
 #include <asm/x86.h>

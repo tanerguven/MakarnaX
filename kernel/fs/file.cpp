@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2012 Taner Guven <tanerguven@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "../task.h"
 #include "../kernel.h"
 #include "vfs.h"
@@ -22,7 +39,7 @@ static File_operations fo_charfile = {
 
 asmlink void sys_open() {
 	Trapframe *tf = task_curr->registers();
-	const char *filename = (const char*)user_to_kernel(get_param1(tf), 256, 0);
+	const char *filename = (const char*)user_to_kernel_check(get_param1(tf), 256, 0);
 	// int flags = (int)get_param2(tf);
 	// int mode = (int)get_param3(tf);
 	DirEntry *file_dentry;
@@ -85,7 +102,7 @@ asmlink void sys_close() {
 asmlink void sys_read() {
 	Trapframe *tf = task_curr->registers();
 	unsigned int fd = get_param1(tf);
-	char *buf = (char*)user_to_kernel(get_param2(tf), 256, 1);
+	char *buf = (char*)user_to_kernel_check(get_param2(tf), 256, 1);
 	unsigned int count = get_param3(tf);
 	size_t r;
 

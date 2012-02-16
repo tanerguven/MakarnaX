@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Taner Guven <tanerguven@gmail.com>
+ * Copyright (C) 2011,2012 Taner Guven <tanerguven@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@
 #ifndef _MEMORY_VIRTUAL_H_
 #define _MEMORY_VIRTUAL_H_
 
-#include "../panic.h"
+#include "../kernel.h"
+
 #include <asm/x86.h>
 #include <types.h>
 #include <string.h>

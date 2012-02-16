@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Taner Guven <tanerguven@gmail.com>
+ * Copyright (C) 2011,2012 Taner Guven <tanerguven@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,11 @@
 #ifndef TASK_H_
 #define TASK_H_
 
+#include "kernel.h"
+
 #include <types.h>
 #include <wmc/list.h>
 #include <wmc/idhashtable.h>
-#include "panic.h"
 
 #include "trap.h"
 #include "memory/virtual.h"
