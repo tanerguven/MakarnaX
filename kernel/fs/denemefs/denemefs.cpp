@@ -106,11 +106,13 @@ uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
 	struct Deneme_inode *in = inode_to_deneme(f->inode);
 	int i;
 
-	if (in->ft != Deneme_inode::FT_FILE)
+	if (in->ft != Deneme_inode::FT_FILE) {
+		PANIC("tanimsiz durum");
 		return -1;
+	}
 
 	const char *src = ((char*)in->data) + f->fpos;
-	for(i = 0 ; i < in->size  && size > 0 ; i++, size--) {
+	for(i = 0 ; (i + f->fpos < in->size) && (size > 0) ; i++, size--) {
 		buf[i] = src[i];
 	}
 
@@ -118,7 +120,7 @@ uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
 }
 
 int denemefs_open(struct File *f) {
-	printf("denemefs_open\n");
+	printf("denemefs_open ino %d\n", f->inode->ino);
 	return 0;
 }
 

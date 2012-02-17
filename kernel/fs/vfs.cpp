@@ -29,7 +29,6 @@ set_list_offset_2(DirEntry, Subdirs, node_subdirs);
 
 int lookup(struct DirEntry *dir, const char *name, struct DirEntry **dentry) {
 	int r;
-	uint32_t no;
 	ASSERT(dentry != NULL);
 
 	/* root'da .. girilirse */
@@ -62,7 +61,6 @@ int lookup(struct DirEntry *dir, const char *name, struct DirEntry **dentry) {
 	(*dentry)->init();
 	strcpy((*dentry)->name, name);
 	(*dentry)->inode = inode;
-	(*dentry)->inode->init(no, dir->inode->superblock, dir->inode->op);
 	/* yeni DirEntry'i dir altina ekle */
 	dir->add_subdir(*dentry);
 
