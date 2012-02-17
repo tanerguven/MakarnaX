@@ -78,16 +78,16 @@ struct File {
 struct File_operations {
 	uint32_t (*read)(struct File *f, char *buf, size_t size);
 	int (*readdir)(struct File *f, struct dirent *dirent, uint32_t count);
-	int (*open)(struct inode *inode, struct File *f);
-	int (*release)(struct inode *inode, struct File *f);
+	int (*open)(struct File *f);
+	int (*release)(struct File *f);
 };
 
 struct inode_operations {
 
-	/*
-	 * dir icerisinde name isimli dosyayi arar, *no ile ino dondurur
-	 */
-	int (*lookup)(struct DirEntry *dir, const char* name, uint32_t *no);
+	struct File_operations *default_file_ops;
+
+	/* dir icerisinde name isimli dosyayi arar, dest ile dondurur */
+	int (*lookup)(struct inode *i_dir, const char* name, struct inode *i_dest);
 };
 
 

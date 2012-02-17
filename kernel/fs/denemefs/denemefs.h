@@ -19,9 +19,16 @@ struct Deneme_inode {
 	void *data;
 };
 
-extern int denemefs_lookup(struct DirEntry*, const char*, uint32_t*);
-extern int denemefs_read_super(struct SuperBlock* sb);
-
 extern struct Deneme_inode* inode_to_deneme(struct inode *inode);
+
+/* inode operations */
+extern int denemefs_lookup(struct inode *i_dir, const char* name, struct inode *i_dest);
+
+/* file operations */
+extern uint32_t denemefs_read(struct File *f, char *buf, size_t size);
+extern int denemefs_open(struct File *f);
+extern int denemefs_release(struct File *f);
+
+extern int denemefs_read_super(struct SuperBlock* sb);
 
 #endif /* _DENEMEFS_H_ */

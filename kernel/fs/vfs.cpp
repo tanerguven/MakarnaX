@@ -51,14 +51,17 @@ int lookup(struct DirEntry *dir, const char *name, struct DirEntry **dentry) {
 	}
 
 	/* disk uzerinde dosyayi ara */
-	r = dir->inode->op->lookup(dir, name, &no);
-	if (r < 0)
+	struct inode *inode = (struct inode*)kmalloc(sizeof(struct inode));
+	r = dir->inode->op->lookup(dir->inode, name, inode);
+	if (r < 0) {
+		kfree(inode);
 		return r;
+	}
 	/* diskte bulunan dosya icin DirEntry ve inode olustur */
 	*dentry = (struct DirEntry*)kmalloc(sizeof(struct DirEntry*));
 	(*dentry)->init();
 	strcpy((*dentry)->name, name);
-	(*dentry)->inode = (struct inode*)kmalloc(sizeof(struct inode));
+	(*dentry)->inode = inode;
 	(*dentry)->inode->init(no, dir->inode->superblock, dir->inode->op);
 	/* yeni DirEntry'i dir altina ekle */
 	dir->add_subdir(*dentry);

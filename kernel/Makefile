@@ -25,10 +25,9 @@ OBJS = \
 	ipc/semaphore.o\
 	ipc/shared_memory.o\
 	fs/vfs.o\
-	fs/file.o\
 	fs/superblock.o\
-	fs/denemefs/file.o\
-	fs/denemefs/superblock.o\
+	fs/file.o\
+	fs/denemefs/denemefs.o\
 
 all: $(OBJS)
 	$(LD) -r -o kernel.O $(OBJS)
