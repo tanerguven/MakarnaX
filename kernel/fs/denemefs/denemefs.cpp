@@ -34,6 +34,7 @@ static struct inode_operations denemefs_inode_op = {
  */
 void denemefs_init() {
 	int i;
+	int n_file = 5;
 
 	di[0].ft = Deneme_inode::FT_DIR;
 	di[0].data = kmalloc(sizeof(struct Deneme_subdentry));
@@ -46,27 +47,43 @@ void denemefs_init() {
 	di[2].data = (void*)dosya2;
 	di[2].size = strlen("data 2")+1;
 
+	di[3].ft = Deneme_inode::FT_DIR;
+	di[3].data = kmalloc(sizeof(struct Deneme_subdentry));
+	Deneme_subdentry *sd_3 = (Deneme_subdentry*)di[3].data;
+	sd_3->n = 0;
+
+	di[4].ft = Deneme_inode::FT_DIR;
+	di[4].data = kmalloc(sizeof(struct Deneme_subdentry));
+	Deneme_subdentry *sd_4 = (Deneme_subdentry*)di[4].data;
+	sd_4->n = 0;
+	/* sd_4'u sd_3 altina ekle */
+	sd_3->n++;
+	sd_3->no[0] = 4;
+	strcpy(sd_3->name[0], "dir11");
+
 	Deneme_subdentry *sd = (Deneme_subdentry*)di[0].data;
 	sd->no[0] = 1;
 	strcpy(sd->name[0], "dosya1");
 	sd->no[1] = 2;
 	strcpy(sd->name[1], "dosya2");
-	sd->n = 2;
+	sd->no[2] = 3;
+	strcpy(sd->name[2], "dir1");
+	sd->n = 3;
 
 	for (i = 0 ; i < nr_user_programs ; i++) {
-		di[i+3].ft = Deneme_inode::FT_FILE;
+		di[n_file].ft = Deneme_inode::FT_FILE;
 
-		di[i+3].data = user_programs[i].addr;
-		di[i+3].size = (uint32_t)user_programs[i].end -
+		di[n_file].data = user_programs[i].addr;
+		di[n_file].size = (uint32_t)user_programs[i].end -
 			(uint32_t)user_programs[i].addr;
-		sd->no[sd->n] = i+3;
+		sd->no[sd->n] = n_file;
 		strcpy(sd->name[sd->n], user_programs[i].name);
-
+		n_file++;
 		sd->n++;
 	}
 
 	printf(">> denemefs init OK\n");
-	printf(">> denemefs: %d dir and %d file\n", 0, sd->n);
+	printf(">> denemefs: %d dir and %d file\n", 1, n_file-1);
 }
 
 int denemefs_read_super(struct SuperBlock* sb) {
