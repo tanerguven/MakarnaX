@@ -142,17 +142,10 @@ CALISTIRMAK:
 
 
   Baslangicta program calistirmak:
-      make run-[program adi]
+      programlar, init_programs isimli dosyaya eklenir
+      her satir bir programi belirtir
 
       programlarin listesi: kernel/test_programs.h
-
-
-  Ornekler:
-      make QEMU="qemu -m 32" run-hello
-      // -m -> memory
-
-      make QEMU="qemu-kvm" run-fork
-
 
 
   TODO: GDB ile calistirmak

@@ -20,76 +20,44 @@
 
 #include <types.h>
 
-struct TestProgram {
+struct UserProgram {
 	const char *name;
 	void *addr;
 	void *end;
 };
-extern TestProgram user_programs[];
+
+extern UserProgram user_programs[];
 extern size_t nr_user_programs;
+UserProgram *user_program(const char *name);
 
 #define USER_PROGRAM(x) _binary_user_programs_##x##_bin_start
 #define USER_PROGRAM_END(x) _binary_user_programs_##x##_bin_end
+#define USER_PROGRAM_SIZE(x) _binary_user_programs_##x##_bin_size
+#define DEFINE_USER_PROGRAM(x)					\
+	extern void* USER_PROGRAM(x);				\
+	extern void* USER_PROGRAM_END(x);			\
+	extern void* USER_PROGRAM_SIZE(x);
 
-extern void* USER_PROGRAM(divide_error);
-extern void* USER_PROGRAM_END(divide_error);
-extern void* USER_PROGRAM(hello);
-extern void* USER_PROGRAM_END(hello);
-extern void* USER_PROGRAM(yield);
-extern void* USER_PROGRAM_END(yield);
-extern void* USER_PROGRAM(forktest);
-extern void* USER_PROGRAM_END(forktest);
-extern void* USER_PROGRAM(dongu);
-extern void* USER_PROGRAM_END(dongu);
-extern void* USER_PROGRAM(sys_dongu);
-extern void* USER_PROGRAM_END(sys_dongu);
-extern void* USER_PROGRAM(signaltest);
-extern void* USER_PROGRAM_END(signaltest);
-extern void* USER_PROGRAM(init);
-extern void* USER_PROGRAM_END(init);
-extern void* USER_PROGRAM(ipctest);
-extern void* USER_PROGRAM_END(ipctest);
-extern void* USER_PROGRAM(processmemtest);
-extern void* USER_PROGRAM_END(processmemtest);
-extern void* USER_PROGRAM(kill);
-extern void* USER_PROGRAM_END(kill);
-extern void* USER_PROGRAM(fs);
-extern void* USER_PROGRAM_END(fs);
+/* test programlari */
 
-extern int load_program(uint32_t addres);
+DEFINE_USER_PROGRAM(divide_error);
+DEFINE_USER_PROGRAM(hello);
+DEFINE_USER_PROGRAM(yield);
+DEFINE_USER_PROGRAM(forktest);
+DEFINE_USER_PROGRAM(dongu);
+DEFINE_USER_PROGRAM(sys_dongu);
+DEFINE_USER_PROGRAM(signaltest);
+DEFINE_USER_PROGRAM(init);
+DEFINE_USER_PROGRAM(ipctest);
+DEFINE_USER_PROGRAM(processmemtest);
+DEFINE_USER_PROGRAM(kill);
+DEFINE_USER_PROGRAM(fs);
+
+/* init_programs dosyasi */
+extern void* _binary_init_programs_start;
+extern void* _binary_init_programs_size;
+extern void* _binary_init_programs_end;
 
 #define DEFAULT_PRIORITY 3
-
-#define test_program(program,param) do { \
-	task_create(&USER_PROGRAM(program), #program" "#param, DEFAULT_PRIORITY); \
-	} while (0)
-
-/*
- * test programlari
- * MAKARNAX_TEST_dongu, "make run-%" komutunda dongu olarak kullanilir
- */
-#define MAKARNAX_TEST_dongu 1
-#define MAKARNAX_TEST_sleep 2
-#define MAKARNAX_TEST_hello 3
-#define MAKARNAX_TEST_dongu2 4
-#define MAKARNAX_TEST_fork 5
-#define MAKARNAX_TEST_signal 6
-#define MAKARNAX_TEST_keyboard 7
-#define MAKARNAX_TEST_fork2 8
-#define MAKARNAX_TEST_signal4 9
-#define MAKARNAX_TEST_signal5 10
-#define MAKARNAX_TEST_signal6 11
-#define MAKARNAX_TEST_ipc_shmtest 12
-#define MAKARNAX_TEST_ipc_shm 13
-#define MAKARNAX_TEST_ipc_shm2 14
-#define MAKARNAX_TEST_ipc_shm3 15
-#define MAKARNAX_TEST_ipc_sem 16
-#define MAKARNAX_TEST_ipc_shmfork 17
-#define MAKARNAX_TEST_stack 18
-#define MAKARNAX_TEST_brktest 19
-#define MAKARNAX_TEST_signal7 20
-#define MAKARNAX_TEST_signal2 21
-#define MAKARNAX_TEST_fs_openfile 22
-#define MAKARNAX_TEST_fs_readfile 23
 
 #endif /* TEST_PROGRAMS_H_ */

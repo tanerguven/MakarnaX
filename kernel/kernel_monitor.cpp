@@ -288,46 +288,32 @@ static int command_info(int argc, char **argv) {
 	return 0;
 }
 
-TestProgram user_programs[] = {
-	{ "yield", &USER_PROGRAM(yield), &USER_PROGRAM_END(yield) },
-	{ "hello", &USER_PROGRAM(hello), &USER_PROGRAM_END(hello) },
-	{ "divide_error", &USER_PROGRAM(divide_error), &USER_PROGRAM_END(divide_error) },
-	{ "forktest", &USER_PROGRAM(forktest), &USER_PROGRAM_END(forktest) },
-	{ "dongu", &USER_PROGRAM(dongu), &USER_PROGRAM_END(dongu) },
-	{ "sys_dongu", &USER_PROGRAM(sys_dongu), &USER_PROGRAM_END(sys_dongu) },
-	{ "signaltest", &USER_PROGRAM(signaltest), &USER_PROGRAM_END(signaltest) },
-	{ "ipctest", &USER_PROGRAM(ipctest), &USER_PROGRAM_END(ipctest) },
-	{ "kill", &USER_PROGRAM(kill), &USER_PROGRAM_END(kill) },
-	{ "fs", &USER_PROGRAM(fs), &USER_PROGRAM_END(fs) },
-};
-
-// FIXME: const
-size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);
-
 static int command_create(int argc, char **argv) {
+
 	if (argc > 1) {
-		for (uint32_t i = 0 ; i < nr_user_programs ; i++) {
-			if ( strcmp(user_programs[i].name, argv[1]) == 0) {
-				char program_args[100];
-				int k = 0;
-				for (int j = 1 ; j < argc ; j++) {
-					size_t len_argv = strlen(argv[j]);
-					strcpy(&program_args[k], argv[j]);
-					k+=len_argv;
-					program_args[k] = ' ';
-					k++;
-				}
-				program_args[k] = '\0';
-				task_create(user_programs[i].addr, program_args, DEFAULT_PRIORITY);
+		UserProgram *tp = user_program(argv[1]);
+		if (tp) {
+			char program_args[100];
+			int k = 0;
+			for (int j = 1 ; j < argc ; j++) {
+				size_t len_argv = strlen(argv[j]);
+				strcpy(&program_args[k], argv[j]);
+				k+=len_argv;
+				program_args[k] = ' ';
+				k++;
 			}
-		}
-	} else {
-		printf("run [program name] [program args]\n");
-		printf("programs:\n");
-		for (uint32_t i = 0 ; i < nr_user_programs ; i++) {
-			printf("    %s\n", user_programs[i].name);
+			program_args[k] = '\0';
+			task_create(tp->addr, program_args, DEFAULT_PRIORITY);
+			return 0;
 		}
 	}
+
+	printf("run [program name] [program args]\n");
+	printf("programs:\n");
+	for (uint32_t i = 0 ; i < nr_user_programs ; i++) {
+		printf("    %s\n", user_programs[i].name);
+	}
+
 	return 0;
 }
 

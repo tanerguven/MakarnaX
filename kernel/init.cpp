@@ -70,11 +70,9 @@ asmlink int main() {
 
 	init_vfs(init_task);
 
-#ifdef TEST
 	printf("teste baslamak icin bir tusa basin\n");
 	getchar();
 	test();
-#endif
 
 	run_first_task();
 
@@ -104,126 +102,73 @@ void __panic_assert(const char* file, int line, const char* d) {
 }
 
 
+/******************************
+ * Test programlari
+ ******************************/
+
+UserProgram user_programs[] = {
+	{ "yield", &USER_PROGRAM(yield), &USER_PROGRAM_END(yield) },
+	{ "hello", &USER_PROGRAM(hello), &USER_PROGRAM_END(hello) },
+	{ "divide_error", &USER_PROGRAM(divide_error), &USER_PROGRAM_END(divide_error) },
+	{ "forktest", &USER_PROGRAM(forktest), &USER_PROGRAM_END(forktest) },
+	{ "dongu", &USER_PROGRAM(dongu), &USER_PROGRAM_END(dongu) },
+	{ "sys_dongu", &USER_PROGRAM(sys_dongu), &USER_PROGRAM_END(sys_dongu) },
+	{ "signaltest", &USER_PROGRAM(signaltest), &USER_PROGRAM_END(signaltest) },
+	{ "ipctest", &USER_PROGRAM(ipctest), &USER_PROGRAM_END(ipctest) },
+	{ "processmemtest", &USER_PROGRAM(processmemtest),
+	  &USER_PROGRAM_END(processmemtest) },
+	{ "kill", &USER_PROGRAM(kill), &USER_PROGRAM_END(kill) },
+	{ "fs", &USER_PROGRAM(fs), &USER_PROGRAM_END(fs) },
+};
+// FIXME: const
+size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);
+
+UserProgram *user_program(const char *name) {
+	for (int i = 0 ; i < nr_user_programs ; i++) {
+		if ( strcmp(user_programs[i].name, name) == 0 )
+			return &user_programs[i];
+	}
+	return NULL;
+}
+
+/** init_programs dosyasini okuyup proses olusturur */
 void test() {
-#if TEST == MAKARNAX_TEST_dongu
-	/* dongu testi */
-	test_program(dongu, 0 30000);
-	test_program(dongu, 0 30000);
-	test_program(dongu, 0 30000);
-#endif
+	char init_programs[1000];
+	int size = (int)&_binary_init_programs_size;
+	char *lines[10];
+	int i_line = 1;
 
-#if TEST == MAKARNAX_TEST_sleep
-	/* dongu & sleep testi */
-	test_program(dongu, 1 100);
-	test_program(dongu, 1 100);
-#endif
+	memcpy(init_programs, &_binary_init_programs_start, size);
+	printf("init_programs:\n");
+	printf("%s\n",init_programs);
 
-#if TEST == MAKARNAX_TEST_hello
-	test_program(hello,);
-#endif
+	/* dosyayi satir satir ayir */
+	lines[0] = init_programs;
+	for (int i = 0 ; i < size ; i++) {
+		if (init_programs[i] == '\n') {
+			init_programs[i] = '\0';
+			if (i+1 < size) {
+				lines[i_line] = &init_programs[i+1];
+				i_line++;
+			}
+		}
+	}
 
-#if TEST == MAKARNAX_TEST_dongu2
-	/* sonsuz dongu 2 testi */
-	test_program(sys_dongu,);
-	test_program(dongu,);
-	test_program(dongu,);
-#endif
-
-#if TEST == MAKARNAX_TEST_fork
-	/* fork testi */
-	for (int i = 0 ; i < 120 ; i++)
-		test_program(forktest,test1);
-#endif
-
-#if TEST == MAKARNAX_TEST_signal
-	/* signal testi */
-	test_program(signaltest,test1);
-#endif
-
-#if TEST == MAKARNAX_TEST_signal2
-	test_program(signaltest,test2);
-#endif
-
-#if TEST == MAKARNAX_TEST_keyboard
-	/* klavye kesmesi testi */
-	test_program(signaltest,test3);
-	test_program(hello,);
-#endif
-
-#if TEST == MAKARNAX_TEST_fork2
-	/* wait testi */
-	test_program(forktest,test2);
-#endif
-
-#if TEST == MAKARNAX_TEST_signal4
-	/* pause testi */
-	test_program(signaltest,test4);
-#endif
-
-#if TEST == MAKARNAX_TEST_signal5
-	/* sleep - signal testi */
-	test_program(signaltest,test5);
-#endif
-
-#if TEST == MAKARNAX_TEST_signal6
-	/* pause - 3 signal testi */
-	test_program(signaltest,test6);
-#endif
-
-#if TEST == MAKARNAX_TEST_ipc_shmtest
-	/* ipc testi */
-	test_program(ipctest,shmtest);
-#endif
-
-#if TEST == MAKARNAX_TEST_ipc_shm
-	/* shared memory server - client */
-	test_program(ipctest,shmserver);
-	test_program(ipctest,shmclient);
-#endif
-
-#if TEST == MAKARNAX_TEST_ipc_shm2
-	/* ipc shared memory testi */
-	test_program(ipctest,shmserver2);
-	test_program(ipctest,shmclient2);
-#endif
-
-#if TEST == MAKARNAX_TEST_ipc_shm3
-	/* ipc semaphore - shared memory testi */
-	test_program(ipctest,shmserver3);
-	test_program(ipctest,shmclient3);
-#endif
-
-#if TEST == MAKARNAX_TEST_ipc_sem
-	/* ipc semaphore testi */
-	test_program(ipctest,semtest);
-#endif
-
-#if TEST == MAKARNAX_TEST_ipc_shmfork
-	/* shared memory fork */
-	test_program(ipctest,shmfork);
-#endif
-
-#if TEST == MAKARNAX_TEST_stack
-	/* stacktest */
-	test_program(processmemtest,stacktest);
-	test_program(processmemtest,stacklimit);
-#endif
-
-#if TEST == MAKARNAX_TEST_brktest
-	/* stacktest */
-	test_program(processmemtest,brktest);
-#endif
-
-#if TEST == MAKARNAX_TEST_signal7
-	test_program(signaltest,test7);
-#endif
-
-#if TEST == MAKARNAX_TEST_fs_openfile
-	test_program(fs,openfile);
-#endif
-
-#if TEST == MAKARNAX_TEST_fs_readfile
-	test_program(fs,readfile);
-#endif
+	/* her satir icin bir proses olustur */
+	for (int i = 0 ; i < i_line ; i++) {
+		char prog[50];
+		for (int j = 0 ; ; j++) {
+			prog[j] = lines[i][j];
+			if (lines[i][j] == ' ') {
+				prog[j] = '\0';
+				printf("prog: %s\n", prog);
+				printf("cmd: %s\n", lines[i]);
+				UserProgram *p = user_program(prog);
+				ASSERT(p != NULL);
+				task_create(p->addr, lines[i], DEFAULT_PRIORITY);
+				break;
+			}
+		}
+	}
 
 }

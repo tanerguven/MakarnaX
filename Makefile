@@ -33,10 +33,6 @@ endif
 #
 ######################################
 
-test-%:
-	rm -f kernel/init.o
-	$(MAKE) "DEFS=-DTEST=MAKARNAX_TEST_$*"
-
 all: rm_objs kernel
 
 debug:
@@ -47,7 +43,7 @@ rm_objs:
 
 kernel: dirs
 	mkdir -p bin
-	$(LD) -Tscripts/link.ld -o"bin/kernel" $(OBJS) $(LIBS) -b binary $(PROGRAMS)
+	$(LD) -Tscripts/link.ld -o"bin/kernel" $(OBJS) $(LIBS) -b binary $(PROGRAMS) init_programs
 	objdump -S bin/kernel > bin/kernel.asm
 
 user:
@@ -87,11 +83,3 @@ qemu: kernel #image
 
 qemu-gdb: kernel #image
 	$(QEMU) -kernel bin/kernel -serial mon:stdio -S -s
-
-run-%:
-	$(MAKE) test-$*
-	$(MAKE) qemu
-
-gdb-%:
-	$(MAKE) test-$*
-	$(MAKE) qemu-gdb
