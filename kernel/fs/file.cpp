@@ -19,9 +19,12 @@
 #include "../kernel.h"
 #include "vfs.h"
 
+// FIXME: path size & buf size
+
+/* open, opendir cagrilari */
 asmlink void sys_open() {
 	Trapframe *tf = task_curr->registers();
-	const char *filename = (const char*)user_to_kernel_check(get_param1(tf), 256, 0);
+	const char *path = (const char*)user_to_kernel_check(get_param1(tf), 256, 0);
 	// int flags = (int)get_param2(tf);
 	// int mode = (int)get_param3(tf);
 	DirEntry *file_dentry;
@@ -31,13 +34,13 @@ asmlink void sys_open() {
 	uint32_t eflags = eflags_read();
 	cli();
 
-	r = lookup(task_curr->pwd, filename, &file_dentry);
+	r = find_dir_entry(path, &file_dentry);
 	if (r < 0)
 	  return set_return(tf, -1); // FIXME: dosya yok
 
 	File *f = (File*)kmalloc(sizeof(File));
 	strcpy(f->path, "/");
-	strcpy(&f->path[1], filename);
+	strcpy(&f->path[1], path);
 	f->inode = file_dentry->inode;
 	f->fo = f->inode->op->default_file_ops;
 	f->fpos = 0;
@@ -52,10 +55,15 @@ asmlink void sys_open() {
 		}
 	}
 
+/*
+ * TODO: opendir durumu ?
+ */
+
 	eflags_load(eflags);
 	return set_return(tf, fd);
 }
 
+/* close, closedir cagrilari */
 void do_close(int fd) {
 	ASSERT(task_curr->files[fd] != NULL);
 	ASSERT(task_curr->files[fd]->inode->ref_count > 0);
@@ -106,12 +114,52 @@ asmlink void sys_readdir() {
 	// struct dirent *dirent = (struct dirent*)get_param2(tf);
 	// unsigned int count = get_param3(tf);
 
+	PANIC("readdir tamamlanmadi\n");
+
 	return set_return(tf, -1);
 }
 
+asmlink void sys_stat() {
+	Trapframe *tf = task_curr->registers();
+
+	PANIC("stat tamamlanmadi\n");
+
+	return set_return(tf, -1);
+}
+
+/* task_curr'in tum dosyalarini kapatir (task_free'de kullanim icin) */
 void task_curr_free_files() {
 	for (int i = 0 ; i < TASK_MAX_FILE_NR ; i++) {
 		if (task_curr->files[i])
 			do_close(i);
 	}
+}
+
+asmlink void sys_chdir() {
+	Trapframe *tf = task_curr->registers();
+	const char *path = (const char*)user_to_kernel_check(get_param1(tf), 256, 0);
+	int r;
+	DirEntry *dentry;
+
+	uint32_t eflags = eflags_read();
+	cli();
+
+	r = find_dir_entry(path, &dentry);
+	if (r < 0)
+		return set_return(tf, r);
+
+	task_curr->pwd = dentry;
+
+	eflags_load(eflags);
+	return set_return(tf, 0);
+}
+
+asmlink void sys_getcwd() {
+	Trapframe *tf = task_curr->registers();
+	char *buf = (char*)user_to_kernel_check(get_param1(tf), 256, 1);
+	int size = (int)get_param2(tf);
+
+	dir_entry_to_path(task_curr->pwd, buf, 256);
+
+	return set_return(tf, 0);
 }

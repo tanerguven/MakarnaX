@@ -10,6 +10,7 @@ PROGRAMS = \
 	signaltest.bin \
 	ipctest.bin \
 	divide_error.bin \
+	fs.bin \
 
 all: clean $(PROGRAMS)
 	rm -rf ../*.o
@@ -31,6 +32,9 @@ ipctest.bin: ../ipctest.o
 
 divide_error.bin: ../divide_error.o
 	gcc -o divide_error.bin ../divide_error.o $(LIBS)
+
+fs.bin: ../fs.o
+	gcc -o fs.bin ../fs.o $(LIBS)
 
 clean:
 	rm -f ../*.o *.bin

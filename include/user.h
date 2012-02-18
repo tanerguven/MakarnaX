@@ -31,10 +31,13 @@ extern void sys_dongu();
 /******************************
  * File System
  ******************************/
+struct stat;
 extern int open(const char *filename, int flags, int mode);
 extern int close(unsigned int fd);
 extern size_t read(unsigned int fd, char *buf, unsigned int count);
-extern int readdir(unsigned int fd, struct dirent *dirent, unsigned int count);
+extern int chdir(const char *path);
+extern char *getcwd(char *buf, size_t size);
+extern int stat(const char *path, struct stat *buf);
 
 /******************************
  * Shared Memory

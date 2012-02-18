@@ -109,9 +109,17 @@ asmlink int close(unsigned int fd) {
 }
 
 asmlink size_t read(unsigned int fd, char *buf, unsigned int count) {
-	return syscall(SYS_read, 0, fd, (uint32_t)buf, count, 0, 0);
+	return (size_t)syscall(SYS_read, 0, fd, (uint32_t)buf, count, 0, 0);
 }
 
-asmlink int readdir(unsigned int fd, struct dirent *dirent, unsigned int count) {
-	return syscall(SYS_readdir, 0, fd, (uint32_t)dirent, count, 0, 0);
+asmlink int chdir(const char *path) {
+	return (int)syscall(SYS_chdir, 0, (uint32_t)path, 0, 0, 0, 0);
+}
+
+asmlink char *getcwd(char *buf, size_t size) {
+	return (char*)syscall(SYS_getcwd, 0, (uint32_t)buf, size, 0, 0, 0);
+}
+
+asmlink int stat(const char *path, struct stat *buf) {
+	return (int)syscall(SYS_stat, 0, (uint32_t)path, (uint32_t)buf, 0, 0, 0);
 }

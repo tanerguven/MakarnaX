@@ -41,7 +41,13 @@ asmlink void sys_kill();
 asmlink void sys_signal();
 asmlink void sys_ipc();
 asmlink void sys_brk();
-
+asmlink void sys_open();
+asmlink void sys_close();
+asmlink void sys_read();
+asmlink void sys_readdir();
+asmlink void sys_chdir();
+asmlink void sys_getcwd();
+asmlink void sys_stat();
 
 asmlink void sys_cputs();
 asmlink void sys_cgetc();
@@ -50,11 +56,6 @@ asmlink void sys_wait();
 asmlink void sys_dongu();
 asmlink void sys_sleep();
 asmlink void sys_sbrk();
-
-asmlink void sys_open();
-asmlink void sys_close();
-asmlink void sys_read();
-asmlink void sys_readdir();
 
 /* */
 
@@ -70,7 +71,7 @@ void (*syscalls[])() = {
 	sys_nosys, /* 0 */
 	sys_exit, sys_fork, sys_read, sys_nosys, sys_open, /* 5 */
 	sys_close, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
-	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_chdir, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_getpid,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 
@@ -88,30 +89,50 @@ void (*syscalls[])() = {
 
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
-	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_readdir, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys, /* 100 */
 
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
-	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_stat, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_ipc, sys_nosys, sys_nosys, sys_nosys,
-	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys, /* 125 */
+
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys, /* 150 */
+
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys, /* 175 */
+
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_getcwd, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
+	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys, /* 200 */
 
 	sys_nosys,
 };
 
+#define N_SYSCALLS (sizeof(syscalls)/sizeof(syscalls[0]))
+
+
 void (*syscalls_2[])() = {
 	sys_nosys, /* 1000 */
 	sys_cputs, sys_cgetc, sys_yield, sys_wait, sys_dongu, /* 1005 */
-	sys_sleep, sys_sbrk, sys_readdir
+	sys_sleep, sys_sbrk
 };
 
 #define N_SYSCALLS_2 (sizeof(syscalls_2)/sizeof(syscalls_2[0]))
 
 asmlink void do_syscall(uint32_t no) {
-	if (no < sizeof(syscalls)) {
+	if (no < N_SYSCALLS) {
 		syscalls[no]();
 		return;
 	}

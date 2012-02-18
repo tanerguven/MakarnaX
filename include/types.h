@@ -16,4 +16,9 @@ typedef int key_t;
 
 #define asmlink extern "C"
 
+
+typedef int ino_t;
+typedef int off_t;
+typedef int dev_t;
+
 #endif /* TYPEDEFS_H */

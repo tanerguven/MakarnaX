@@ -51,3 +51,36 @@ int atoi(const char *s) {
 	}
 	return i;
 }
+
+/**
+ * / ile basliyorsa, buf[0] = "" olur
+ * sonda bulunan / ihmal edilir
+ * return degeri: buf'da bulunan eleman sayisi
+ */
+int parse_path(const char *path, char buf[][256], size_t count) {
+	int i, j = 0;
+	int i_ent = 0;
+
+	for (i = 0 ; path[i] != '\0' ; i++) {
+		switch (path[i]) {
+		case '/':
+			buf[i_ent][j] = '\0';
+			i_ent++;
+			j = 0;
+			if (i_ent >= count)
+				goto son;
+			break;
+		default:
+			buf[i_ent][j] = path[i];
+			j++;
+		}
+	}
+
+son:
+	/* sonu / ile bitmiyorsa */
+	if (j > 0) {
+		buf[i_ent][j] = '\0';
+		i_ent++;
+	}
+	return i_ent;
+}

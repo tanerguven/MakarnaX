@@ -92,5 +92,7 @@ struct inode_operations {
 
 
 extern int lookup(struct DirEntry *dir, const char *fn, struct DirEntry **dentry);
+extern int find_dir_entry(const char *path, struct DirEntry **dest);
+extern int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size);
 
 #endif /* _VFS_H_ */

@@ -1,11 +1,20 @@
 #ifdef _USER_PROGRAM
 #include <user.h>
+# else
+#include <unistd.h>
+#include <fcntl.h> // open
 #endif
 
 #include <stdio.h>
+#include <string.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 int openfile();
 int readfile();
+int test_readdir();
+int test_chdir();
+int test_stat();
 
 struct {
 	const char *name;
@@ -14,6 +23,9 @@ struct {
 } tests[] = {
 	{"openfile", "openfile", openfile},
 	{"readfile", "readfile", readfile},
+	{"readdir", "readdir", test_readdir},
+	{"chdir", "chdir", test_chdir},
+	{"stat", "stat", test_stat},
 };
 #define TEST_COUNT (sizeof(tests)/sizeof(tests[0]))
 
@@ -62,7 +74,7 @@ int readfile() {
 		return fd1;
 	printf("fd1: %d\n", fd1);
 
-	r = read(fd1, &buf, 10);
+	r = read(fd1, buf, 10);
 	printf("r %d\n", r);
 	printf("buf: %s\n", buf);
 
@@ -73,7 +85,7 @@ int readfile() {
 		return fd2;
 	printf("fd2: %d\n", fd2);
 
-	r = read(fd2, &buf, 10);
+	r = read(fd2, buf, 10);
 	printf("r %d\n", r);
 	printf("buf: %s\n", buf);
 
@@ -90,12 +102,106 @@ int readfile() {
 		return fd1;
 	printf("fd1: %d\n", fd1);
 
-	r = read(fd1, &buf, 10);
+	r = read(fd1, buf, 10);
 	printf("r %d\n", r);
 	printf("buf: %s\n", buf);
 
 	close(fd1);
 	close(fd2);
+
+	return 0;
+}
+
+int test_readdir() {
+	DIR *dir;;
+	struct dirent *dirent;
+
+	dir = opendir(".");
+
+	while((dirent = readdir(dir))) {
+		printf("%s\n",dirent->d_name);
+	}
+
+	closedir(dir);
+	return 0;
+}
+
+int test_chdir() {
+	int r;
+	char buf[256];
+
+	getcwd(buf, 256);
+	printf("cwd %s\n\n", buf);
+
+	printf("chdir dir1\n");
+	r = chdir("dir1");
+	if (r < 0) {
+		printf("r %d\n", r);
+		return -1;
+	}
+	getcwd(buf, 256);
+	printf("cwd %s\n\n", buf);
+
+	printf("chdir dir11\n");
+	r = chdir("dir11");
+	if (r < 0) {
+		printf("r %d\n", r);
+		return -1;
+	}
+	getcwd(buf, 256);
+	printf("cwd %s\n\n", buf);
+
+	printf("chdir .\n");
+	r = chdir(".");
+	if (r < 0) {
+		printf("r %d\n", r);
+		return -1;
+	}
+	getcwd(buf, 256);
+	printf("cwd %s\n\n", buf);
+
+	printf("chdir ..\n");
+	r = chdir("..");
+	if (r < 0) {
+		printf("r %d\n", r);
+		return -1;
+	}
+	getcwd(buf, 256);
+	printf("cwd %s\n\n", buf);
+
+	printf("chdir /dir1/dir11\n");
+	r = chdir("/dir1/dir11");
+	if (r < 0) {
+		printf("r %d\n", r);
+		return -1;
+	}
+	getcwd(buf, 256);
+	printf("cwd %s\n\n", buf);
+
+	printf("chdir /\n");
+	r = chdir("/");
+	if (r < 0) {
+		printf("r %d\n", r);
+		return -1;
+	}
+	getcwd(buf, 256);
+	printf("cwd %s\n", buf);
+
+	return 0;
+}
+
+int test_stat() {
+	int r;
+	struct stat s;
+
+	r = stat(".", &s);
+	if (r < 0)
+		return r;
+
+	printf("dev\t%d\n", (unsigned int)s.st_dev);
+	printf("ino\t%d\n", (unsigned int)s.st_ino);
+	printf("rdev\t%d\n", (unsigned int)s.st_rdev);
+	printf("size\t%d\n", (unsigned int)s.st_size);
 
 	return 0;
 }

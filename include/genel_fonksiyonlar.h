@@ -33,7 +33,6 @@ inline uint32_t isRounded(void *x) {
 
 #endif
 
-
 static inline char isClean(uint8_t* ptr, uint32_t size) {
 	uint32_t i;
 	for (i = 0 ; i < size ; i++) {
@@ -57,9 +56,12 @@ static inline char isSet(uint8_t* ptr, uint32_t size) {
 extern "C" {
 #endif
 
+// lib/genelfonksiyonlar.c
 extern uint32_t intToString(char *buf, unsigned int num, unsigned int base);
 extern uint32_t str_to_int(const char *s);
 extern int atoi(const char *s);
+extern int parse_path(const char *path, char buf[][256], int count);
+
 #ifdef __cplusplus
 }
 #endif

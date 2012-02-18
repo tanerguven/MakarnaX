@@ -31,12 +31,21 @@ int lookup(struct DirEntry *dir, const char *name, struct DirEntry **dentry) {
 	int r;
 	ASSERT(dentry != NULL);
 
-	/* root'da .. girilirse */
+	/* . */
+	if (name[0] == '.' && name[1] == '\0') {
+		*dentry = dir;
+		return 0;
+	}
+
+	/* .. */
 	if (name[0] == '.' && name[1] == '.' && name[2] == '\0') {
 		if (dir == task_curr->root) {
 			*dentry = dir;
-			return 0;
+		} else {
+			ASSERT(dir->parent);
+			*dentry = dir->parent;
 		}
+		return 0;
 	}
 
 	/* DirEntry cache icerisinde dosyayi ara */
@@ -67,12 +76,71 @@ int lookup(struct DirEntry *dir, const char *name, struct DirEntry **dentry) {
 	return 0;
 }
 
+int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size) {
+	struct DirEntry *dir_stack[100];
+	int i = 0; // dir_stack count
+	int j = 1; // buf count
+
+	while (dirent->parent != NULL) {
+		dir_stack[i] = dirent;
+		i++;
+		dirent = dirent->parent;
+	}
+
+	strcpy(buf, "/");
+
+	while ((--i > -1) && (size > 0)) {
+		int len = strlen(dir_stack[i]->name);
+		strncpy(&buf[j], dir_stack[i]->name, size-1);
+		size -= len+1;
+		j += len+1;
+		if (i > 0)
+			buf[j-1] = '/';
+		else
+			buf[j-1] = '\0';
+	}
+
+	return 0;
+}
+
+int find_dir_entry(const char *path, struct DirEntry **dirent) {
+	int i, r, count;
+	char buf[4][256];
+
+	struct DirEntry *curr, *next;
+
+/*
+ * TODO: bu fonksiyon cok fazla stack alani kullaniyor, baska bir fonksiyon
+ * gerekli. ilerlemeli olarak calisan bir fonksiyon yazilabilir
+ */
+	count = parse_path(path, buf, 4);
+
+	/* / ile basliyorsa */
+	if ( strcmp(buf[0], "") == 0 ) {
+		curr = task_curr->root;
+		i = 1;
+	} else {
+		curr = task_curr->pwd;
+		i = 0;
+	}
+
+	for (; i < count ; i++) {
+		r = lookup(curr, buf[i], &next);
+		if (r < 0)
+			return r;
+		curr = next;
+	}
+
+	*dirent = curr;
+	return r;
+}
+
 void init_vfs(Task* init_task) {
 	denemefs_init();
 	mount_root(init_task);
 }
 
-
+// TODO: bunu file.cpp'ye tasi
 struct File* dup_file(struct File *src) {
 	struct File *f = (struct File*)kmalloc(sizeof(struct File));
 	*f = *src;
