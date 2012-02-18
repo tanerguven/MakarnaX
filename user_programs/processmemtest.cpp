@@ -6,7 +6,7 @@ int stacktest();
 int stacklimit();
 int brktest();
 
-struct {
+struct tests {
 	const char *name;
 	const char *description;
 	int (*function)();
@@ -19,7 +19,7 @@ struct {
 #define TEST_COUNT (sizeof(tests)/sizeof(tests[0]))
 
 int main(int argc, char** argv) {
-	int i;
+	unsigned int i;
 
 	if (argc > 1) {
 		for (i = 0 ; i < TEST_COUNT ; i++) {
@@ -61,10 +61,10 @@ int brktest() {
 	start_brk = sbrk(0);
 	printf("brk = %08x\n", start_brk);
 
-	r = brk(start_brk - 1);
+	r = brk((char*)start_brk - 1);
 	printf("brk(start-1) return: %d\n", r);
 
-	r = brk(start_brk + 0x3000);
+	r = brk((char*)start_brk + 0x3000);
 	printf("brk(start+0x3000)  return: %d\n", r);
 
 	*((char*)start_brk+0x2000) = 'a';
@@ -72,7 +72,7 @@ int brktest() {
 	b = sbrk(0);
 	printf("brk = %08x\n", b);
 
-	r = brk(start_brk + 0x1000);
+	r = brk((char*)start_brk + 0x1000);
 	printf("brk(start+0x1000) return: %d\n", r);
 
 	*((char*)start_brk+0x800) = 'a';
@@ -80,4 +80,5 @@ int brktest() {
 	b = sbrk(0);
 	printf("brk = %08x\n", b);
 
+	return 0;
 }
