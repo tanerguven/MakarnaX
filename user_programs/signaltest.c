@@ -142,6 +142,8 @@ int test2() {
 
 		sleep(2);
 	}
+
+	return 0;
 }
 
 
@@ -333,6 +335,8 @@ int test6() {
 
 		sleep(3);
 	}
+
+	return 0;
 }
 
 /**********************************************
@@ -397,4 +401,6 @@ int test7() {
 		send_sig(SIGUSR1, pid);
 		sleep(100);
 	}
+
+	return 0;
 }

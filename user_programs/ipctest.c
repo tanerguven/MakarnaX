@@ -5,6 +5,7 @@
 
 #else
 
+#include <stdlib.h> // exit
 #include <unistd.h>
 #include <sys/shm.h>
 #include <semaphore.h>
@@ -64,11 +65,8 @@ int main(int argc, char** argv) {
 }
 
 int shmtest() {
-	key_t key;
 	int shmid;
 	char *shm;
-
-	key = 5000;
 
 	shmid = shmget(5000, 100, shmflg_server);
 	if (shmid < 0) {

@@ -2,6 +2,7 @@
 #include <user.h>
 #else
 #include <unistd.h>
+#include <stdlib.h> // exit
 #endif
 
 #include <stdio.h>
@@ -50,7 +51,6 @@ int test1() {
 	int pid;
 	int i = 10;
 	int status;
-	int w;
 
 	pid = fork();
 
@@ -62,7 +62,7 @@ int test1() {
 	if (pid > 0) {
 		printf("parent process calisiyor\n");
 		printf("child id: %d\n", pid);
-		w = wait(&status);
+		wait(&status);
 
 	} else if (pid == 0) {
 		printf("child process calisiyor\n");
@@ -117,4 +117,6 @@ int test2() {
 	}
 
 	printf("%d, sonlaniyor\n", getpid());
+
+	return 0;
 }
