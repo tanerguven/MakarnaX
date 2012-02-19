@@ -178,8 +178,8 @@ int test_chdir() {
 	getcwd(buf, 256);
 	printf("cwd %s\n\n", buf);
 
-	printf("chdir /\n");
-	r = chdir("/");
+	printf("chdir //\n");
+	r = chdir("//");
 	if (r < 0) {
 		printf("r %d\n", r);
 		return -1;

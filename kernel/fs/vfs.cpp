@@ -104,32 +104,25 @@ int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size) {
 }
 
 int find_dir_entry(const char *path, struct DirEntry **dirent) {
-	int i, r, count;
-	char buf[4][256];
+	int i = 0, r;
+	char buf[256];
 
 	struct DirEntry *curr, *next;
 
-/*
- * TODO: bu fonksiyon cok fazla stack alani kullaniyor, baska bir fonksiyon
- * gerekli. ilerlemeli olarak calisan bir fonksiyon yazilabilir
- */
-	count = parse_path(path, buf, 4);
-
-	/* / ile basliyorsa */
-	if ( strcmp(buf[0], "") == 0 ) {
+	if (path[0] == '/')
 		curr = task_curr->root;
-		i = 1;
-	} else {
+	else
 		curr = task_curr->pwd;
-		i = 0;
-	}
 
-	for (; i < count ; i++) {
-		r = lookup(curr, buf[i], &next);
+	do {
+		i = parse_path_i(path, i, buf);
+		if (buf[0] == '\0')
+			continue;
+		r = lookup(curr, buf, &next);
 		if (r < 0)
 			return r;
 		curr = next;
-	}
+	} while (i > 0);
 
 	*dirent = curr;
 	return r;

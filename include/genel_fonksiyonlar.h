@@ -51,6 +51,29 @@ static inline char isSet(uint8_t* ptr, uint32_t size) {
 	return 1;
 }
 
+/**
+ * // gibi durumlarda buf = "" olabilir
+ * @return path'de kalinan yer
+ */
+inline int parse_path_i(const char *path, int i, char buf[256]) {
+	int j = 0;
+
+	while (path[i] != '\0') {
+		/* basta olmayan / yerine \0 */
+		if ( j > 0 && path[i] == '/' ) {
+			buf[j] = '\0';
+			return i+1;
+		}
+		/* bastaki /'lari yoksay */
+		if (path[i] != '/') {
+			buf[j] = path[i];
+			j++;
+		}
+		i++;
+	}
+	buf[j] = '\0';
+	return 0;
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +83,6 @@ extern "C" {
 extern uint32_t intToString(char *buf, unsigned int num, unsigned int base);
 extern uint32_t str_to_int(const char *s);
 extern int atoi(const char *s);
-extern int parse_path(const char *path, char buf[][256], int count);
 
 #ifdef __cplusplus
 }
