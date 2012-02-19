@@ -136,21 +136,21 @@ void test() {
 	char init_programs[1000];
 	int size = (int)&_binary_init_programs_size;
 	char *lines[10];
-	int i_line = 1;
+	int i_line = 0;
 
 	memcpy(init_programs, &_binary_init_programs_start, size);
+
 	printf("init_programs:\n");
-	printf("%s\n",init_programs);
 
 	/* dosyayi satir satir ayir */
 	lines[0] = init_programs;
-	for (int i = 0 ; i < size ; i++) {
-		if (init_programs[i] == '\n') {
+	for (int i = 0 ; i <= size ; i++) {
+		if ( (init_programs[i] == '\n') || (i == size) ) {
 			init_programs[i] = '\0';
-			if (i+1 < size) {
+			printf("- %s\n", lines[i_line]);
+			i_line++;
+			if (i != size)
 				lines[i_line] = &init_programs[i+1];
-				i_line++;
-			}
 		}
 	}
 
