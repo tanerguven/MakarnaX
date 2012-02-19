@@ -21,6 +21,9 @@
 #include <types.h>
 #include <wmc/list.h>
 
+#define MAX_DIR_ENTRY_SIZE 256
+#define MAX_PATH_SIZE 1536
+
 struct SuperBlock {
 	int dev;
 	int fs_type;
@@ -53,7 +56,7 @@ struct DirEntry {
 
 	int mounted;
 	struct inode *inode;
-	char name[256];
+	char name[MAX_DIR_ENTRY_SIZE];
 
 	struct DirEntry * parent;
 	Subdirs subdirs;
@@ -72,7 +75,7 @@ struct DirEntry {
 };
 
 struct File {
-	char path[1536];
+	char path[MAX_PATH_SIZE];
 	struct File_operations *fo;
 	struct inode *inode;
 	int fpos;

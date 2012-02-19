@@ -20,12 +20,13 @@
 #include "vfs.h"
 #include <sys/stat.h>
 
-// FIXME: path size & buf size
+// FIXME: path size
 
 /* open, opendir cagrilari */
 asmlink void sys_open() {
 	Trapframe *tf = task_curr->registers();
-	const char *path = (const char*)user_to_kernel_check(get_param1(tf), 256, 0);
+	const char *path = (const char*)
+		user_to_kernel_check(get_param1(tf), MAX_PATH_SIZE, 0);
 	// int flags = (int)get_param2(tf);
 	// int mode = (int)get_param3(tf);
 	DirEntry *file_dentry;
@@ -96,8 +97,8 @@ asmlink void sys_close() {
 asmlink void sys_read() {
 	Trapframe *tf = task_curr->registers();
 	unsigned int fd = get_param1(tf);
-	char *buf = (char*)user_to_kernel_check(get_param2(tf), 256, 1);
 	unsigned int count = get_param3(tf);
+	char *buf = (char*)user_to_kernel_check(get_param2(tf), count, 1);
 	size_t r;
 
 	r = task_curr->files[fd]->fo->read(task_curr->files[fd], buf, count);
@@ -122,7 +123,7 @@ asmlink void sys_readdir() {
 
 asmlink void sys_stat() {
 	Trapframe *tf = task_curr->registers();
-	char *path = (char*)user_to_kernel_check(get_param1(tf), 256, 1);
+	char *path = (char*)user_to_kernel_check(get_param1(tf), MAX_PATH_SIZE, 1);
 	struct stat* stat = (struct stat*)
 		user_to_kernel_check(get_param2(tf),sizeof(struct stat), 1);
 	struct DirEntry *dentry;
@@ -143,6 +144,13 @@ asmlink void sys_stat() {
 	return set_return(tf, 0);
 }
 
+struct File* dup_file(struct File *src) {
+	struct File *f = (struct File*)kmalloc(sizeof(struct File));
+	*f = *src;
+	f->inode->ref_count++;
+	return f;
+}
+
 /* task_curr'in tum dosyalarini kapatir (task_free'de kullanim icin) */
 void task_curr_free_files() {
 	for (int i = 0 ; i < TASK_MAX_FILE_NR ; i++) {
@@ -153,7 +161,8 @@ void task_curr_free_files() {
 
 asmlink void sys_chdir() {
 	Trapframe *tf = task_curr->registers();
-	const char *path = (const char*)user_to_kernel_check(get_param1(tf), 256, 0);
+	const char *path = (const char*)
+		user_to_kernel_check(get_param1(tf), MAX_PATH_SIZE, 0);
 	int r;
 	DirEntry *dentry;
 
@@ -172,10 +181,10 @@ asmlink void sys_chdir() {
 
 asmlink void sys_getcwd() {
 	Trapframe *tf = task_curr->registers();
-	char *buf = (char*)user_to_kernel_check(get_param1(tf), 256, 1);
 	int size = (int)get_param2(tf);
+	char *buf = (char*)user_to_kernel_check(get_param1(tf), size, 1);
 
-	dir_entry_to_path(task_curr->pwd, buf, 256);
+	dir_entry_to_path(task_curr->pwd, buf, size);
 
 	return set_return(tf, 0);
 }

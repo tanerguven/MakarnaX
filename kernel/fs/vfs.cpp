@@ -105,7 +105,7 @@ int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size) {
 
 int find_dir_entry(const char *path, struct DirEntry **dirent) {
 	int i = 0, r;
-	char buf[256];
+	char buf[MAX_DIR_ENTRY_SIZE];
 
 	struct DirEntry *curr, *next;
 
@@ -131,12 +131,4 @@ int find_dir_entry(const char *path, struct DirEntry **dirent) {
 void init_vfs(Task* init_task) {
 	denemefs_init();
 	mount_root(init_task);
-}
-
-// TODO: bunu file.cpp'ye tasi
-struct File* dup_file(struct File *src) {
-	struct File *f = (struct File*)kmalloc(sizeof(struct File));
-	*f = *src;
-	f->inode->ref_count++;
-	return f;
 }
