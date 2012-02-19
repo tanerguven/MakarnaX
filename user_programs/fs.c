@@ -194,14 +194,26 @@ int test_stat() {
 	int r;
 	struct stat s;
 
-	r = stat(".", &s);
+	r = stat("/", &s);
 	if (r < 0)
 		return r;
 
+	printf("/\n");
 	printf("dev\t%d\n", (unsigned int)s.st_dev);
 	printf("ino\t%d\n", (unsigned int)s.st_ino);
 	printf("rdev\t%d\n", (unsigned int)s.st_rdev);
 	printf("size\t%d\n", (unsigned int)s.st_size);
+	printf("\n");
+
+	r = stat("/dosya1", &s);
+	if (r < 0)
+		return r;
+	printf("/dosya1\n");
+	printf("dev\t%d\n", (unsigned int)s.st_dev);
+	printf("ino\t%d\n", (unsigned int)s.st_ino);
+	printf("rdev\t%d\n", (unsigned int)s.st_rdev);
+	printf("size\t%d\n", (unsigned int)s.st_size);
+	printf("\n");
 
 	return 0;
 }

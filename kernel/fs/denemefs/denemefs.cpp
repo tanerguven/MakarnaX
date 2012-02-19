@@ -33,11 +33,12 @@ static struct inode_operations denemefs_inode_op = {
  *   (yield, hello, dongu vb.)
  */
 void denemefs_init() {
-	int i;
+	unsigned int i;
 	int n_file = 5;
 
 	di[0].ft = Deneme_inode::FT_DIR;
 	di[0].data = kmalloc(sizeof(struct Deneme_subdentry));
+	di[0].size = sizeof(struct Deneme_subdentry);
 
 	di[1].ft = Deneme_inode::FT_FILE;
 	di[1].data = (void*)dosya1;
@@ -49,11 +50,13 @@ void denemefs_init() {
 
 	di[3].ft = Deneme_inode::FT_DIR;
 	di[3].data = kmalloc(sizeof(struct Deneme_subdentry));
+	di[3].size = sizeof(struct Deneme_subdentry);
 	Deneme_subdentry *sd_3 = (Deneme_subdentry*)di[3].data;
 	sd_3->n = 0;
 
 	di[4].ft = Deneme_inode::FT_DIR;
 	di[4].data = kmalloc(sizeof(struct Deneme_subdentry));
+	di[4].size = sizeof(struct Deneme_subdentry);
 	Deneme_subdentry *sd_4 = (Deneme_subdentry*)di[4].data;
 	sd_4->n = 0;
 	/* sd_4'u sd_3 altina ekle */
@@ -96,7 +99,7 @@ int denemefs_read_super(struct SuperBlock* sb) {
 	strcpy(sb->root->name, "");
 
 	sb->root->inode = (struct inode*)kmalloc(sizeof(struct inode));
-	sb->root->inode->init(0, sb, &denemefs_inode_op);
+	sb->root->inode->init(0, sb, &denemefs_inode_op, di[0].size);
 
 	return 0;
 }
@@ -111,7 +114,8 @@ int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest)
 	Deneme_subdentry *sd = (Deneme_subdentry*)inode->data;
 	for (int i = 0 ; i < sd->n ; i++) {
 		if ( strcmp(sd->name[i], name) == 0) {
-			i_dest->init(sd->no[i], i_dir->superblock, &denemefs_inode_op);
+			i_dest->init(sd->no[i], i_dir->superblock, &denemefs_inode_op,
+				di[sd->no[i]].size);
 			return 0;
 		}
 	}
@@ -121,7 +125,7 @@ int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest)
 
 uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
 	struct Deneme_inode *in = inode_to_deneme(f->inode);
-	int i;
+	unsigned int i;
 
 	if (in->ft != Deneme_inode::FT_FILE) {
 		PANIC("tanimsiz durum");

@@ -18,6 +18,7 @@
 #include "../task.h"
 #include "../kernel.h"
 #include "vfs.h"
+#include <sys/stat.h>
 
 // FIXME: path size & buf size
 
@@ -121,10 +122,25 @@ asmlink void sys_readdir() {
 
 asmlink void sys_stat() {
 	Trapframe *tf = task_curr->registers();
+	char *path = (char*)user_to_kernel_check(get_param1(tf), 256, 1);
+	struct stat* stat = (struct stat*)
+		user_to_kernel_check(get_param2(tf),sizeof(struct stat), 1);
+	struct DirEntry *dentry;
+	int r;
+	uint32_t eflags = eflags_read();
+	cli();
 
-	PANIC("stat tamamlanmadi\n");
+	r = find_dir_entry(path, &dentry);
+	if (r < 0)
+		return set_return(tf, r);
 
-	return set_return(tf, -1);
+	stat->st_dev = 123;
+	stat->st_ino = dentry->inode->ino;
+	stat->st_rdev = 0;
+	stat->st_size =  dentry->inode->size;
+
+	eflags_load(eflags);
+	return set_return(tf, 0);
 }
 
 /* task_curr'in tum dosyalarini kapatir (task_free'de kullanim icin) */

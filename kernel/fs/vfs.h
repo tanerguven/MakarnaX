@@ -31,13 +31,16 @@ struct inode {
 	uint32_t ino;
 	SuperBlock *superblock;
 	int ref_count;
+	uint32_t size;
 	struct inode_operations *op;
 
-	inline void init(uint32_t ino, SuperBlock *sb, struct inode_operations *op) {
+	inline void init(uint32_t ino, SuperBlock *sb, struct inode_operations *op,
+					 uint32_t size) {
 		this->ino = ino;
 		this->superblock = sb;
 		this->ref_count = 0;
 		this->op = op;
+		this->size = size;
 	}
 };
 
