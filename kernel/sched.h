@@ -32,22 +32,21 @@ extern void schedule();
 extern TaskList_t __task_runnable_queue[41];
 
 inline void add_to_runnable_list(Task* t) {
-	uint32_t eflags = eflags_read();
-	cli();
+	ASSERT(!(eflags_read() & FL_IF));
+
 	ASSERT(t->state == Task::State_running);
 	ASSERT(t->list_node.is_free());
 	ASSERT( __task_runnable_queue[t->priority].push_back(&t->list_node) );
-	eflags_load(eflags);
 }
 
 inline void remove_from_runnable_list(Task* t) {
-	uint32_t eflags = eflags_read();
-	cli();
+	ASSERT(!(eflags_read() & FL_IF));
+
 	ASSERT(t->list_node.__list == &__task_runnable_queue[t->priority]);
 	ASSERT(t->state == Task::State_running);
 	ASSERT( __task_runnable_queue[t->priority].erase(&t->list_node)
 			!= __task_runnable_queue[t->priority].error());
-	eflags_load(eflags);
+	ASSERT(t->list_node.is_free());
 }
 
 #endif /* SCHED_H_ */

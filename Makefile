@@ -63,7 +63,7 @@ clean:
 	do \
 		cd $$p; make clean; cd ..; \
 	done
-	rm -f bin/kernel bin/mnt/kernel bin/kernel.asm;
+	rm -f bin/kernel bin/kernel.asm;
 
 kclean:
 	cd kernel; make clean;

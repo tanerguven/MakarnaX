@@ -146,10 +146,13 @@ asmlink void sys_pause() {
 		return;
 
 	Trapframe *tf = task_curr->registers();
+	uint32_t eflags = eflags_read();
 
+	cli();
 	remove_from_runnable_list(task_curr);
-
 	task_curr->state = Task::State_interruptible;
+	eflags_load(eflags);
+
 	/*
 	 * pause fonksiyonu sonlandiginda -1 degeri dondur:
 	 * http://www.kernel.org/doc/man-pages/online/pages/man2/pause.2.html

@@ -73,6 +73,7 @@ void denemefs_init() {
 	strcpy(sd->name[2], "dir1");
 	sd->n = 3;
 
+	/* kullanici programlarini dosya sistemine ekle */
 	for (i = 0 ; i < nr_user_programs ; i++) {
 		di[n_file].ft = Deneme_inode::FT_FILE;
 
@@ -84,6 +85,15 @@ void denemefs_init() {
 		n_file++;
 		sd->n++;
 	}
+
+	/* init_programs dosyasini ekle */
+	di[n_file].ft = Deneme_inode::FT_FILE;
+	di[n_file].data = &_binary_init_programs_start;
+	di[n_file].size = (uint32_t)&_binary_init_programs_size;
+	sd->no[sd->n] = n_file;
+	strcpy(sd->name[sd->n], "init_script");
+	n_file++;
+	sd->n++;
 
 	printf(">> denemefs init OK\n");
 	printf(">> denemefs: %d dir and %d file\n", 1, n_file-1);
@@ -128,7 +138,7 @@ uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
 	unsigned int i;
 
 	if (in->ft != Deneme_inode::FT_FILE) {
-		PANIC("tanimsiz durum");
+		// PANIC("tanimsiz durum");
 		return -1;
 	}
 
@@ -141,11 +151,11 @@ uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
 }
 
 int denemefs_open(struct File *f) {
-	printf("denemefs_open ino %d\n", f->inode->ino);
+	// printf("denemefs_open ino %d\n", f->inode->ino);
 	return 0;
 }
 
 int denemefs_release(struct File *f) {
-	printf("denemefs_release\n");
+	// printf("denemefs_release\n");
 	return 0;
 }

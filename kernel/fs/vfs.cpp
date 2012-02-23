@@ -100,7 +100,7 @@ int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size) {
 			buf[j-1] = '\0';
 	}
 
-	return 0;
+	return j;
 }
 
 int find_dir_entry(const char *path, struct DirEntry **dirent) {
