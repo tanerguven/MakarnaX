@@ -11,6 +11,7 @@ typedef unsigned char  uint8_t;
 typedef          char  int8_t;
 
 typedef char* ptr_t;
+typedef uint32_t addr_t;
 
 typedef int key_t;
 

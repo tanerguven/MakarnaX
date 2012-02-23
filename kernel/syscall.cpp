@@ -31,23 +31,23 @@
 extern TaskList_t console_input_list;
 //
 
-/* */
 asmlink void sys_exit();
 asmlink void sys_fork();
+asmlink void sys_read();
+asmlink void sys_open();
+asmlink void sys_close();
+asmlink void sys_execve();
+asmlink void sys_chdir();
 asmlink void sys_getpid();
 asmlink void sys_alarm();
 asmlink void sys_pause();
 asmlink void sys_kill();
-asmlink void sys_signal();
-asmlink void sys_ipc();
 asmlink void sys_brk();
-asmlink void sys_open();
-asmlink void sys_close();
-asmlink void sys_read();
+asmlink void sys_signal();
 asmlink void sys_readdir();
-asmlink void sys_chdir();
-asmlink void sys_getcwd();
 asmlink void sys_stat();
+asmlink void sys_ipc();
+asmlink void sys_getcwd();
 
 asmlink void sys_cputs();
 asmlink void sys_cgetc();
@@ -56,8 +56,6 @@ asmlink void sys_wait();
 asmlink void sys_dongu();
 asmlink void sys_sleep();
 asmlink void sys_sbrk();
-
-/* */
 
 void sys_nosys() {
 	Trapframe *tf = task_curr->registers();
@@ -71,7 +69,7 @@ void (*syscalls[])() = {
 	sys_nosys, /* 0 */
 	sys_exit, sys_fork, sys_read, sys_nosys, sys_open, /* 5 */
 	sys_close, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
-	sys_nosys, sys_chdir, sys_nosys, sys_nosys, sys_nosys,
+	sys_execve, sys_chdir, sys_nosys, sys_nosys, sys_nosys,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_getpid,
 	sys_nosys, sys_nosys, sys_nosys, sys_nosys, sys_nosys,
 

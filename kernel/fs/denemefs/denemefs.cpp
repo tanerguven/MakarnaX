@@ -103,7 +103,7 @@ int denemefs_read_super(struct SuperBlock* sb) {
 	ASSERT(sb->dev == 123);
 	ASSERT(sb->fs_type == 123);
 
-	sb->root = (struct DirEntry*)kmalloc(sizeof(DirEntry*));
+	sb->root = (struct DirEntry*)kmalloc(sizeof(DirEntry));
 	sb->root->init();
 	sb->root->mounted = 1;
 	strcpy(sb->root->name, "");

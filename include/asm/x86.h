@@ -177,6 +177,13 @@ static inline void sti() {
 	asm("sti");
 }
 
+/*
+ * FIXME: gecici cozum, eklendigi fonksiyon calismandan once registerlarin
+ * kaydedilmesi icin
+ */
+#define CLOBBERED_REGISTERS_ALL() do {									\
+	asm volatile("" ::: "eax", "ebx", "ecx", "edx", "edi", "esi", "ebp", "esp");\
+	} while (0)
 
 /**********************************************
  * bit array operations

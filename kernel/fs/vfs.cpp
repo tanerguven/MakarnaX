@@ -23,7 +23,7 @@
 #include "../kernel.h"
 
 extern void denemefs_init();
-extern void mount_root(struct Task*);
+extern DirEntry* mount_root();
 
 set_list_offset_2(DirEntry, Subdirs, node_subdirs);
 
@@ -128,7 +128,7 @@ int find_dir_entry(const char *path, struct DirEntry **dirent) {
 	return r;
 }
 
-void init_vfs(Task* init_task) {
+DirEntry* init_vfs() {
 	denemefs_init();
-	mount_root(init_task);
+	return mount_root();
 }

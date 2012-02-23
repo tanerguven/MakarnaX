@@ -43,7 +43,8 @@ start:
 		mov   %eax, _multiboot_magic
 
 		/* Initialize the stack pointer. */
-		movl    $(__boot_stack + STACK_SIZE), %esp
+		movl    $(__boot_stack + STACK_SIZE - 0x200), %esp
+		// 0x200 -> stackin ustunden trapframe'nin sigabilecegi bir bosluk
 
 		/* Reset EFLAGS. */
 		pushl   $0

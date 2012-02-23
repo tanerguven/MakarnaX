@@ -1,1 +1,3 @@
-fs stat
+fs readfile
+hello
+forktest test1

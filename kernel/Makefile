@@ -28,6 +28,7 @@ OBJS = \
 	fs/superblock.o\
 	fs/file.o\
 	fs/denemefs/denemefs.o\
+	fs/exec.o\
 
 all: $(OBJS)
 	$(LD) -r -o kernel.O $(OBJS)

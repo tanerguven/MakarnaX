@@ -83,6 +83,7 @@ extern "C" {
 extern uint32_t intToString(char *buf, unsigned int num, unsigned int base);
 extern uint32_t str_to_int(const char *s);
 extern int atoi(const char *s);
+extern void parse_cmd(char *cmd, int *argc, char *argv[11]);
 
 #ifdef __cplusplus
 }

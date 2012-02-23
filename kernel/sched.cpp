@@ -58,6 +58,8 @@ Task* find_runnable_task() {
 	Task *task_next = NULL;
 	TaskList_t *first_priority_level;
 
+	ASSERT(!(eflags_read() & FL_IF));
+
 	/* process olan en yuksek oncelikli listeyi bul */
 	first_priority_level = NULL;
 	for (int i = 40 ; i > 0 ; i--) {
@@ -68,13 +70,15 @@ Task* find_runnable_task() {
 	}
 
 	if (first_priority_level) {
+		bool b;
 		/* runnable listesinden task bul ve zaman ekle */
 		task_next = first_priority_level->front();
-		first_priority_level->pop_front();
-		first_priority_level->push_back(&task_next->list_node);
+		b = first_priority_level->pop_front();
+		ASSERT( b );
+		b = first_priority_level->push_back(&task_next->list_node);
+		ASSERT( b );
 
 		task_next->counter = task_next->priority;
-
 		ASSERT(task_next->state == Task::State_running);
 	}
 
@@ -108,19 +112,8 @@ void schedule() {
 			break;
 
 		} else {
-			/* kuyruklarin tamami bossa (islemciyi bekleyen proses yoksa) */
-			Task *t = task_curr;
-			if (task_curr)
-				pgdir_curr = &task_curr->pgdir;
-			/* FIXME: task_curr = NULL, optimizasyonu engellemek icin memset */
-			memset(&task_curr, 0, sizeof(Task*));
-
-			/* kesme gelene kadar bekle */
-			sti();
-			asm("hlt");
-			cli();
-			task_curr = t;
-			memset(&pgdir_curr, 0, sizeof(&pgdir_curr));
+			PANIC("burasi artik yok. kernel task beklemeye gecemez.\n"
+				  "runnable kuyrugu bos olmamali");
 		}
 
 	} while (1);

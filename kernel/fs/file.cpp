@@ -22,6 +22,43 @@
 
 // FIXME: path size
 
+int do_open(File **f, const char *path) {
+	DirEntry *file_dentry;
+	int r;
+	File *file;
+
+	ASSERT(!(eflags_read() & FL_IF));
+
+	r = find_dir_entry(path, &file_dentry);
+	if (r < 0)
+		return r;
+
+	file = (File*)kmalloc(sizeof(File));
+
+	strcpy(file->path, "/");
+	strcpy(&file->path[1], path);
+	file->inode = file_dentry->inode;
+	file->fo = file->inode->op->default_file_ops;
+	file->fpos = 0;
+	file->fo->open(file);
+
+	// FIXME: --
+	file->inode->ref_count++;
+
+	*f = file;
+	return r;
+}
+
+void do_close(File *f) {
+	ASSERT(f->inode->ref_count > 0);
+
+	// FIXME: --
+	f->inode->ref_count--;
+	f->fo->release(f);
+
+	kfree(f);
+}
+
 /* open, opendir cagrilari */
 asmlink void sys_open() {
 	Trapframe *tf = task_curr->registers();
@@ -29,24 +66,16 @@ asmlink void sys_open() {
 		user_to_kernel_check(get_param1(tf), MAX_PATH_SIZE, 0);
 	// int flags = (int)get_param2(tf);
 	// int mode = (int)get_param3(tf);
-	DirEntry *file_dentry;
 	int fd;
 	int r;
+	File *f;
 
 	uint32_t eflags = eflags_read();
 	cli();
 
-	r = find_dir_entry(path, &file_dentry);
+	r = do_open(&f, path);
 	if (r < 0)
-	  return set_return(tf, -1); // FIXME: dosya yok
-
-	File *f = (File*)kmalloc(sizeof(File));
-	strcpy(f->path, "/");
-	strcpy(&f->path[1], path);
-	f->inode = file_dentry->inode;
-	f->fo = f->inode->op->default_file_ops;
-	f->fpos = 0;
-	f->fo->open(f);
+		return set_return(tf, r);
 
 	for (fd = 0 ; fd < TASK_MAX_FILE_NR ; fd++) {
 		if (task_curr->files[fd] == NULL) {
@@ -57,25 +86,15 @@ asmlink void sys_open() {
 		}
 	}
 
+	if (fd == TASK_MAX_FILE_NR)
+		PANIC("FIXME");
+
 /*
  * TODO: opendir durumu ?
  */
 
 	eflags_load(eflags);
 	return set_return(tf, fd);
-}
-
-/* close, closedir cagrilari */
-void do_close(int fd) {
-	ASSERT(task_curr->files[fd] != NULL);
-	ASSERT(task_curr->files[fd]->inode->ref_count > 0);
-
-	// FIXME: --
-	task_curr->files[fd]->inode->ref_count--;
-	task_curr->files[fd]->fo->release(task_curr->files[fd]);
-
-	kfree(task_curr->files[fd]);
-	task_curr->files[fd] = NULL;
 }
 
 asmlink void sys_close() {
@@ -88,10 +107,22 @@ asmlink void sys_close() {
 	if (task_curr->files[fd] == NULL)
 		return set_return(tf, -1);
 
-	do_close(fd);
+	do_close(task_curr->files[fd]);
+	task_curr->files[fd] = NULL;
 
 	eflags_load(eflags);
 	return set_return(tf, 0);
+}
+
+int do_read(File *f, char *buf, unsigned int count) {
+	int r;
+
+	r = f->fo->read(f, buf, count);
+	if (r < 0)
+		return r;
+
+	f->fpos += r;
+	return r;
 }
 
 asmlink void sys_read() {
@@ -154,8 +185,10 @@ struct File* dup_file(struct File *src) {
 /* task_curr'in tum dosyalarini kapatir (task_free'de kullanim icin) */
 void task_curr_free_files() {
 	for (int i = 0 ; i < TASK_MAX_FILE_NR ; i++) {
-		if (task_curr->files[i])
-			do_close(i);
+		if (task_curr->files[i]) {
+			do_close(task_curr->files[i]);
+			task_curr->files[i] = NULL;
+		}
 	}
 }
 

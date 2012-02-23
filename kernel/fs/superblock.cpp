@@ -19,7 +19,6 @@
 
 #include <string.h>
 #include "../kernel.h"
-#include "../task.h"
 
 #include "denemefs/denemefs.h"
 
@@ -27,7 +26,7 @@
 
 static struct SuperBlock superblocks[NR_SUPERBLOCKS];
 
-void mount_root(Task *init_task) {
+DirEntry* mount_root() {
 
 	memset(superblocks, 0, sizeof(superblocks));
 	superblocks[0].dev = 123;
@@ -35,7 +34,7 @@ void mount_root(Task *init_task) {
 
 	denemefs_read_super(&superblocks[0]);
 
-	init_task->root = init_task->pwd = superblocks[0].root;
-
 	printf(">> mount_root OK\n");
+
+	return superblocks[0].root;
 }

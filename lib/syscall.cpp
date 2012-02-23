@@ -123,3 +123,7 @@ asmlink char *getcwd(char *buf, size_t size) {
 asmlink int stat(const char *path, struct stat *buf) {
 	return (int)syscall(SYS_stat, 0, (uint32_t)path, (uint32_t)buf, 0, 0, 0);
 }
+
+asmlink int execve(const char *path, const char **argv) {
+	return (int)syscall(SYS_execve, 0, (uint32_t)path, (uint32_t)argv, 0, 0, 0);
+}

@@ -27,21 +27,26 @@ extern void init_console();
 extern int memory_init();
 extern void init_traps();
 extern void task_init();
-extern struct Task* task_create(void* program_addr, const char *cmd, int priority);
 extern void schedule_init();
 extern void run_first_task();
 extern void start_kernel_monitor();
 extern void picirq_init();
 extern void timer_init();
 extern void ipc_init();
-extern void init_vfs(struct Task *init_task);
+extern struct DirEntry* init_vfs();
+extern void init_kernel_task(struct DirEntry* root);
 
 extern uint32_t free_memory_start;
 
-void test();
+extern int do_fork();
+extern int do_execve(const char *path, const char **argv);
+
+void kernel_task();
+void init_task();
 
 asmlink int main() {
-	struct Task* init_task;
+	struct DirEntry *root_dir;
+	int r;
 
 	init_console();
 	printf("\n");
@@ -66,17 +71,41 @@ asmlink int main() {
 
 	free_memory_start = mem_free();
 
-	init_task = task_create(&USER_PROGRAM(init), "init", 1);
+	root_dir = init_vfs();
 
-	init_vfs(init_task);
+	printf("init_kernel_task\n");
+	init_kernel_task(root_dir);
 
-	printf("teste baslamak icin bir tusa basin\n");
-	getchar();
-	test();
+	r = do_fork();
+	ASSERT(r > -1);
+	sti();
+	if (r == 0) {
+		init_task();
+		PANIC("init task sonlandi\n");
+	}
+	kernel_task();
+	PANIC("kernel task sonlandi");
 
-	run_first_task();
+	while (1);
+}
 
-	return 0;
+void kernel_task() {
+	printf(">> kernel_task started\n");
+	while (1) {
+		sti();
+		asm("hlt");
+		cli();
+	}
+}
+
+void init_task() {
+	int r;
+	const char *argv[1] = { NULL };
+
+	printf(">> init_task started\n");
+
+	r = do_execve("init", argv);
+	ASSERT(r == 0);
 }
 
 void __panic(const char *msg, const char* file, int line) {
@@ -105,7 +134,6 @@ void __panic_assert(const char* file, int line, const char* d) {
 /******************************
  * Test programlari
  ******************************/
-
 UserProgram user_programs[] = {
 	{ "yield", &USER_PROGRAM(yield), &USER_PROGRAM_END(yield) },
 	{ "hello", &USER_PROGRAM(hello), &USER_PROGRAM_END(hello) },
@@ -119,6 +147,7 @@ UserProgram user_programs[] = {
 	  &USER_PROGRAM_END(processmemtest) },
 	{ "kill", &USER_PROGRAM(kill), &USER_PROGRAM_END(kill) },
 	{ "fs", &USER_PROGRAM(fs), &USER_PROGRAM_END(fs) },
+	{ "init", &USER_PROGRAM(init), &USER_PROGRAM_END(init) },
 };
 // FIXME: const
 size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);
@@ -129,46 +158,4 @@ UserProgram *user_program(const char *name) {
 			return &user_programs[i];
 	}
 	return NULL;
-}
-
-/** init_programs dosyasini okuyup proses olusturur */
-void test() {
-	char init_programs[1000];
-	int size = (int)&_binary_init_programs_size;
-	char *lines[10];
-	int i_line = 0;
-
-	memcpy(init_programs, &_binary_init_programs_start, size);
-
-	printf("init_programs:\n");
-
-	/* dosyayi satir satir ayir */
-	lines[0] = init_programs;
-	for (int i = 0 ; i <= size ; i++) {
-		if ( (init_programs[i] == '\n') || (i == size) ) {
-			init_programs[i] = '\0';
-			printf("- %s\n", lines[i_line]);
-			i_line++;
-			if (i != size)
-				lines[i_line] = &init_programs[i+1];
-		}
-	}
-
-	/* her satir icin bir proses olustur */
-	for (int i = 0 ; i < i_line ; i++) {
-		char prog[50];
-		for (int j = 0 ; ; j++) {
-			prog[j] = lines[i][j];
-			if (lines[i][j] == ' ') {
-				prog[j] = '\0';
-				printf("prog: %s\n", prog);
-				printf("cmd: %s\n", lines[i]);
-				UserProgram *p = user_program(prog);
-				ASSERT(p != NULL);
-				task_create(p->addr, lines[i], DEFAULT_PRIORITY);
-				break;
-			}
-		}
-	}
-
 }

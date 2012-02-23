@@ -38,7 +38,6 @@
 #include <asm/x86.h>
 
 //
-extern void task_create(void* program_addr, const char *cmd, int priority);
 extern void schedule();
 extern size_t kmalloc_size(size_t size);
 //
@@ -85,41 +84,7 @@ Command commands[] = {
 	{ "continue", "c", "continue", command_continue },
 	{ "memdebug", "md", "memory debug", command_memdebug },
 };
-
 uint32_t nr_commands = sizeof(commands) / sizeof(commands[0]);
-
-void parse_cmd(char *cmd, int *argc, char *argv[10]) {
-	*argc = 0;
-	argv[0] = cmd;
-
-	/*
-	 * 		cmd = " asd fff\t ggg"
-	 * şeklindeki stringi aşağıdaki biçime dönüştürür
-	 * 		cmd = "\0asd\0fff\0\0ggg"
-	 *
-	 * arg'lar, cmd'nin belirli bir karakterini referans eder
-	 * 		argv[0] = "asd\0fff\0\0ggg"	-> &cmd[1]
-	 * 		argv[1] = "fff\0\0ggg" 		-> &cmd[5]
-	 * 		argv[2] = "ggg" 			-> &cmd[10]
-	 * 		argc = 3
-	 */
-	for ( ; *cmd != '\0' ; cmd++) {
-		switch (*cmd) {
-			case ' ':
-			case '\t':
-			case '\n':
-				*cmd = '\0'; /* boşluk karakterlerini null olarak işaretle */
-				if ( *(cmd-1) != '\0' && (*argc) < 10) //10 -> max argc
-					(*argc)++;
-				argv[*argc] = cmd+1;
-				break;
-		}
-	}
-
-	if (argv[*argc][0] != '\0')
-		(*argc)++;
-	argv[*argc] = 0;
-}
 
 int runcmd(char *cmd) {
 	int argc = 0;
@@ -136,7 +101,6 @@ int runcmd(char *cmd) {
 	printf("%s: command not found\n", argv[0]);
 	return 0;
 }
-
 
 void start_kernel_monitor() {
 	uint32_t eflags = eflags_read();
@@ -288,22 +252,25 @@ static int command_info(int argc, char **argv) {
 	return 0;
 }
 
+extern int do_fork();
+extern int do_execve(const char *path, const char **argv);
+
 static int command_create(int argc, char **argv) {
+	int r;
 
 	if (argc > 1) {
 		UserProgram *tp = user_program(argv[1]);
 		if (tp) {
-			char program_args[100];
-			int k = 0;
-			for (int j = 1 ; j < argc ; j++) {
-				size_t len_argv = strlen(argv[j]);
-				strcpy(&program_args[k], argv[j]);
-				k+=len_argv;
-				program_args[k] = ' ';
-				k++;
+			r = do_fork();
+			printf("--");
+			if (r < 0)
+				return r;
+			if (r == 0) { // child
+				r = do_execve(argv[1], (const char**)&argv[1]);
+				if (r < 0)
+					do_exit(0); // FIXME: code
+				PANIC("--");
 			}
-			program_args[k] = '\0';
-			task_create(tp->addr, program_args, DEFAULT_PRIORITY);
 			return 0;
 		}
 	}
@@ -355,7 +322,9 @@ static int command_taskinfo(int argc, char **argv) {
 	printf("id:%d  ", t->id);
 	printf("parent id:%d  ", (t->parent) ? t->parent->id : 0);
 	printf("status:%d  ", t->state);
-	printf("run count:%d\n", t->run_count);
+	printf("run count:%d  ", t->run_count);
+	printf("priority:%d\n", t->priority);
+
 	// FIXME: baska bir yontemle bu registerlara ulasilabilmeli
 	// printf("eip:0x%08x  esp:0x%08x\n", t->registers_user.eip, t->registers_user.esp);
 	printf("time_start: %d\n", t->time_start);
