@@ -66,7 +66,7 @@ int lookup(struct DirEntry *dir, const char *name, struct DirEntry **dentry) {
 		return r;
 	}
 	/* diskte bulunan dosya icin DirEntry ve inode olustur */
-	*dentry = (struct DirEntry*)kmalloc(sizeof(struct DirEntry*));
+	*dentry = (struct DirEntry*)kmalloc(sizeof(struct DirEntry));
 	(*dentry)->init();
 	strcpy((*dentry)->name, name);
 	(*dentry)->inode = inode;
