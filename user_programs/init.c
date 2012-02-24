@@ -5,9 +5,9 @@ char buf[2048];
 char *lines[100];
 
 int main(int argc, char** argv) {
-	int fd, r, pid;
+	int fd, pid;
 	int size;
-	int i, j, i_line = 0;
+	int i, i_line = 0;
 
 	fd = open("/init_script", 0, 0);
 	if (fd < 0) {

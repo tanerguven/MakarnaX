@@ -40,6 +40,8 @@
 //
 extern void schedule();
 extern size_t kmalloc_size(size_t size);
+extern int do_fork();
+extern int do_execve(const char *path, char *const argv[]);
 //
 
 uint32_t free_memory_start;
@@ -252,9 +254,6 @@ static int command_info(int argc, char **argv) {
 	return 0;
 }
 
-extern int do_fork();
-extern int do_execve(const char *path, const char **argv);
-
 static int command_create(int argc, char **argv) {
 	int r;
 
@@ -266,7 +265,7 @@ static int command_create(int argc, char **argv) {
 			if (r < 0)
 				return r;
 			if (r == 0) { // child
-				r = do_execve(argv[1], (const char**)&argv[1]);
+				r = do_execve(argv[1], &argv[1]);
 				if (r < 0)
 					do_exit(0); // FIXME: code
 				PANIC("--");

@@ -26,7 +26,6 @@
 
 // task.cpp
 extern void switch_to_task(Task *newtask);
-//
 
 void check_alarm();
 void check_sleep_list();
@@ -36,12 +35,6 @@ TaskList_t __task_runnable_queue[41];
 
 AlarmList_t task_alarm_list;
 TaskList_t task_sleep_list;
-
-/**
- * task_curr = NULL durumunda, kullanilan page directory'i saklar.
- * diger durumlarda NULL
- */
-PageDirInfo *pgdir_curr = NULL;
 
 void schedule_init() {
 	task_alarm_list.init();
@@ -97,26 +90,20 @@ void schedule() {
 
 	Task *task_next = NULL;
 
-	do {
 /*
  * TODO: check alarm ve sleep'i bunlari do_timer icerisinde tasimak daha
  * mantikli gibi. Bu fonksiyonlar timer ile ilgili, timer saat degistiginde
  * calisiyor. Schedule her zaman timer ile calismiyor.
  */
-		check_alarm();
-		check_sleep_list();
+	check_alarm();
+	check_sleep_list();
 
-		task_next = find_runnable_task();
+	task_next = find_runnable_task();
 
-		if (task_next) {
-			break;
-
-		} else {
-			PANIC("burasi artik yok. kernel task beklemeye gecemez.\n"
-				  "runnable kuyrugu bos olmamali");
-		}
-
-	} while (1);
+	if (!task_next) {
+		PANIC("bu durum yok, kernel task beklemeye gecemez.\n"
+			  "runnable kuyrugu bos olmamali");
+	}
 
 	switch_to_task(task_next);
 
@@ -164,12 +151,7 @@ asmlink void do_timer(Trapframe *tf) {
 	ASSERT(!(eflags_read() & FL_IF));
 	jiffies++;
 
-	if (task_curr == NULL) {
-		/* sistem bosta bekliyor */
-		// TODO: bosta gecen sureyi hesaplamak icin sayac eklenebilir
-		return;
-	}
-
+	ASSERT(task_curr != NULL);
 	ASSERT(task_curr->state == Task::State_running);
 
 	task_curr->counter--;

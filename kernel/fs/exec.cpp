@@ -21,7 +21,7 @@
 
 #include <types.h>
 
-int init_user_stack(const char **argv, addr_t *user_esp) {
+int init_user_stack(char *const argv[], addr_t *user_esp) {
 	int r;
 	addr_t esp = (addr_t)va2kaddr(MMAP_USER_STACK_TOP);
 	addr_t arg_ptr[20];
@@ -84,7 +84,7 @@ int load_program(File* f, Elf32_Ehdr *header, uint32_t *last_addr) {
 			old_pos = f->fpos;
 			f->fpos = ph.offset;
 			r = do_read(f, (char*)uaddr2kaddr(ph.vaddr), ph.memsz);
-			ASSERT(r == ph.memsz);
+			ASSERT((uint32_t)r == ph.memsz);
 			f->fpos = old_pos;
 
 			/* programin sonunda kalan alani sifirla */
@@ -97,7 +97,7 @@ int load_program(File* f, Elf32_Ehdr *header, uint32_t *last_addr) {
 	return 0;
 }
 
-int do_execve(const char *path, const char **argv) {
+int do_execve(const char *path, char *const argv[]) {
 	int r;
 	File *f;
 	Trapframe registers;
@@ -144,6 +144,7 @@ int do_execve(const char *path, const char **argv) {
 		);
 
 	PANIC("--");
+	return -1;
 }
 
 /*
@@ -152,7 +153,7 @@ int do_execve(const char *path, const char **argv) {
  */
 char _a[16][256];
 char _path[MAX_PATH_SIZE];
-const char *_argv[16];
+char *_argv[16];
 
 // FIXME: parametre kontrolunu duzelt
 asmlink void sys_execve() {
@@ -162,7 +163,7 @@ asmlink void sys_execve() {
 	cli();
 
 	const char *path = (const char*)uaddr2kaddr(get_param1(tf));
-	const char **argv = (const char**)uaddr2kaddr(get_param2(tf));
+	char *const *argv = (char* const*)uaddr2kaddr(get_param2(tf));
 
 	/* kullanicidan gelen parametreleri kopyala */
 	strncpy(_path, path, MAX_PATH_SIZE);

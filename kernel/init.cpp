@@ -39,7 +39,7 @@ extern void init_kernel_task(struct DirEntry* root);
 extern uint32_t free_memory_start;
 
 extern int do_fork();
-extern int do_execve(const char *path, const char **argv);
+extern int do_execve(const char *path, char *const argv[]);
 
 void kernel_task();
 void init_task();
@@ -100,7 +100,7 @@ void kernel_task() {
 
 void init_task() {
 	int r;
-	const char *argv[1] = { NULL };
+	char* argv[1] = { NULL };
 
 	printf(">> init_task started\n");
 
@@ -153,7 +153,7 @@ UserProgram user_programs[] = {
 size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);
 
 UserProgram *user_program(const char *name) {
-	for (int i = 0 ; i < nr_user_programs ; i++) {
+	for (unsigned int i = 0 ; i < nr_user_programs ; i++) {
 		if ( strcmp(user_programs[i].name, name) == 0 )
 			return &user_programs[i];
 	}

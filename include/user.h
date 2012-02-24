@@ -38,7 +38,7 @@ extern size_t read(unsigned int fd, char *buf, unsigned int count);
 extern int chdir(const char *path);
 extern char *getcwd(char *buf, size_t size);
 extern int stat(const char *path, struct stat *buf);
-extern int execve(const char *path, const char **argv);
+extern int execve(const char *path, char *const argv[]);
 
 /******************************
  * Shared Memory

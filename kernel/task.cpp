@@ -15,11 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Task (process) olusturma, ilk process'in olusturulmasi, sanal bellek alani
- * olusturma, kernele gomulmus binary programi processe yukleme gibi islemler
- */
-
 #include <types.h>
 #include <asm/x86.h>
 
@@ -69,10 +64,6 @@ uint8_t mem_task_id_ht[4096];
 int next_task_id = 0;
 
 TaskList_t task_zombie_list;
-/**
- * task_curr sadece sistem cagrisi icinde kullanilmali.
- * diger durumlarda NULL olabilir. (runnable task yoksa NULL olur)
- */
 Task *task_curr;
 
 /** task için sanal bellek oluşturur */
@@ -216,8 +207,8 @@ void task_free(Task *t) {
 	ipc_task_free(t);
 	task_curr_free_files();
 
-	uint32_t count_brk = (t->pgdir.end_brk - t->pgdir.start_brk) / 0x1000;
 // FIXME: bunu duzelt
+	// uint32_t count_brk = (t->pgdir.end_brk - t->pgdir.start_brk) / 0x1000;
 	// ASSERT(t->pgdir.count_stack + t->pgdir.count_program + count_brk ==
 	// 	   t->pgdir.count_user);
 	task_free_vm_user(t);

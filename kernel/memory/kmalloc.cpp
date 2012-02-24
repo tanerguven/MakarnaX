@@ -223,8 +223,6 @@ static void test3();
 static void test4();
 static void compare_total_count();
 
-static void bugtest();
-
 static void *x[100];
 static BlockHeader *bh[100];
 static FreeBlock *fb[100];
@@ -404,7 +402,7 @@ static void test2() {
 	for (int j = 7 ; j < 23 ; j++) {
 		if (j % 5 == 1 || j % 5 == 2) {
 			// printf("malloc %d\n", j);
-			uint32_t b;
+			uint32_t b = 0;
 			switch (j% 3) {
 			case 0:
 				b = j / 5;
@@ -434,7 +432,7 @@ static void test3() {
 	i = 0;
 	for ( ; i < 30 ; ) {
 		++i;
-		int b;
+		int b = 0;
 		switch (i % 3) {
 		case 0:
 			b = i / 5;
@@ -472,7 +470,7 @@ static void test3() {
 	for (int j = 3 ; j < 19 ; j++) {
 		if (j % 5 == 2 || j % 5 == 3) {
 			// printf("malloc %d\n", j);
-			uint32_t b;
+			uint32_t b = 0;
 			switch (j % 3) {
 			case 0:
 				b = j / 5;
@@ -508,7 +506,7 @@ static void test3() {
 	for (int j = 3 ; j < 19 ; j++) {
 		if (j % 5 == 1 || j % 5 == 2) {
 			// printf("malloc %d\n", j);
-			uint32_t b;
+			uint32_t b = 0;
 			switch (j% 3) {
 			case 0:
 				b = j / 5;
@@ -553,7 +551,7 @@ static void test4() {
 		for (int j = baslangic ; j < bitis ; j++) {
 			if (j % 5 == 2 || j % 5 == 3) {
 				// printf("malloc %d\n", j);
-				uint32_t b;
+				uint32_t b = 0;
 				switch (j % 3) {
 				case 0:
 					b = j / 5;
@@ -591,7 +589,7 @@ static void test4() {
 
 		for (int j = baslangic ; j < bitis ; j++) {
 			// printf("malloc %d\n", j);
-			uint32_t b;
+			uint32_t b = 0;
 			switch (j % 3) {
 			case 0:
 				b = j / 5;
@@ -630,7 +628,7 @@ static void test4() {
 
 		for (int j = baslangic ; j < bitis ; j++) {
 			// printf("malloc %d\n", j);
-			uint32_t b;
+			uint32_t b = 0;
 			switch (j % 3) {
 			case 0:
 				b = j / 5;
