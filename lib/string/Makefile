@@ -20,8 +20,10 @@ OBJS = memcpy.o \
 	memcmp.o \
 
 all: $(OBJS)
-	ar cr string.a $(OBJS)
-	$(LD) -r -o string.O $(OBJS)
+	@echo [ar] string.a
+	@ar cr string.a $(OBJS)
+	@echo [ld] string.O
+	@$(LD) -r -o string.O $(OBJS)
 
 clean:
 	rm -f *.o *.O *.a;

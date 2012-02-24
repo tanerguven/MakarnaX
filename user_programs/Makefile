@@ -26,43 +26,56 @@ PROGRAMS = \
 all: $(PROGRAMS)
 
 test.bin: test.o
-	$(LD) -T"link.ld" -o test.bin test.o $(LIBS)
+	@echo [ld] test.bin
+	@$(LD) -T"link.ld" -o test.bin test.o $(LIBS)
 
 hello.bin: hello.o
-	$(LD) -T"link.ld" -o hello.bin hello.o $(LIBS)
+	@echo [ld] test.bin
+	@$(LD) -T"link.ld" -o hello.bin hello.o $(LIBS)
 
 divide_error.bin: divide_error.o
-	$(LD) -T"link.ld" -o divide_error.bin divide_error.o $(LIBS)
+	@echo [ld] divide_error.bin
+	@$(LD) -T"link.ld" -o divide_error.bin divide_error.o $(LIBS)
 
 yield.bin: yield.o
-	$(LD) -T"link.ld" -o yield.bin yield.o $(LIBS)
+	@echo [ld] yield.bin
+	@$(LD) -T"link.ld" -o yield.bin yield.o $(LIBS)
 
 forktest.bin: forktest.o
-	$(LD) -T"link.ld" -o forktest.bin forktest.o $(LIBS)
+	@echo [ld] forktest.bin
+	@$(LD) -T"link.ld" -o forktest.bin forktest.o $(LIBS)
 
 dongu.bin: dongu.o
-	$(LD) -T"link.ld" -o dongu.bin dongu.o $(LIBS)
+	@echo [ld] dongu.bin
+	@$(LD) -T"link.ld" -o dongu.bin dongu.o $(LIBS)
 
 sys_dongu.bin: sys_dongu.o
-	$(LD) -T"link.ld" -o sys_dongu.bin sys_dongu.o $(LIBS)
+	@echo [ld] sys_dongu.bin
+	@$(LD) -T"link.ld" -o sys_dongu.bin sys_dongu.o $(LIBS)
 
 signaltest.bin: signaltest.o
-	$(LD) -T"link.ld" -o signaltest.bin signaltest.o $(LIBS)
+	@echo [ld] signaltest.bin
+	@$(LD) -T"link.ld" -o signaltest.bin signaltest.o $(LIBS)
 
 init.bin: init.o
-	$(LD) -T"link.ld" -o init.bin init.o $(LIBS)
+	@echo [ld] init.bin
+	@$(LD) -T"link.ld" -o init.bin init.o $(LIBS)
 
 ipctest.bin: ipctest.o
-	$(LD) -T"link.ld" -o ipctest.bin ipctest.o $(LIBS)
+	@echo [ld] ipctest.bin
+	@$(LD) -T"link.ld" -o ipctest.bin ipctest.o $(LIBS)
 
 processmemtest.bin: processmemtest.o
-	$(LD) -T"link.ld" -o processmemtest.bin processmemtest.o $(LIBS)
+	@echo [ld] processmemtest.bin
+	@$(LD) -T"link.ld" -o processmemtest.bin processmemtest.o $(LIBS)
 
 kill.bin: kill.o
-	$(LD) -T"link.ld" -o kill.bin kill.o $(LIBS)
+	@echo [ld] kill.bin
+	@$(LD) -T"link.ld" -o kill.bin kill.o $(LIBS)
 
 fs.bin: fs.o
-	$(LD) -T"link.ld" -o fs.bin fs.o $(LIBS)
+	@echo [ld] fs.bin
+	@$(LD) -T"link.ld" -o fs.bin fs.o $(LIBS)
 
 clean:
 	rm -f *.o *.bin

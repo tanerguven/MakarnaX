@@ -30,9 +30,15 @@ OBJS = \
 	fs/denemefs/denemefs.o\
 	fs/exec.o\
 
+DEPS = $(OBJS:.o=.d)
+
 all: $(OBJS)
-	$(LD) -r -o kernel.O $(OBJS)
+	@echo [ld] kernel.O
+	@$(LD) -r -o kernel.O $(OBJS)
+
+-include $(DEPS)
 
 clean:
 	find . -name "*.o" | xargs rm -f
-	rm -f kernel.O;
+	find . -name "*.d" | xargs rm -f
+	rm -f kernel.O

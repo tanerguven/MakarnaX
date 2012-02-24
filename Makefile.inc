@@ -11,3 +11,15 @@ CFLAGS = $(M) -I$(D)/include -O1 -g3 -Wall -c -nostdlib -nostdinc -fno-builtin\
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 
 LD = ld -m elf_i386
+
+%.o: %.S
+	@echo [cc] $<
+	@$(CC) $(CFLAGS) -c -MMD -o $@ $<
+
+%.o: %.c
+	@echo [cc] $<
+	@$(CC) $(CFLAGS) -c -MMD -o $@ $<
+
+%.o: %.cpp
+	@echo [cxx] $<
+	@$(CXX) $(CXXFLAGS) -c -MMD -o $@ $<

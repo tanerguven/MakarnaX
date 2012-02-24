@@ -11,19 +11,27 @@ OBJ_USER_LIB = \
 	stdio.o\
 	lib.o\
 
+DEPS_LIB = $(OBJ_LIB:.o=.d)
+DEPS_USER_LIB = $(OBJ_USER_LIB:.o=.d)
+
 all: user_lib
 
+-include $(DEPS_LIB)
+-include $(DEPS_USER_LIB)
+
 libstring:
-	cd string; make;
+	@cd string; make;
 
 lib: $(OBJ_LIB)
-	$(LD) -r -o lib.O $(OBJ_LIB)
+	@echo [ld] lib.O
+	@$(LD) -r -o lib.O $(OBJ_LIB)
 
 # FIXME: --
 user_lib: libstring lib $(OBJ_USER_LIB)
-	cp string/string.a user_lib.a
-	ar r user_lib.a $(OBJ_USER_LIB) $(OBJ_LIB)
+	@cp string/string.a user_lib.a
+	@echo [ar] user_lib.a
+	@ar r user_lib.a $(OBJ_USER_LIB) $(OBJ_LIB)
 
 clean:
 	cd string; make clean;
-	rm -f *.o *.O *.a;
+	rm -f *.o *.O *.a *.d;

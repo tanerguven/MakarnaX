@@ -39,12 +39,13 @@ debug:
 	export KERNEL_CFLAGS=-D__KERNEL_DEBUG__
 
 rm_objs:
-	rm -f $(OBJS)
+	@rm -f $(OBJS)
 
 kernel: dirs
-	mkdir -p bin
-	$(LD) -Tscripts/link.ld -o"bin/kernel" $(OBJS) $(LIBS) -b binary $(PROGRAMS) init_programs
-	objdump -S bin/kernel > bin/kernel.asm
+	@mkdir -p bin
+	@echo [ld] bin/kernel
+	@$(LD) -Tscripts/link.ld -o"bin/kernel" $(OBJS) $(LIBS) -b binary $(PROGRAMS) init_programs
+	@objdump -S bin/kernel > bin/kernel.asm
 
 user:
 	cd user_programs; make clean; make;
@@ -64,9 +65,6 @@ clean:
 		cd $$p; make clean; cd ..; \
 	done
 	rm -f bin/kernel bin/kernel.asm;
-
-kclean:
-	cd kernel; make clean;
 
 documentation:
 	doxygen doc/doc.doxygen
