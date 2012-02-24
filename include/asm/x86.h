@@ -2,6 +2,7 @@
 #define X86_H_
 
 #include <types.h>
+#include <gcc.h>
 
 /** Protection Enable */
 #define CR0_PE		0x00000001
@@ -181,10 +182,15 @@ static inline void sti() {
  * FIXME: gecici cozum, eklendigi fonksiyon calismandan once registerlarin
  * kaydedilmesi icin
  */
+#if GCC_VERSION < 40600 // 4.6.0
+#define CLOBBERED_REGISTERS_ALL() do {									\
+	asm volatile("" ::: "eax", "ebx", "ecx", "edx", "edi", "esi", "esp");\
+	} while (0)
+# else
 #define CLOBBERED_REGISTERS_ALL() do {									\
 	asm volatile("" ::: "eax", "ebx", "ecx", "edx", "edi", "esi", "ebp", "esp");\
 	} while (0)
-
+#endif
 /**********************************************
  * bit array operations
  **********************************************/

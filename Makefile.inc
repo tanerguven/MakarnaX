@@ -13,13 +13,13 @@ CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 LD = ld -m elf_i386
 
 %.o: %.S
-	@echo [cc] $<
+	@echo [$(CC)] $<
 	@$(CC) $(CFLAGS) -c -MMD -o $@ $<
 
 %.o: %.c
-	@echo [cc] $<
+	@echo [$(CC)] $<
 	@$(CC) $(CFLAGS) -c -MMD -o $@ $<
 
 %.o: %.cpp
-	@echo [cxx] $<
+	@echo [$(CXX)] $<
 	@$(CXX) $(CXXFLAGS) -c -MMD -o $@ $<
