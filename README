@@ -8,45 +8,31 @@ NELER VAR?
     - fiziksel bellegin yonetilmesi
   	- sanal bellek (segmantasyon & paging)
   	- malloc fonksiyonu (kmalloc)
-
  - fork
-
+ - execve
  - task scheduling
-
- - binary program calistirma: exec gibi fakat dosya sistemi olmadigi icin kernel
-   dosyasina gomulmus executable elf dosyalarini kullanarak
-
  - sistem cagrilari
-
  - Unix signalleri
-
  - ipc
     - shared memory
     - semaphore
-
+ - sanal dosya sistemi
  - kernel monitor ve debug modu: ctrl-alt-delete ile sistem duraklatilip,
    kaynaklar, process vb. gozlemlenebilir
-
  - test programlari (user_programs): sistem cagrilarini test etmek icin
-   kullanilan programlar.
+   gelistirilmis programlar.
 
 
 NELER YOK?
 
  - copy-on-write fork
-
  - ipc
     - message queues
     - ipc permissions
-
- - dosya sistemi
-
+ - disk uzerinde dosya sistemi
  - kullanicilar
-
  - socket
-
  - bircok sey ...
-
 
 
 SISTEM CAGRILARI VE FONKSIYONLAR
@@ -63,6 +49,17 @@ SISTEM CAGRILARI VE FONKSIYONLAR
   unsigned int sys_sleep(unsigned int seconds);
   int brk(void *addr);
   void *sbrk(unsigned int increment);
+
+  int open(const char *filename, int flags, int mode);
+  int close(unsigned int fd);
+  size_t read(unsigned int fd, char *buf, unsigned int count);
+  int chdir(const char *path);
+  char *getcwd(char *buf, size_t size);
+  int stat(const char *path, struct stat *buf);
+  int execve(const char *path, const char **argv);
+  DIR *opendir(const char *path);
+  int closedir(DIR *dirp);
+  struct dirent* readdir(DIR *dirp);
 
   void sys_cputs(const char *s, size_t len);
   int sys_cgetc();
