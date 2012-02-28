@@ -15,10 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Paging ile ilgili veriyapilarini icerir.
- */
-
 #ifndef _MEMORY_VIRTUAL_H_
 #define _MEMORY_VIRTUAL_H_
 
@@ -226,14 +222,16 @@ struct PageDirInfo {
 	/* uint32_t function_level; */
     /* */
 
+/*
+ * count_user ve count_kernel insert ve remove durumlarinda perm parametresine
+ * gore otomatik guncellenir
+ */
 	uint32_t count_user;
 	uint32_t count_kernel;
 	uint32_t count_stack;
 	uint32_t count_program;
 	uint32_t count_shared;
-
-	/* heap */
-	uint32_t start_brk;
+	uint32_t start_brk; // heap
 	uint32_t end_brk;
 
 	inline PTE_t * page_get(VA_t va);
@@ -252,6 +250,7 @@ struct PageDirInfo {
 	int verify_user_addr(const void *addr, size_t len, int perm);
 };
 
+extern PageDirInfo kernel_dir;
 extern int tmp_page_alloc_map(Page **p, uint32_t *va, int perm);
 extern int tmp_page_free(uint32_t va);
 
@@ -336,8 +335,6 @@ inline int PageDirInfo::pde_free(uint32_t pde_no) {
 	return 0;
 }
 
-#include <stdio.h>
-
 /** hata durumunda errno, normal refCount dondurur */
 inline int PageDirInfo::page_remove(VA_t va, int invl) {
 	ASSERT(!(eflags_read() & FL_IF));
@@ -359,14 +356,9 @@ inline int PageDirInfo::page_remove(VA_t va, int invl) {
     else
 		PANIC("page_insert: bilinmeyen adres alani");
 
- 	// FIXME: --
-	extern PageDirInfo kernel_dir;
 	uint32_t cr3; read_reg(%cr3,cr3);
 	if (invl && (this == &kernel_dir || cr3 == pgdir_pa))
 		tlb_invalidate(v);
-	/*  else { */
-	/* 	printf(">> not tlb_invalidate %08x\n", va); */
-	/* } */
 
 	return refCount;
 }

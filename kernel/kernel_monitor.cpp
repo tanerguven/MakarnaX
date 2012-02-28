@@ -37,12 +37,9 @@
 #include "sched.h"
 #include <asm/x86.h>
 
-//
-extern void schedule();
 extern size_t kmalloc_size(size_t size);
 extern int do_fork();
 extern int do_execve(const char *path, char *const argv[]);
-//
 
 uint32_t free_memory_start;
 
@@ -140,48 +137,10 @@ static int command_kernelinfo(int argc, char** argv) {
 }
 
 static int command_backtrace(int argc, char **argv) {
-	/*
-	 * ----------------------------
-	 * 			eip
-	 * 0xfff8:	ebp = 0x0
-	 * 0xfff4	yerel değişkenler ...
-	 * ----------------------------
-	 * 0xfff0	arg4
-	 * 0xffec	arg3
-	 * 0xffe8	arg2
-	 * 0xffe4	arg1
-	 * 0xffe0	arg0		-> fonksiyonun parametreleri
-	 * 0xffdc	eip			-> fonksiyonun çağırıldığı kodun yerinin adresi
-	 * 0xffd8	ebp = 0xfff8 -> fonksiyonu çağıran fonksiyonun ebp'sinin stackteki adresi
-	 * 			yerel değişkenler ...
-	 * ----------------------------
-	 * 			arg4
-	 * 			...
-	 * 			arg0
-	 * 0xffbc	eip
-	 * 0xffb8	ebp = 0xffd8
-	 * 			...
-	 * 			yerel değişkenler
-	 * 			...
-	 * 0xffa0
-	 * ----------------------------
-	 */
-
-	/*
-	 * çalışma sırasındaki registerlar
-	 * esp = 0xffa0
-	 * ebp = 0xffb8
-	 */
-
-	/*
-	 * - yeni bir fonksiyon çağırılırken stack'e sırasıyla
-	 * arg'lar, eip ve ebp push'lanıyor
-	 * - ebp registerına esp aktarılıyor
-	 * - esp registerı, fonksiyonun kullanacağı stack alanı kadar arttırılıyor
-	 * - fonksiyonun yerel değişkenleri, ebp ve esp registerlarının gösterdiği adresler arasında
-	 * saklanıyor
-	 */
-
+/*
+ * gcc x86 calling conventions
+ * http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-828-operating-system-engineering-fall-2006/lecture-notes/l2.pdf
+ */
 	uint32_t *ebp; read_reg(%ebp, ebp);
 	printf("ebp: %08x\n", ebp);
 

@@ -23,19 +23,19 @@
 extern void __panic(const char *msg, const char* file, int line);
 extern void __panic_assert(const char* file, int line, const char* d);
 
-#define PANIC(msg) __panic(msg, __FILE__, __LINE__);
+#define PANIC(msg) __panic(msg, __FILE__, __LINE__)
 #define ASSERT(b) ((b) ? (void)0 : __panic_assert(__FILE__, __LINE__, #b))
 
 #ifdef M_DEBUG_1
 #define ASSERT_D1(b) ASSERT(b)
 #else
-#define ASSERT_D1(b) /* */
+#define ASSERT_D1(b) (0)
 #endif
 
 #ifdef M_DEBUG_2
 #define ASSERT_D2(b) ASSERT(b)
 #else
-#define ASSERT_D2(b) /* */
+#define ASSERT_D2(b) (0)
 #endif
 
 // kmalloc.cpp
