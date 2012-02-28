@@ -140,7 +140,7 @@ void task_free_kernel_stack(Task* t) {
 	free_sigstack();
 }
 
-static void task_free_vm_user(Task* t) {
+void task_free_vm_user(Task* t) {
 	ASSERT(!(eflags_read() & FL_IF));
 
 	/*  user alanindaki butun pageleri serbest birak */
@@ -167,6 +167,7 @@ static void task_free_vm_user(Task* t) {
 
 	t->pgdir.count_stack = 0;
 	t->pgdir.count_program = 0;
+	t->pgdir.count_shared = 0;
 }
 
 void task_free(Task *t) {
@@ -176,10 +177,10 @@ void task_free(Task *t) {
 	ipc_task_free(t);
 	task_curr_free_files();
 
-// FIXME: bunu duzelt
-	// uint32_t count_brk = (t->pgdir.end_brk - t->pgdir.start_brk) / 0x1000;
-	// ASSERT(t->pgdir.count_stack + t->pgdir.count_program + count_brk ==
-	// 	   t->pgdir.count_user);
+	uint32_t count_brk = (t->pgdir.end_brk - t->pgdir.start_brk) / 0x1000;
+	/* code, heap ve stack alanlari toplami user alanina esit olmali */
+	ASSERT(t->pgdir.count_stack + t->pgdir.count_program + count_brk ==
+		   t->pgdir.count_user);
 	task_free_vm_user(t);
 	ASSERT(t->pgdir.count_user == 0);
 
@@ -324,6 +325,8 @@ int do_fork() {
 		goto bad_fork_copy_vm_user;
 	t->pgdir.count_program = task_curr->pgdir.count_program;
 	t->pgdir.count_stack = task_curr->pgdir.count_stack;
+	t->pgdir.start_brk = task_curr->pgdir.start_brk;
+	t->pgdir.end_brk = task_curr->pgdir.end_brk;
 	/* */
 
 	/* ipc veriyapilari icin, ipc_fork */
@@ -338,7 +341,6 @@ int do_fork() {
 		else
 			t->files[i] = NULL;
 	}
-	/* */
 
 	/* kernel stackini kopyala */
 	mem_before_kernel_stack = mem_free();

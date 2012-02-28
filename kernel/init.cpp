@@ -69,9 +69,9 @@ asmlink int main() {
 	picirq_init();
 	timer_init();
 
-	free_memory_start = mem_free();
-
 	root_dir = init_vfs();
+
+	free_memory_start = mem_free();
 
 	printf("init_kernel_task\n");
 	init_kernel_task(root_dir);

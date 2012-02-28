@@ -21,6 +21,12 @@
 
 #include <types.h>
 
+// task.cpp
+extern void task_free_vm_user(Task* t);
+
+// file.cpp
+extern void task_curr_free_files();
+
 int init_user_stack(char *const argv[], addr_t *user_esp) {
 	int r;
 	addr_t esp = (addr_t)va2kaddr(MMAP_USER_STACK_TOP);
@@ -97,6 +103,10 @@ int load_program(File* f, Elf32_Ehdr *header, uint32_t *last_addr) {
 	return 0;
 }
 
+/*
+ * TODO: bellek yetmemesi gibi durumlarda hata oldugunda, proses calismaz
+ * duruma gelir. Bu duzeltilmeli
+ */
 int do_execve(const char *path, char *const argv[]) {
 	int r;
 	File *f;
@@ -114,12 +124,22 @@ int do_execve(const char *path, char *const argv[]) {
 	if (r < 0)
 		return r;
 
+	/*
+	 * TODO: prosesin calismasi icin kaynaklar yeterli mi hesapla
+	 */
+
 	/* prosesin baslangictaki register degerleri */
 	memset(&registers, 0, sizeof(registers));
 	registers.eip = header.entry; // programin baslangic adresi
 	registers.ds = registers.es = registers.ss = GD_UD | 3;
 	registers.cs = GD_UT | 3;
 	registers.eflags = FL_IF; // interruplar aktif
+
+	/* prosesin tum dosyalarini kapat */
+	task_curr_free_files();
+
+	/* prosesin tum user alanini sil */
+	task_free_vm_user(task_curr);
 
 	/* stack'i olustur, argv'yi stacke bas ve registerlara esp degerini ata */
 	r = init_user_stack(argv, &registers.esp);
