@@ -226,19 +226,14 @@ asmlink void sys_signal() {
 // FIXME: uygun yere tasi
 void copy_stack(uint32_t addr) {
 	ASSERT(isRounded(addr));
-
 	memcpy((void*)va2kaddr(addr),
-		   (void*)va2kaddr(MMAP_KERNEL_STACK_BASE), 0x1000);
-#if 1
-/*
- * FIXME: bu kisima gcc-4.6 ile derlendiginde gerek yok, derleyici versiyonuna
- * gore kullanilmali
- */
+		   (void*)va2kaddr(MMAP_KERNEL_STACK_BASE), MMAP_KERNEL_STACK_SIZE);
+#if GCC_VERSION < 40600
 	uint32_t *ebp; read_reg(%ebp, ebp);
-	for ( ; va2kaddr(MMAP_KERNEL_STACK_TOP) - (uint32_t)ebp < 0x1000 ;
+	for ( ; va2kaddr(MMAP_KERNEL_STACK_TOP) - (uint32_t)ebp < MMAP_KERNEL_STACK_SIZE ;
 		 ebp = (uint32_t*)*ebp)
 	{
-		*(uint32_t*)(va2kaddr(addr) + ((uint32_t)ebp % 0x1000)) = *ebp - 0x2000;
+		*(uint32_t*)(va2kaddr(addr) + ((uint32_t)ebp % 0x1000)) = *ebp - MMAP_KERNEL_STACK_OFFSET;
 	};
 #endif
 }
@@ -256,21 +251,25 @@ static void push_stack() {
 	s->list_node.init();
 	ASSERT(s->list_node.is_free());
 
-	r = page_alloc(&s->stack);
+	r = task_curr->pgdir.segment_alloc(MMAP_KERNEL_STACK_2_BASE,
+									   MMAP_KERNEL_STACK_SIZE,
+									   PTE_P | PTE_W);
 	ASSERT(r > -1);
-	r = task_curr->pgdir.page_insert(s->stack,
-									 MMAP_KERNEL_STACK_BASE - 0x2000,
-									 PTE_P | PTE_W);
-	ASSERT(r > -1);
-	s->stack->refcount_inc();
+
+	/* yeni olusturulan stackin pageleri signal state icerisine kaydediliyor */
+	for (int i = 0 ; i < MMAP_KERNEL_STACK_SIZE/0x1000 ; i++) {
+		PTE_t* p = task_curr->pgdir.page_get(MMAP_KERNEL_STACK_2_BASE + i*0x1000);
+		ASSERT(p);
+		s->stack[i] = p->phys_page();
+		s->stack[i]->refcount_inc();
+	}
 
 	// FIXME: ebp degerinden stack icin kullanilan offset cikarilmali mi?
 	read_reg(%esp, s->esp);
-	s->esp -= 0x2000;
-	copy_stack(MMAP_KERNEL_STACK_BASE - 0x2000);
+	s->esp -= MMAP_KERNEL_STACK_OFFSET;
+	copy_stack(MMAP_KERNEL_STACK_2_BASE);
 
 	/* pop_stack fonksiyonundan buraya atlaniyor  */
-	/* hatirlatma: registerlarin tamami yuklenmedi, burada islem yapilmamali */
 	eip = read_eip();
 	if (eip == 1)
 		return;
@@ -297,10 +296,14 @@ static void pop_stack() {
 
 	task_curr->popped_kstack = 1;
 	task_curr->sleep = s->sleep;
-	task_curr->pgdir.page_insert(s->stack,
-								 MMAP_KERNEL_STACK_BASE - 0x2000,
-								 PTE_P | PTE_W);
-	s->stack->refcount_dec();
+
+	for (int i = 0 ; i < MMAP_KERNEL_STACK_SIZE/0x1000 ; i++) {
+		r = task_curr->pgdir.page_insert(s->stack[i],
+										 MMAP_KERNEL_STACK_2_BASE + i*0x1000,
+										 PTE_P | PTE_W);
+		ASSERT(r == 2);
+		s->stack[i]->refcount_dec();
+	}
 
 	esp = s->esp;
 	eip = s->eip;
@@ -322,9 +325,11 @@ void free_sigstack() {
 		SignalState *s = task_curr->sigstack.front();
 		task_curr->sigstack.pop_front();
 
-		s->stack->refcount_dec();
-		ASSERT(s->stack->refcount_get() < 2);
-		page_free(s->stack);
+		for (int i = 0 ; i < MMAP_KERNEL_STACK_SIZE/0x1000 ; i++) {
+			s->stack[i]->refcount_dec();
+			ASSERT(s->stack[i]->refcount_get() < 2);
+			page_free(s->stack[i]);
+		}
 
 		kfree(s);
 	}

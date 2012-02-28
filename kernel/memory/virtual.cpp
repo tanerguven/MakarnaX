@@ -218,6 +218,23 @@ bad_segment_alloc:
 	return err;
 }
 
+void PageDirInfo::segment_free(uint32_t va, size_t len) {
+	ASSERT(!(eflags_read() & FL_IF));
+
+	uint32_t i, end;
+	int err;
+
+	end = va + len;
+	va = roundDown(va);
+	end = roundUp(end);
+
+	for (i = va; i < end; i += 0x1000) {
+		err = page_remove(va, 1);
+		if (err < 0)
+			continue;
+	}
+}
+
 /**
  * simdiki pgdir'dan dest_pgdir'a page kopyalar.
  * hatada errno, normalde 0 dondurur.

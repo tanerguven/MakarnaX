@@ -123,33 +123,12 @@ static void task_delete_vm(Task *t) {
 	ASSERT(t->pgdir.count_kernel == 0);
 }
 
-// FIXME: --
-int task_copy_kernel_stack(Task *t) {
-	int r;
-
-	r = t->pgdir.copy_pages(&task_curr->pgdir, MMAP_KERNEL_STACK_BASE-0x1000, MMAP_KERNEL_STACK_TOP);
-	ASSERT(r == 0);
-
-	return 0;
-}
-
-
 void task_free_kernel_stack(Task* t) {
 	ASSERT(!(eflags_read() & FL_IF));
-
-	int r;
 	uint32_t va;
+	VA_t va_kernel_stack(MMAP_KERNEL_STACK_BASE);
 
-	VA_t va_kernel_stack(MMAP_KERNEL_STACK_TOP - 0x1000);
-
-	/* free kernel stack */
-	/*
-	 * paylasilamayan alan, silince refcount=0 olmali
-	 * kernel stack yoksa r = errno da olabilir
-	 */
-	r = t->pgdir.page_remove(va_kernel_stack, 1);
-	if (r > -1)
-		ASSERT( r == 0);
+	t->pgdir.segment_free(MMAP_KERNEL_STACK_BASE, MMAP_KERNEL_STACK_SIZE);
 
 	/* free kernel stacks pgtable */
 	va = (uint32_t)t->pgdir.pgtables[va_kernel_stack.pdx];
@@ -188,16 +167,6 @@ static void task_free_vm_user(Task* t) {
 
 	t->pgdir.count_stack = 0;
 	t->pgdir.count_program = 0;
-}
-
-// TODO: bu fonksiyon kaldirilabilir
-static int task_alloc(Task **t) {
-	ASSERT(!(eflags_read() & FL_IF));
-
-	*t = (Task*)kmalloc(sizeof(Task));
-	if (*t == NULL)
-		return -1;
-	return 0;
 }
 
 void task_free(Task *t) {
@@ -283,7 +252,8 @@ void init_kernel_task(struct DirEntry* root) {
 
 	ASSERT(!(eflags_read() & FL_IF));
 
-	ASSERT( task_alloc(&task_curr) == 0 );
+	task_curr = (Task*)kmalloc(sizeof(Task));
+	ASSERT( task_curr );
 
 	memset(task_curr, 0, sizeof(Task));
 	task_curr->init();
@@ -293,18 +263,12 @@ void init_kernel_task(struct DirEntry* root) {
 	task_curr->root = task_curr->pwd = root;
 
 	/* task icin kernel stack alani olustur */
-	r = task_curr->pgdir.page_alloc_insert(MMAP_KERNEL_STACK_BASE,
-											PTE_P | PTE_W);
-	ASSERT( r == 1 );
-	r = task_curr->pgdir.page_alloc_insert(MMAP_KERNEL_STACK_BASE-0x1000,
-											PTE_P | PTE_W);
-	ASSERT( r == 1 );
-
-/*
- * TODO: registerlar kadar stacki asagi kaydir ve %eip'ye baslangic adresi ata
- */
-	move_stack((uint32_t)&__boot_stack + 0x3000,
-			   va2kaddr(MMAP_KERNEL_STACK_BASE-0x1000), 0x2000);
+	r = task_curr->pgdir.segment_alloc(MMAP_KERNEL_STACK_BASE,
+									   MMAP_KERNEL_STACK_SIZE,
+									   PTE_P | PTE_W);
+	ASSERT( r == 0 );
+	move_stack((uint32_t)&__boot_stack + (0x4000-MMAP_KERNEL_STACK_SIZE),
+			   va2kaddr(MMAP_KERNEL_STACK_BASE), MMAP_KERNEL_STACK_SIZE);
 
 	/* task id hash tablosuna ekle */
 	task_curr->id = next_task_id++;
@@ -332,7 +296,8 @@ int do_fork() {
 
 	ASSERT(!(eflags_read() & FL_IF));
 
-	if (task_alloc(&t) < 0)
+	t = (Task*)kmalloc(sizeof(Task));
+	if (!t)
 		goto bad_fork_task_alloc;
 
 	memcpy(t, task_curr, sizeof(Task));
@@ -377,10 +342,9 @@ int do_fork() {
 
 	/* kernel stackini kopyala */
 	mem_before_kernel_stack = mem_free();
-	r = task_copy_kernel_stack(t);
+	r = t->pgdir.copy_pages(&task_curr->pgdir, MMAP_KERNEL_STACK_BASE, MMAP_KERNEL_STACK_TOP);
 	if (r < 0)
 		goto bad_fork_copy_kernel_stack;
-	/* */
 
 	/* burasi 2 kere calisiyor */
 	eip = read_eip();

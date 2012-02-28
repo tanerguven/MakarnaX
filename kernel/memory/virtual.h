@@ -65,7 +65,12 @@
 #define MMAP_USER_STACK_TOP 0xF0000000
 #endif
 
-#define MMAP_KERNEL_STACK_BASE (MMAP_KERNEL_STACK_TOP - 0x1000)
+#define MMAP_KERNEL_STACK_SIZE 0x2000
+#define MMAP_KERNEL_STACK_BASE (MMAP_KERNEL_STACK_TOP - MMAP_KERNEL_STACK_SIZE)
+#define MMAP_KERNEL_STACK_OFFSET (0x1000 + MMAP_KERNEL_STACK_SIZE)
+#define MMAP_KERNEL_STACK_2_BASE (MMAP_KERNEL_STACK_BASE - MMAP_KERNEL_STACK_OFFSET)
+#define MMAP_KERNEL_STACK_2_TOP (MMAP_KERNEL_STACK_TOP - MMAP_KERNEL_STACK_OFFSET)
+
 #define MMAP_KERNEL_TOP MMAP_KERNEL_STACK_TOP
 #define MMAP_USER_LIMIT (MMAP_USER_TOP-MMAP_USER_BASE)
 #define MMAP_USER_TOP MMAP_USER_STACK_TOP
@@ -240,6 +245,7 @@ struct PageDirInfo {
 
 	inline int page_alloc_insert(uint32_t va, int perm);
 	int segment_alloc(uint32_t va, size_t len, int perm);
+	void segment_free(uint32_t va, size_t len);
 	int copy_pages(PageDirInfo *src, uint32_t start, uint32_t end);
 	int link_pgtables(PageDirInfo *src, uint32_t start, uint32_t end);
 	int link_pages(PageDirInfo *src, uint32_t start, uint32_t end, int perm);

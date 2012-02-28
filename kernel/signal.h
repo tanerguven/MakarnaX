@@ -25,7 +25,7 @@ extern void check_signals();
 define_list(struct SignalState, SignalStack_t);
 
 struct SignalState {
-	Page* stack;
+	Page* stack[MMAP_KERNEL_STACK_SIZE / 0x1000];
 	uint32_t esp;
 	uint32_t eip;
 

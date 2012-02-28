@@ -130,7 +130,7 @@ inline Task* SharedMemDesc::task() {
 inline Trapframe* current_registers() {
 	ASSERT(task_curr);
 	if (task_curr->popped_kstack)
-		return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_TOP - 0x2000 - sizeof(Trapframe));
+		return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_2_TOP - sizeof(Trapframe));
 	else
 		return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_TOP - sizeof(Trapframe));
 }
