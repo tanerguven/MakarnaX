@@ -252,7 +252,6 @@ void wakeup_interruptible(TaskList_t *list) {
 
 	ASSERT( list->pop_front() );
 
-	t->state = Task::State_running;
 	add_to_runnable_list(t);
 }
 
@@ -274,7 +273,6 @@ void wakeup_uninterruptible(TaskList_t *list) {
 	Task* t = list->front();
 	ASSERT( list->pop_front() );
 
-	t->state = Task::State_running;
 	add_to_runnable_list(t);
 }
 
@@ -296,7 +294,6 @@ void check_sleep_list() {
 		task_sleep_list.erase(&t->list_node);
 		ASSERT(t->list_node.is_free());
 		t->sleep = 0;
-		t->state = Task::State_running;
 		add_to_runnable_list(t);
 	}
 

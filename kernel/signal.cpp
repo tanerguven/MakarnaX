@@ -97,7 +97,6 @@ int send_signal(uint32_t sig, Task* t) {
 		/* taski bekledigi listeden sil ve uyandir */
 		if (t->list_node.__list)
 			t->list_node.__list->erase(&t->list_node);
-		t->state = Task::State_running;
 		add_to_runnable_list(t);
 		eflags_load(eflags);
 	} else if (t->state == Task::State_running) {

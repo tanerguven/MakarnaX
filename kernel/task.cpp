@@ -247,6 +247,13 @@ void move_stack(uint32_t ka_curr, uint32_t ka_new, uint32_t size) {
 	load_reg(%ebp, ka_new + ebp - ka_curr);
 }
 
+inline void set_task_id(Task* t) {
+	ASSERT(!(eflags_read() & FL_IF));
+
+	t->id = next_task_id++;
+	ASSERT( task_id_ht.put(&t->id_hash_node) == 0);
+}
+
 /* ilk prosesi (proses 0, kernel task) olusturur */
 void init_kernel_task(struct DirEntry* root) {
 	int r;
@@ -271,13 +278,8 @@ void init_kernel_task(struct DirEntry* root) {
 	move_stack((uint32_t)&__boot_stack + (0x4000-MMAP_KERNEL_STACK_SIZE),
 			   va2kaddr(MMAP_KERNEL_STACK_BASE), MMAP_KERNEL_STACK_SIZE);
 
-	/* task id hash tablosuna ekle */
-	task_curr->id = next_task_id++;
-	ASSERT( task_id_ht.put(&task_curr->id_hash_node) == 0);
-
-	/* runnable listesine ekle */
-	task_curr->state = Task::State_running;
-	ASSERT(task_curr->list_node.is_free());
+	/* process id ata ve runnable listesine ekle */
+	set_task_id(task_curr);
 	add_to_runnable_list(task_curr);
 
 	printf(">> task %d created\n", task_curr->id);
@@ -294,6 +296,7 @@ int do_fork() {
 	Task *t;
 	uint32_t eip;
 	int e = 0; // error (bad_fork_* icin)
+	uint32_t eflags;
 
 	ASSERT(!(eflags_read() & FL_IF));
 
@@ -361,15 +364,16 @@ int do_fork() {
 	/* child prosesin baslangic zamani */
 	t->time_start = jiffies;
 
-	/* child prosesi task hash tablosuna ekle */
-	t->id = next_task_id++;
-	ASSERT( task_id_ht.put(&t->id_hash_node) == 0);
+	eflags = eflags_read();
+	cli();
+
 	/* child listesine ekle */
 	ASSERT( task_curr->childs.push_back(&t->childlist_node) );
-	/* runnable listesine ekle */
-	t->state = Task::State_running;
-
+	/* process id ata ve runnable listesine ekle */
+	set_task_id(t);
 	add_to_runnable_list(t);
+
+	eflags_load(eflags);
 
 	return t->id;
 

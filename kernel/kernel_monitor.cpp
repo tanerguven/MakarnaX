@@ -321,7 +321,7 @@ static int command_memdebug(int argc, char **argv) {
 
 	uint32_t size_tasks_zombie = 0;
 	uint32_t size_tasks = 0;
-	uint32_t unknown_mem = 0;
+	int32_t unknown_mem = 0;
 	uint32_t ipc_mem = mem_ipc();
 
 	for (uint32_t i = 0 ; i < task_id_ht.__table_size; i++) {
@@ -346,11 +346,10 @@ static int command_memdebug(int argc, char **argv) {
 
 	printf("zombie tasks: %d kb\n", size_tasks_zombie>>10);
 	printf("tasks: %d kb\n", size_tasks>>10);
-	printf("ipc: %d kb\n", ipc_mem>>10);
+	printf("ipc: %d kb\n", ipc_mem);
 
 	unknown_mem = free_memory_start - mem_free() - ipc_mem - size_tasks;
-
-	printf("unknown memory: %d kb\n", unknown_mem >> 10);
+	printf("unknown memory: %d kb\n", unknown_mem/1024);
 
 	return 0;
 }

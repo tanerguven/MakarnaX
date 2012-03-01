@@ -34,7 +34,7 @@ extern TaskList_t __task_runnable_queue[41];
 inline void add_to_runnable_list(Task* t) {
 	ASSERT(!(eflags_read() & FL_IF));
 
-	ASSERT(t->state == Task::State_running);
+	t->state = Task::State_running;
 	ASSERT(t->list_node.is_free());
 	ASSERT( __task_runnable_queue[t->priority].push_back(&t->list_node) );
 }

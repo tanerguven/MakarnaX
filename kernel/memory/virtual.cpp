@@ -239,7 +239,7 @@ void PageDirInfo::segment_free(uint32_t va, size_t len) {
  * simdiki pgdir'dan dest_pgdir'a page kopyalar.
  * hatada errno, normalde 0 dondurur.
  */
-static inline int copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va, int perm) {
+static inline int __copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va, int perm) {
 	ASSERT(!(eflags_read() & FL_IF));
 
 	/*
@@ -256,7 +256,6 @@ static inline int copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va, i
 	uint32_t tmp_va;
 
 	r = tmp_page_alloc_map(&p, &tmp_va, PTE_P | PTE_W);
-
 	if (r < 0)
 		return r;
 
@@ -269,9 +268,7 @@ static inline int copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va, i
 	}
 
 	r = tmp_page_free(tmp_va);
-
 	ASSERT(r > -1);
-
 	return 0;
 }
 
@@ -285,31 +282,34 @@ static inline int copy_page(PageDirInfo *dest, PageDirInfo *src, uint32_t va, in
 /** hatada errno, normalde 0 dondurur */
 int PageDirInfo::copy_pages(PageDirInfo *src, uint32_t start, uint32_t end) {
 	ASSERT(!(eflags_read() & FL_IF));
-	uint32_t cr3; read_reg(%cr3,cr3);
-	if (src->pgdir_pa == cr3) {
-		for (uint32_t i = start ; i < end ; i+=0x1000) {
-			PTE_t *pte = src->page_get(i);
 
+	uint32_t i;
+	PTE_t *pte;
+	int err;
+	uint32_t cr3; read_reg(%cr3,cr3);
+
+	/* aktif page dirdan kopyalama durumu */
+	if (src->pgdir_pa == cr3) {
+		for (i = start ; i < end ; i+=0x1000) {
+			pte = src->page_get(i);
 			if (!pte | !pte->present)
 				continue;
-
-			int err = copy_page_from_current(this, i, pte->perm());
+			err = __copy_page_from_current(this, i, pte->perm());
 			if (err < 0)
 				return err;
-
-			// FIXME: tlb_invalidate hatali, gecici cozum (kvm'de hatali calisiyor)
-			cr3_reload();
 		}
-
 		return 0;
-
 	}
+
+	/* FIXME: aktif olmayan page dirdan kopyalama yok */
 	PANIC("tamamlanmadi");
 	return -1;
 }
 
 
 int PageDirInfo::link_pgtables(PageDirInfo *src, uint32_t start, uint32_t end) {
+	ASSERT(!(eflags_read() & FL_IF));
+
 	for (uint32_t i = VA_t(start).pdx; i < VA_t(end).pdx ; i++) {
 		this->pgdir->e[i] = src->pgdir->e[i];
 		this->pgtables[i] = src->pgtables[i];
