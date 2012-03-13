@@ -35,17 +35,17 @@ namespace __wmc_list2 {
 
 
 #define define_list(type_t,list_t) \
-struct LI_##list_t { static const  ptr_t offset_node_value; }; \
+struct LI_##list_t { static const  wmc_ptr_t offset_node_value; }; \
 typedef List_2<type_t, LI_##list_t> list_t;
 
 #define set_list_offset(type_t,list_t,node_name) \
-const ptr_t LI_##list_t::offset_node_value =(ptr_t)offsetof(type_t,node_name);
+const wmc_ptr_t LI_##list_t::offset_node_value =(wmc_ptr_t)offsetof(type_t,node_name);
 
 /**
  * type_t icerisinde tanimlandiginda kullanmak icin
  * type_t::LI_list_t seklinde
  */
 #define set_list_offset_2(type_t,list_t,node_name)					\
-const ptr_t type_t::LI_##list_t::offset_node_value =(ptr_t)offsetof(type_t,node_name);
+const wmc_ptr_t type_t::LI_##list_t::offset_node_value =(wmc_ptr_t)offsetof(type_t,node_name);
 
 #endif /* _WMC_LIST_H_ */
