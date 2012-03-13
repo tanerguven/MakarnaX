@@ -250,7 +250,7 @@ struct PageDirInfo {
 	int verify_user_addr(const void *addr, size_t len, int perm);
 };
 
-extern PageDirInfo kernel_dir;
+extern PageDirInfo *kernel_dir;
 extern int tmp_page_alloc_map(Page **p, uint32_t *va, int perm);
 extern int tmp_page_free(uint32_t va);
 
@@ -357,7 +357,7 @@ inline int PageDirInfo::page_remove(VA_t va, int invl) {
 		PANIC("page_insert: bilinmeyen adres alani");
 
 	uint32_t cr3; read_reg(%cr3,cr3);
-	if (invl && (this == &kernel_dir || cr3 == pgdir_pa))
+	if (invl && (this == kernel_dir || cr3 == pgdir_pa))
 		tlb_invalidate(v);
 
 	return refCount;

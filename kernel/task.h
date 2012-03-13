@@ -109,7 +109,7 @@ struct Task {
 extern TaskIdHashTable_t task_id_ht;
 extern TaskList_t task_zombie_list;
 extern struct Task* task_curr;
-
+extern struct Task task0;
 
 inline void task_trapret(Trapframe *tf) {
 /*

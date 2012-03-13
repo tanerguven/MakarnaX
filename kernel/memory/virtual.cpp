@@ -45,8 +45,6 @@ int tmp_page_alloc_map(Page **p, uint32_t *va, int perm);
 SegmentDesc gdt[10];
 PseudoDesc gdt_pd;
 
-PageDirInfo kernel_dir;
-
 void* __init_free_pages[10];
 
 /** aciklama icin paging.h ve memory.h */
@@ -55,14 +53,14 @@ void vm_init() {
 	int err;
 	err = page_alloc(&p);
 	ASSERT(err == 0);
-	kernel_dir.pgdir = (PageDirectory*)p->addr();
-	kernel_dir.pgdir_pa = (uint32_t)kernel_dir.pgdir;
-	memset(kernel_dir.pgdir, 0, 0x1000);
+	kernel_dir->pgdir = (PageDirectory*)p->addr();
+	kernel_dir->pgdir_pa = (uint32_t)kernel_dir->pgdir;
+	memset(kernel_dir->pgdir, 0, 0x1000);
 
 	err = page_alloc(&p);
 	ASSERT(err == 0);
-	kernel_dir.pgtables = (PageTable**)p->addr();
-	memset(kernel_dir.pgtables, 0, 0x1000);
+	kernel_dir->pgtables = (PageTable**)p->addr();
+	memset(kernel_dir->pgtables, 0, 0x1000);
 
 	for (int i = 0 ; i < 10 ; i++) {
 		page_alloc(&p);
@@ -105,28 +103,28 @@ void vm_init() {
 
 #if MMAP_SEG_KERNEL_BASE != 0
 		/* kernel segmentation kullanilarak calistirilacaksa */
-		kernel_dir.pgdir->e[i+VA_t(MMAP_KERNEL_BASE).pdx] = PDE_t(pt, PTE_P | PTE_W);
-		kernel_dir.pgtables[i+VA_t(MMAP_KERNEL_BASE).pdx] = (PageTable*)pt;
+		kernel_dir->pgdir->e[i+VA_t(MMAP_KERNEL_BASE).pdx] = PDE_t(pt, PTE_P | PTE_W);
+		kernel_dir->pgtables[i+VA_t(MMAP_KERNEL_BASE).pdx] = (PageTable*)pt;
 #endif
-		kernel_dir.pgdir->e[i] = PDE_t(pt, PTE_P | PTE_W);
-		kernel_dir.pgtables[i] = (PageTable*)pt;
+		kernel_dir->pgdir->e[i] = PDE_t(pt, PTE_P | PTE_W);
+		kernel_dir->pgtables[i] = (PageTable*)pt;
 
 		for (uint32_t j = 0 ; j < 1024; j++) {
 			if (mappedPageCount > pageCount) {
-				kernel_dir.pgtables[i]->e[j] = PTE_t(0, 0);
+				kernel_dir->pgtables[i]->e[j] = PTE_t(0, 0);
 			} else {
 				uint32_t pa = (i * 1024 + j) * 0x1000;
 				if ((pa >= (uint32_t)&__text_start) && (pa < (uint32_t)&__rodata_end)) {
 					/* text ve read only data bölümlerine yazma izni yok */
-					kernel_dir.pgtables[i]->e[j] = PTE_t(pa, PTE_P);
+					kernel_dir->pgtables[i]->e[j] = PTE_t(pa, PTE_P);
 				} else {
-					kernel_dir.pgtables[i]->e[j] = PTE_t(pa, PTE_P | PTE_W);
+					kernel_dir->pgtables[i]->e[j] = PTE_t(pa, PTE_P | PTE_W);
 				}
 				mappedPageCount++;
 			}
 		}
 	}
-	load_reg(%cr3, kernel_dir.pgdir_pa);
+	load_reg(%cr3, kernel_dir->pgdir_pa);
 
 	/* enable paging */
 	uint32_t cr0; read_reg(%cr0, cr0);
@@ -160,8 +158,8 @@ void vm_init() {
 #if MMAP_SEG_KERNEL_BASE != 0
 /* 3 - Geçici olarak fiziksel bellek ile 1-1 map ettiğimiz alanı iptal et */
 	for (uint32_t i = 0 ; i < (mappedPageCount >> 10) + 1 ; i++) {
-		kernel_dir.pgdir->e[i] = PDE_t(0 ,0);
-		kernel_dir.pgtables[i] = 0;
+		kernel_dir->pgdir->e[i] = PDE_t(0 ,0);
+		kernel_dir->pgtables[i] = 0;
 	}
 	cr3_reload();
 #endif
@@ -372,8 +370,8 @@ uint32_t tmp_pages[TMP_PAGE_COUNT/32];
 static void tmp_page_init(uint32_t pa) {
 	memset(tmp_pages, 0, sizeof(tmp_pages));
 	/* tmp_page için, page table */
-    kernel_dir.pgdir->e[VA_t(MMAP_KERNEL_TMP_PAGE_BASE).pdx] = PDE_t(pa, PTE_P | PTE_W);
-	kernel_dir.pgtables[VA_t(MMAP_KERNEL_TMP_PAGE_BASE).pdx] = (PageTable*)pa;
+    kernel_dir->pgdir->e[VA_t(MMAP_KERNEL_TMP_PAGE_BASE).pdx] = PDE_t(pa, PTE_P | PTE_W);
+	kernel_dir->pgtables[VA_t(MMAP_KERNEL_TMP_PAGE_BASE).pdx] = (PageTable*)pa;
 	/* */
 }
 
@@ -416,7 +414,7 @@ int tmp_page_alloc_map(Page **p, uint32_t *va, int perm) {
 	if (err < 0)
 		goto bad_tmp_page_alloc_map__page_alloc;
 
-	err = kernel_dir.page_insert(*p, VA_t(*va), perm);
+	err = kernel_dir->page_insert(*p, VA_t(*va), perm);
 	if (err < 0)
 		goto bad_tmp_page_alloc_map__page_insert;
 
@@ -436,7 +434,7 @@ int tmp_page_free(uint32_t va) {
 	ASSERT(va >= MMAP_KERNEL_TMP_PAGE_BASE && va < MMAP_KERNEL_TOP);
 
 	int r;
-	r = kernel_dir.page_remove(va, 1);
+	r = kernel_dir->page_remove(va, 1);
 	if (r > -1)
 		tmp_page_put(va);
 	return r;

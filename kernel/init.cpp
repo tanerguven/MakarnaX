@@ -58,10 +58,11 @@ asmlink int main() {
 	printf("DEBUG 2\n");
 #endif
 
+	task_init();
+
 	memory_init();
 
 	init_traps();
-	task_init();
 
 	schedule_init();
 	ipc_init();

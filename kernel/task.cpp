@@ -42,8 +42,8 @@ void task_curr_free_files();
 // boot.asm
 extern "C" void *__boot_stack;
 
-// memory/virtual.cpp
-extern PageDirInfo kernel_dir;
+Task task0;
+PageDirInfo *kernel_dir = &task0.pgdir;
 
 /*
  * TODO: signal almis bir process, signal fonksiyonunda fork yaparsa ?
@@ -214,6 +214,7 @@ void free_zombie_tasks() {
 }
 
 void task_init() {
+	memset(&task0, 0, sizeof(Task));
 	task_id_ht.init(mem_task_id_ht, sizeof(mem_task_id_ht));
 	task_zombie_list.init();
 
@@ -260,14 +261,11 @@ void init_kernel_task(struct DirEntry* root) {
 
 	ASSERT(!(eflags_read() & FL_IF));
 
-	task_curr = (Task*)kmalloc(sizeof(Task));
-	ASSERT( task_curr );
+	task_curr = &task0;
 
-	memset(task_curr, 0, sizeof(Task));
 	task_curr->init();
 	task_curr->shared_mem_list.init();
 	task_curr->priority = 3;
-	task_curr->pgdir = kernel_dir;
 	task_curr->root = task_curr->pwd = root;
 
 	/* task icin kernel stack alani olustur */
