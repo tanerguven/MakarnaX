@@ -1,6 +1,7 @@
 #ifndef _INC_SYSCALL_H
 #define _INC_SYSCALL_H
 
+#define SYS_nosys		0
 #define SYS_exit		1
 #define SYS_fork		2
 #define SYS_read		3
@@ -28,7 +29,7 @@
 /* #define SYS_stime		 25 */
 /* #define SYS_ptrace		 26 */
 #define SYS_alarm		27
-/* #define SYS_oldfstat		 28 */
+#define SYS_oldfstat		 28
 #define SYS_pause		29
 /* #define SYS_utime		 30 */
 /* #define SYS_stty		 31 */

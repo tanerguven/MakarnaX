@@ -1,0 +1,45 @@
+diff -Nuar newlib-1.20.0_orig/config.sub newlib-1.20.0/config.sub
+--- newlib-1.20.0_orig/config.sub	2012-04-04 01:40:17.391266394 +0300
++++ newlib-1.20.0/config.sub	2012-04-04 01:41:07.219268028 +0300
+@@ -4,7 +4,7 @@
+ #   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+ #   2011 Free Software Foundation, Inc.
+ 
+-timestamp='2011-10-29'
++timestamp='2012-04-04'
+ 
+ # This file is (in principle) common to ALL GNU software.
+ # The presence of a machine in this file suggests that SOME GNU software
+@@ -1347,6 +1347,7 @@
+ 	      | -mingw32* | -linux-gnu* | -linux-android* \
+ 	      | -linux-newlib* | -linux-uclibc* \
+ 	      | -uxpv* | -beos* | -mpeix* | -udk* \
++		  | -makarnax* \
+ 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
+ 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
+ 	      | -storm-chaos* | -tops10* | -tenex* | -tops20* | -its* \
+diff -Nuar newlib-1.20.0_orig/newlib/configure.host newlib-1.20.0/newlib/configure.host
+--- newlib-1.20.0_orig/newlib/configure.host	2012-04-04 01:40:17.439266395 +0300
++++ newlib-1.20.0/newlib/configure.host	2012-04-04 01:43:31.035272746 +0300
+@@ -438,6 +438,10 @@
+ 	##newlib_cflags="${newlib_cflags} -idirafter ${gcc_dir}include"
+ 	;;
+ 
++  i[34567]86-*-makarnax*)
++	sys_dir=makarnax
++	;;
++
+   m68hc11-*-*|m6811-*-*|m6812-*-*|m68hc12-*-*)
+ 	;;
+ 
+diff -Nuar newlib-1.20.0_orig/newlib/libc/sys/configure.in newlib-1.20.0/newlib/libc/sys/configure.in
+--- newlib-1.20.0_orig/newlib/libc/sys/configure.in	2012-04-04 01:40:17.495266397 +0300
++++ newlib-1.20.0/newlib/libc/sys/configure.in	2012-04-04 01:42:11.919270150 +0300
+@@ -31,6 +31,7 @@
+ 	h8500hms) AC_CONFIG_SUBDIRS(h8500hms) ;;
+ 	linux) AC_CONFIG_SUBDIRS(linux) ;;
+ 	m88kbug) AC_CONFIG_SUBDIRS(m88kbug) ;;
++	makarnax) AC_CONFIG_SUBDIRS(makarnax) ;;
+ 	mmixware) AC_CONFIG_SUBDIRS(mmixware) ;;
+ 	netware) AC_CONFIG_SUBDIRS(netware) ;;
+ 	rdos) AC_CONFIG_SUBDIRS(rdos) ;;

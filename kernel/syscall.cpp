@@ -59,8 +59,8 @@ asmlink void sys_sbrk();
 
 void sys_nosys() {
 	Trapframe *tf = task_curr->registers();
-	printf("sys %d\n", tf->regs.eax);
-	PANIC("nosys");
+	printf(">> no sys %d\n", tf->regs.eax);
+	// PANIC("nosys");
 
 	return set_return(tf, -ENOSYS);
 }

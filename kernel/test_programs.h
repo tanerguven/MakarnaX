@@ -52,6 +52,7 @@ DEFINE_TEST_PROGRAM(ipctest);
 DEFINE_TEST_PROGRAM(processmemtest);
 DEFINE_TEST_PROGRAM(kill);
 DEFINE_TEST_PROGRAM(fs);
+DEFINE_TEST_PROGRAM(hello_newlib);
 
 /* init_programs dosyasi */
 extern void* _binary_init_programs_start;

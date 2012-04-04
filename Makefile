@@ -1,6 +1,9 @@
 include Makefile.inc
 
-DIRS = kernel lib
+DIRS = \
+	kernel \
+	lib \
+	user_programs \
 
 OBJS = \
 	kernel/kernel.O \
@@ -20,6 +23,7 @@ PROGRAMS = \
 	user_programs/test/processmemtest.bin \
 	user_programs/test/kill.bin \
 	user_programs/test/fs.bin \
+	user_programs/test/hello_newlib.bin \
 
 ######################################
 #	env variables
@@ -47,8 +51,14 @@ kernel: dirs
 	@$(LD) -Tscripts/link.ld -o"bin/kernel" $(OBJS) $(LIBS) -b binary $(PROGRAMS) init_programs
 	@objdump -S bin/kernel > bin/kernel.asm
 
+usr_lib:
+	cd user_programs/lib; make clean; make;
+
+usr_bin:
+	cd user_programs/bin; make clean; make;
+
 user:
-	cd user_programs/test; make clean; make;
+	cd user_programs; make clean; make;
 
 linux:
 	cd user_programs/test/linux; make;
@@ -58,6 +68,17 @@ dirs:
     do \
 	cd $$p; make; cd ..; \
     done
+
+gcc_cross_compiler:
+	cd tools/gcc_cross_compiler; ./build.sh;
+	ln -f -s `pwd`/user_programs/lib/libmakarnax.a tools/gcc_cross_compiler/local/lib/.
+	ln -f -s `pwd`/user_programs/lib/crt0.o tools/gcc_cross_compiler/local/lib/.
+	rm -rf tools/gcc_cross_compiler/build
+
+tools-clean:
+	rm -f tools/gcc_cross_compiler/*.tar.*
+	rm -rf tools/gcc_cross_compiler/build
+	rm -rf tools/gcc_cross_compiler/local
 
 clean:
 	@for p in  $(DIRS); \

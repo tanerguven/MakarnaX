@@ -1,0 +1,59 @@
+diff -Nuar gcc-4.6.3_orig//config.sub gcc-4.6.3/config.sub
+--- gcc-4.6.3_orig//config.sub	2012-04-04 00:53:58.283175251 +0300
++++ gcc-4.6.3/config.sub	2012-04-04 00:55:18.091177868 +0300
+@@ -4,7 +4,7 @@
+ #   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
+ #   Free Software Foundation, Inc.
+ 
+-timestamp='2010-05-21'
++timestamp='2012-04-04'
+ 
+ # This file is (in principle) common to ALL GNU software.
+ # The presence of a machine in this file suggests that SOME GNU software
+@@ -1311,6 +1311,7 @@
+ 	      | -mingw32* | -linux-gnu* | -linux-android* \
+ 	      | -linux-newlib* | -linux-uclibc* \
+ 	      | -uxpv* | -beos* | -mpeix* | -udk* \
++		  | -makarnax* \
+ 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
+ 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
+ 	      | -storm-chaos* | -tops10* | -tenex* | -tops20* | -its* \
+diff -Nuar gcc-4.6.3_orig//gcc/config.gcc gcc-4.6.3/gcc/config.gcc
+--- gcc-4.6.3_orig//gcc/config.gcc	2012-04-04 00:53:58.291175251 +0300
++++ gcc-4.6.3/gcc/config.gcc	2012-04-04 00:59:45.959186653 +0300
+@@ -695,6 +695,11 @@
+     *) echo 'Unknown thread configuration for VxWorks'; exit 1 ;;
+   esac
+   ;;
++*-*-makarnax*)
++  gas=yes
++  gnu_ld=yes
++  default_use_cxa_atexit=yes
++  ;;
+ *-*-elf)
+   # Assume that newlib is being used and so __cxa_atexit is provided.
+   default_use_cxa_atexit=yes
+@@ -1250,6 +1256,11 @@
+ 	gas=yes
+ 	gnu_ld=yes
+ 	;;
++i[34567]86-*-makarnax*)
++	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h i386/i386elf.h makarnax.h"
++	tmake_file="i386/t-i386elf t-svr4"
++	use_fixproto=yes
++	;;
+ i[34567]86-*-linux* | i[34567]86-*-kfreebsd*-gnu | i[34567]86-*-knetbsd*-gnu | i[34567]86-*-gnu* | i[34567]86-*-kopensolaris*-gnu)
+ 			# Intel 80386's running GNU/*
+ 			# with ELF format using glibc 2
+diff -Nuar gcc-4.6.3_orig//libgcc/config.host gcc-4.6.3/libgcc/config.host
+--- gcc-4.6.3_orig//libgcc/config.host	2012-04-04 00:53:59.707175297 +0300
++++ gcc-4.6.3/libgcc/config.host	2012-04-04 01:02:30.655192054 +0300
+@@ -296,6 +296,8 @@
+ 	extra_parts="$extra_parts crtprec32.o crtprec64.o crtprec80.o crtfastmath.o"
+ 	tmake_file="${tmake_file} i386/t-crtpc i386/t-crtfm"
+ 	;;
++i[34567]86-*-makarnax*)
++	;;
+ i[34567]86-pc-msdosdjgpp*)
+ 	;;
+ i[34567]86-*-lynxos*)

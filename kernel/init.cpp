@@ -149,6 +149,7 @@ TestProgram test_programs[] = {
 	{ "kill", &TEST_PROGRAM(kill), &TEST_PROGRAM_END(kill) },
 	{ "fs", &TEST_PROGRAM(fs), &TEST_PROGRAM_END(fs) },
 	{ "init", &TEST_PROGRAM(init), &TEST_PROGRAM_END(init) },
+	{ "hello_newlib", &TEST_PROGRAM(hello_newlib), &TEST_PROGRAM_END(hello_newlib) },
 };
 // FIXME: const
 size_t nr_test_programs = sizeof(test_programs)/sizeof(test_programs[0]);
