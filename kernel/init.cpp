@@ -135,28 +135,28 @@ void __panic_assert(const char* file, int line, const char* d) {
 /******************************
  * Test programlari
  ******************************/
-UserProgram user_programs[] = {
-	{ "yield", &USER_PROGRAM(yield), &USER_PROGRAM_END(yield) },
-	{ "hello", &USER_PROGRAM(hello), &USER_PROGRAM_END(hello) },
-	{ "divide_error", &USER_PROGRAM(divide_error), &USER_PROGRAM_END(divide_error) },
-	{ "forktest", &USER_PROGRAM(forktest), &USER_PROGRAM_END(forktest) },
-	{ "dongu", &USER_PROGRAM(dongu), &USER_PROGRAM_END(dongu) },
-	{ "sys_dongu", &USER_PROGRAM(sys_dongu), &USER_PROGRAM_END(sys_dongu) },
-	{ "signaltest", &USER_PROGRAM(signaltest), &USER_PROGRAM_END(signaltest) },
-	{ "ipctest", &USER_PROGRAM(ipctest), &USER_PROGRAM_END(ipctest) },
-	{ "processmemtest", &USER_PROGRAM(processmemtest),
-	  &USER_PROGRAM_END(processmemtest) },
-	{ "kill", &USER_PROGRAM(kill), &USER_PROGRAM_END(kill) },
-	{ "fs", &USER_PROGRAM(fs), &USER_PROGRAM_END(fs) },
-	{ "init", &USER_PROGRAM(init), &USER_PROGRAM_END(init) },
+TestProgram test_programs[] = {
+	{ "yield", &TEST_PROGRAM(yield), &TEST_PROGRAM_END(yield) },
+	{ "hello", &TEST_PROGRAM(hello), &TEST_PROGRAM_END(hello) },
+	{ "divide_error", &TEST_PROGRAM(divide_error), &TEST_PROGRAM_END(divide_error) },
+	{ "forktest", &TEST_PROGRAM(forktest), &TEST_PROGRAM_END(forktest) },
+	{ "dongu", &TEST_PROGRAM(dongu), &TEST_PROGRAM_END(dongu) },
+	{ "sys_dongu", &TEST_PROGRAM(sys_dongu), &TEST_PROGRAM_END(sys_dongu) },
+	{ "signaltest", &TEST_PROGRAM(signaltest), &TEST_PROGRAM_END(signaltest) },
+	{ "ipctest", &TEST_PROGRAM(ipctest), &TEST_PROGRAM_END(ipctest) },
+	{ "processmemtest", &TEST_PROGRAM(processmemtest),
+	  &TEST_PROGRAM_END(processmemtest) },
+	{ "kill", &TEST_PROGRAM(kill), &TEST_PROGRAM_END(kill) },
+	{ "fs", &TEST_PROGRAM(fs), &TEST_PROGRAM_END(fs) },
+	{ "init", &TEST_PROGRAM(init), &TEST_PROGRAM_END(init) },
 };
 // FIXME: const
-size_t nr_user_programs = sizeof(user_programs)/sizeof(user_programs[0]);
+size_t nr_test_programs = sizeof(test_programs)/sizeof(test_programs[0]);
 
-UserProgram *user_program(const char *name) {
-	for (unsigned int i = 0 ; i < nr_user_programs ; i++) {
-		if ( strcmp(user_programs[i].name, name) == 0 )
-			return &user_programs[i];
+TestProgram *test_program(const char *name) {
+	for (unsigned int i = 0 ; i < nr_test_programs ; i++) {
+		if ( strcmp(test_programs[i].name, name) == 0 )
+			return &test_programs[i];
 	}
 	return NULL;
 }

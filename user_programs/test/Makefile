@@ -1,13 +1,13 @@
-D = ..
-include ../Makefile.inc
+D = ../..
+include $(D)/Makefile.inc
 
-CFLAGS = $(M) -I../include -O0 -g3 -Wall -c -nostdlib -nostdinc -fno-builtin\
+CFLAGS = $(M) -I$(D)/include -O0 -g3 -Wall -c -nostdlib -nostdinc -fno-builtin\
 	    -fno-stack-protector -nostartfiles -nodefaultlibs -D_USER_PROGRAM
 
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 
 LIBS = \
-	../lib/user_lib.a \
+	$(D)/lib/user_lib.a \
 
 PROGRAMS = \
 	divide_error.bin \
@@ -78,5 +78,5 @@ fs.bin: fs.o
 	@$(LD) -T"link.ld" -o fs.bin fs.o $(LIBS)
 
 clean:
-	rm -f *.o *.bin
+	rm -f *.o *.bin *.d
 	cd linux; make clean;

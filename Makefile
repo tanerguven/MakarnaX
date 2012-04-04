@@ -1,6 +1,6 @@
 include Makefile.inc
 
-DIRS = kernel lib user_programs
+DIRS = kernel lib
 
 OBJS = \
 	kernel/kernel.O \
@@ -8,18 +8,18 @@ OBJS = \
 	lib/string/string.O \
 
 PROGRAMS = \
-	user_programs/divide_error.bin \
-	user_programs/hello.bin \
-	user_programs/yield.bin \
-	user_programs/forktest.bin \
-	user_programs/dongu.bin \
-	user_programs/sys_dongu.bin \
-	user_programs/signaltest.bin \
-	user_programs/init.bin \
-	user_programs/ipctest.bin \
-	user_programs/processmemtest.bin \
-	user_programs/kill.bin \
-	user_programs/fs.bin \
+	user_programs/test/divide_error.bin \
+	user_programs/test/hello.bin \
+	user_programs/test/yield.bin \
+	user_programs/test/forktest.bin \
+	user_programs/test/dongu.bin \
+	user_programs/test/sys_dongu.bin \
+	user_programs/test/signaltest.bin \
+	user_programs/test/init.bin \
+	user_programs/test/ipctest.bin \
+	user_programs/test/processmemtest.bin \
+	user_programs/test/kill.bin \
+	user_programs/test/fs.bin \
 
 ######################################
 #	env variables
@@ -48,10 +48,10 @@ kernel: dirs
 	@objdump -S bin/kernel > bin/kernel.asm
 
 user:
-	cd user_programs; make clean; make;
+	cd user_programs/test; make clean; make;
 
 linux:
-	cd user_programs/linux; make;
+	cd user_programs/test/linux; make;
 
 dirs:
 	@for p in  $(DIRS); \

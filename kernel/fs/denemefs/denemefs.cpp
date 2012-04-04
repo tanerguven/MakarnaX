@@ -74,14 +74,14 @@ void denemefs_init() {
 	sd->n = 3;
 
 	/* kullanici programlarini dosya sistemine ekle */
-	for (i = 0 ; i < nr_user_programs ; i++) {
+	for (i = 0 ; i < nr_test_programs ; i++) {
 		di[n_file].ft = Deneme_inode::FT_FILE;
 
-		di[n_file].data = user_programs[i].addr;
-		di[n_file].size = (uint32_t)user_programs[i].end -
-			(uint32_t)user_programs[i].addr;
+		di[n_file].data = test_programs[i].addr;
+		di[n_file].size = (uint32_t)test_programs[i].end -
+			(uint32_t)test_programs[i].addr;
 		sd->no[sd->n] = n_file;
-		strcpy(sd->name[sd->n], user_programs[i].name);
+		strcpy(sd->name[sd->n], test_programs[i].name);
 		n_file++;
 		sd->n++;
 	}

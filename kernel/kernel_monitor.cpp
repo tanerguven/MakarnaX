@@ -217,7 +217,7 @@ static int command_create(int argc, char **argv) {
 	int r;
 
 	if (argc > 1) {
-		UserProgram *tp = user_program(argv[1]);
+		TestProgram *tp = test_program(argv[1]);
 		if (tp) {
 			r = do_fork();
 			printf("--");
@@ -235,8 +235,8 @@ static int command_create(int argc, char **argv) {
 
 	printf("run [program name] [program args]\n");
 	printf("programs:\n");
-	for (uint32_t i = 0 ; i < nr_user_programs ; i++) {
-		printf("    %s\n", user_programs[i].name);
+	for (uint32_t i = 0 ; i < nr_test_programs ; i++) {
+		printf("    %s\n", test_programs[i].name);
 	}
 
 	return 0;

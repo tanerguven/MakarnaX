@@ -20,38 +20,38 @@
 
 #include <types.h>
 
-struct UserProgram {
+struct TestProgram {
 	const char *name;
 	void *addr;
 	void *end;
 };
 
-extern UserProgram user_programs[];
-extern size_t nr_user_programs;
-UserProgram *user_program(const char *name);
+extern TestProgram test_programs[];
+extern size_t nr_test_programs;
+TestProgram *test_program(const char *name);
 
-#define USER_PROGRAM(x) _binary_user_programs_##x##_bin_start
-#define USER_PROGRAM_END(x) _binary_user_programs_##x##_bin_end
-#define USER_PROGRAM_SIZE(x) _binary_user_programs_##x##_bin_size
-#define DEFINE_USER_PROGRAM(x)					\
-	extern void* USER_PROGRAM(x);				\
-	extern void* USER_PROGRAM_END(x);			\
-	extern void* USER_PROGRAM_SIZE(x);
+#define TEST_PROGRAM(x) _binary_user_programs_test_##x##_bin_start
+#define TEST_PROGRAM_END(x) _binary_user_programs_test_##x##_bin_end
+#define TEST_PROGRAM_SIZE(x) _binary_user_programs_test_##x##_bin_size
+#define DEFINE_TEST_PROGRAM(x)					\
+	extern void* TEST_PROGRAM(x);				\
+	extern void* TEST_PROGRAM_END(x);			\
+	extern void* TEST_PROGRAM_SIZE(x);
 
 /* test programlari */
 
-DEFINE_USER_PROGRAM(divide_error);
-DEFINE_USER_PROGRAM(hello);
-DEFINE_USER_PROGRAM(yield);
-DEFINE_USER_PROGRAM(forktest);
-DEFINE_USER_PROGRAM(dongu);
-DEFINE_USER_PROGRAM(sys_dongu);
-DEFINE_USER_PROGRAM(signaltest);
-DEFINE_USER_PROGRAM(init);
-DEFINE_USER_PROGRAM(ipctest);
-DEFINE_USER_PROGRAM(processmemtest);
-DEFINE_USER_PROGRAM(kill);
-DEFINE_USER_PROGRAM(fs);
+DEFINE_TEST_PROGRAM(divide_error);
+DEFINE_TEST_PROGRAM(hello);
+DEFINE_TEST_PROGRAM(yield);
+DEFINE_TEST_PROGRAM(forktest);
+DEFINE_TEST_PROGRAM(dongu);
+DEFINE_TEST_PROGRAM(sys_dongu);
+DEFINE_TEST_PROGRAM(signaltest);
+DEFINE_TEST_PROGRAM(init);
+DEFINE_TEST_PROGRAM(ipctest);
+DEFINE_TEST_PROGRAM(processmemtest);
+DEFINE_TEST_PROGRAM(kill);
+DEFINE_TEST_PROGRAM(fs);
 
 /* init_programs dosyasi */
 extern void* _binary_init_programs_start;
