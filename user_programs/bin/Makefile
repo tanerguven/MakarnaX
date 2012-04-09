@@ -7,7 +7,7 @@ CC = i686-makarnax-gcc
 GCC = i686-makarnax-gcc
 LD = i686-makarnax-gcc
 
-CFLAGS = -nostdinc -O0 -g3 -Wall \
+CFLAGS = -nostdinc -O0 -g3 -Wall -Werror=implicit-function-declaration \
 	-I$(R)/include \
 	-I$(R)/lib/gcc/i686-makarnax/4.6.3/include
 
