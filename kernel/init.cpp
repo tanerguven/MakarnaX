@@ -105,7 +105,7 @@ void init_task() {
 
 	printf(">> init_task started\n");
 
-	r = do_execve("init", argv);
+	r = do_execve("/bin/init", argv);
 	ASSERT(r == 0);
 }
 

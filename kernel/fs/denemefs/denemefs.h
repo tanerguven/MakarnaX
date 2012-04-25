@@ -3,10 +3,12 @@
 
 #include "../vfs.h"
 
+#define Deneme_subdentry_count 16
+
 struct Deneme_subdentry {
 	int n; // dentry count
-	uint32_t no[16]; // dentry ino
-	char name[16][32]; // dentry name
+	uint32_t no[Deneme_subdentry_count]; // dentry ino
+	char name[Deneme_subdentry_count][32]; // dentry name
 };
 
 struct Deneme_inode {

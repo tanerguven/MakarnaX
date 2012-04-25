@@ -1,1 +1,2 @@
-hello_newlib
+/bin/fs readfile
+/bin/hello_newlib

@@ -220,11 +220,13 @@ static int command_create(int argc, char **argv) {
 		TestProgram *tp = test_program(argv[1]);
 		if (tp) {
 			r = do_fork();
-			printf("--");
 			if (r < 0)
 				return r;
 			if (r == 0) { // child
-				r = do_execve(argv[1], &argv[1]);
+				char buf[256];
+				strcpy(buf, "/bin/");
+				strcat(buf, argv[1]);
+				r = do_execve(buf, &argv[1]);
 				if (r < 0)
 					do_exit(0); // FIXME: code
 				PANIC("--");
