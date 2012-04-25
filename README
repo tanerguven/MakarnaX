@@ -1,5 +1,3 @@
-TODO: create English README file
-
 	MakarnaX kernel 0.01
 
 NELER VAR?
@@ -17,10 +15,13 @@ NELER VAR?
     - shared memory
     - semaphore
  - sanal dosya sistemi
+ - bellekte readonly dosya sistemi (open, read sistem cagrilari calisiyor)
  - kernel monitor ve debug modu: ctrl-alt-delete ile sistem duraklatilip,
    kaynaklar, process vb. gozlemlenebilir
  - test programlari (user_programs): sistem cagrilarini test etmek icin
    gelistirilmis programlar.
+ - Kullanici programlari icin C library destegi (newlib)
+ - Linux uzerinde calisabilen gcc cross compiler (i686-makarnax-gcc vb.)
 
 
 NELER YOK?
@@ -35,73 +36,45 @@ NELER YOK?
  - bircok sey ...
 
 
-SISTEM CAGRILARI VE FONKSIYONLAR
+EKLENMIS SISTEM CAGRILARI
 
-  int getpid();
-  int exit(int error_code);
-  int fork();
-  sighandler_t signal(int signum, sighandler_t handler);
-  unsigned int alarm(unsigned int seconds);
-  int kill(int pid, int sig);
-  int pause();
-  int wait(int *status);
-  int sys_ipc(unsigned int ipc_no, int a1, int a2, int a3, int a4);
-  unsigned int sys_sleep(unsigned int seconds);
-  int brk(void *addr);
-  void *sbrk(unsigned int increment);
+  fork, execve, getpid, exit, kill, pause, wait, signal, alarm, sleep, brk, sbrk
 
-  int open(const char *filename, int flags, int mode);
-  int close(unsigned int fd);
-  size_t read(unsigned int fd, char *buf, unsigned int count);
-  int chdir(const char *path);
-  char *getcwd(char *buf, size_t size);
-  int stat(const char *path, struct stat *buf);
-  int execve(const char *path, const char **argv);
-  DIR *opendir(const char *path);
-  int closedir(DIR *dirp);
-  struct dirent* readdir(DIR *dirp);
+  open, close, read, stat, opendir, closedir, readdir, chdir, getcwd
 
-  void sys_cputs(const char *s, size_t len);
-  int sys_cgetc();
-  void sys_yield();
+  shmget, shmat, shmdt, sem_init, sem_wait, sem_post
 
-  key_t shmget(key_t key, size_t size, int shmflg);
-  void *shmat(int shmid, const void *shmaddr, int shmflg);
-  int shmdt(const void *shmaddr);
-
-  int sem_init(sem_t *sem, int pshared, unsigned int value);
-  int sem_wait(sem_t *sem);
-  int sem_post(sem_t *sem);
+  sys_cputs (printf), sys_cgetc (getchar), sys_yield
 
 
+DIZINLER VE DOSYALAR:
 
-KODLAR
+  kernel: kernel kodlari
 
-  Kodlarda belli bir standart yok.  Biraz C++'in ozelliklerini iceriyor.
-  Kodlarin bulundugu dizinler su sekilde.
+  user_programs: kullanici program ve kutuphaneleri
+  	test: test programlari (C library olmadan derlenenler)
+	bin: kullanici programlari
+	lib: libmakarnax.a, crt0.o
 
-  kernel : kernel kodlari
+  lib: kernel icerisinde kullanilan kutuphaneler. newlib kullanilmayan
+    programlarda da kullanilabilir.
 
-  user_programs : test etmek icin kullanilan kullanici programlari
+  include: kernel ve test programlari icin kullanilan include directory
+    kernel: kernele ozel header dosyalari
+	asm: assembly kodlari icin hazirlanmis inline fonksiyonlar
+    user.h: test programlari icin (newlib kullanilmayanlarda)
 
-  bin : derleme sonucunda olusturulan kernel'in bulundugu dizin
+  tools: kerneli ve programlari derlemek icin cesitli araclar ve kutuphaneler
+    gcc_cross_compiler: makarnax icin gcc cross compiler ve newlibin bulundugu dizin
 
-  doc : dokumantasyon
+  init_programs: baslangicta calistirilacak programlarin listesi.
+    bu dosya user_programs/test/init (/bin/init) tarafindan kullaniliyor.
 
-  include : kernel ve user programlari icin kullanilan include directory
+  kernel_conf.h: kernel configrasyon dosyasi
 
-  include/kernel : kernele ozel header dosyalari
+  bin: derleme sonucunda olusturulan kernel'in bulundugu dizin
 
-  include/asm : assembly kodlari icin hazirlanmis inline fonksiyonlarin
-  bulundugu dizin. Fonksiyonlarin bir kisimi user modda kullanilabilir
-
-  include/*.h, include/sys/ : Standart C kutuphanesi vb. hem kernelde hem
-  userda kullanilabilir.
-
-  include/user.h : sistem cagrilarinin tanimli oldugu header. Sadece userda
-  kullanilabilir.
-
-
+  doc: dokumantasyon
 
 DERLEMEK:
 

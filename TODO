@@ -1,7 +1,4 @@
-- create English TODO file
-
 - Türkçe klavye
-- user panic fonksiyonu
 - ASSERT kullanimlari gozden gecirilmeli gereksizleri temizlenmeli
 ya da ASSERT_D yapilmali
 
@@ -11,4 +8,3 @@ ya da ASSERT_D yapilmali
 - shell programi
 
 - kullanici programlarinin ciktilarini Linux ile karsilastiran program
-- jos'daki gibi debug (satır numaralarıyla backtrace)
