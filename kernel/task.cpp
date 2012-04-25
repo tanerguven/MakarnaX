@@ -285,6 +285,8 @@ void init_kernel_task(struct DirEntry* root) {
 
 // TODO: fork kurallari duzenlenmeli (neler kopyalanacak, neler kopyalanmayacak?)
 int do_fork() {
+	CLOBBERED_REGISTERS_ALL();
+
 	/* debug only */
 	uint32_t mem_before_setup_vm = 0;
 	uint32_t mem_before_copy_pages = 0;
@@ -401,7 +403,6 @@ bad_fork_task_alloc:
 	return -1;
 }
 
-/* bu fonksiyon calismadan once tum registerlar kayedilmeli */
 void switch_to_task(Task *newtask) {
 	CLOBBERED_REGISTERS_ALL();
 
