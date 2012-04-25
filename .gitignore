@@ -34,3 +34,7 @@
 
 *.pisi
 .ropeproject
+
+
+/bin
+/tools/gcc_cross_compiler/local
