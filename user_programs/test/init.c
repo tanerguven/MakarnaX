@@ -37,6 +37,9 @@ int main(int argc, char** argv) {
 	/* her satir icin bir proses olustur */
 	for (i = 0 ; i < i_line ; i++) {
 
+		if (strcmp(lines[i], "")==0)
+			continue;
+
 		pid = fork();
 
 		if (pid < 0) {

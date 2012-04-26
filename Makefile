@@ -87,6 +87,12 @@ clean:
 	done
 	rm -f bin/kernel bin/kernel.asm;
 
+clear-test:
+	echo "" > init_programs
+
+test-%:
+	echo "/bin/"$* >> init_programs
+
 documentation:
 	doxygen doc/doc.doxygen
 
