@@ -104,7 +104,7 @@ int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size) {
 }
 
 int find_dir_entry(const char *path, struct DirEntry **dirent) {
-	int i = 0, r = -1;
+	int i = 0, r = 0;
 	char buf[MAX_DIR_ENTRY_SIZE];
 
 	struct DirEntry *curr, *next;
