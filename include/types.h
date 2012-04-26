@@ -13,8 +13,11 @@ typedef          char  int8_t;
 typedef char* ptr_t;
 typedef uint32_t addr_t;
 
-
+#ifdef __cplusplus
 #define asmlink extern "C"
+# else
+#define asmlink extern
+#endif
 
 // FIXME: newlib types.h
 #ifndef _SYS_TYPES_H
