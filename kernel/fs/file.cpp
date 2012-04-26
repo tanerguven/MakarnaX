@@ -17,6 +17,7 @@
 
 #include "../task.h"
 #include "../kernel.h"
+#include <kernel/syscall.h>
 #include "vfs.h"
 #include <sys/stat.h>
 
@@ -60,10 +61,8 @@ void do_close(File *f) {
 }
 
 /* open, opendir cagrilari */
-asmlink void sys_open() {
-	Trapframe *tf = task_curr->registers();
-	const char *path = (const char*)
-		user_to_kernel_check(get_param1(tf), MAX_PATH_SIZE, 0);
+SYSCALL_DEFINE1(open, const char*, path) {
+	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
 	// int flags = (int)get_param2(tf);
 	// int mode = (int)get_param3(tf);
 	int fd;
@@ -75,7 +74,7 @@ asmlink void sys_open() {
 
 	r = do_open(&f, path);
 	if (r < 0)
-		return set_return(tf, r);
+		return SYSCALL_RETURN(r);
 
 	for (fd = 0 ; fd < TASK_MAX_FILE_NR ; fd++) {
 		if (task_curr->files[fd] == NULL) {
@@ -94,25 +93,26 @@ asmlink void sys_open() {
  */
 
 	eflags_load(eflags);
-	return set_return(tf, fd);
+	return SYSCALL_RETURN(fd);
 }
+SYSCALL_END(open)
 
-asmlink void sys_close() {
-	Trapframe *tf = task_curr->registers();
-	unsigned int fd = get_param1(tf);
 
+SYSCALL_DEFINE1(close, unsigned int, fd) {
 	uint32_t eflags = eflags_read();
 	cli();
 
 	if (task_curr->files[fd] == NULL)
-		return set_return(tf, -1);
+		return SYSCALL_RETURN(-1);
 
 	do_close(task_curr->files[fd]);
 	task_curr->files[fd] = NULL;
 
 	eflags_load(eflags);
-	return set_return(tf, 0);
+	return SYSCALL_RETURN(0);
 }
+SYSCALL_END(close)
+
 
 int do_read(File *f, char *buf, unsigned int count) {
 	int r;
@@ -125,11 +125,8 @@ int do_read(File *f, char *buf, unsigned int count) {
 	return r;
 }
 
-asmlink void sys_read() {
-	Trapframe *tf = task_curr->registers();
-	unsigned int fd = get_param1(tf);
-	unsigned int count = get_param3(tf);
-	char *buf = (char*)user_to_kernel_check(get_param2(tf), count, 1);
+SYSCALL_DEFINE3(read, unsigned int, fd, char*, buf, unsigned int, count) {
+	buf = (char*)user_to_kernel_check((uint32_t)buf, count, 1);
 	size_t r;
 
 	r = task_curr->files[fd]->fo->read(task_curr->files[fd], buf, count);
@@ -137,11 +134,11 @@ asmlink void sys_read() {
 	// FIXME: bu islem nerede yapilmali ?
 	task_curr->files[fd]->fpos += r;
 
-	return set_return(tf, r);
+	return SYSCALL_RETURN(r);
 }
+SYSCALL_END(read)
 
-asmlink void sys_readdir() {
-	Trapframe *tf = task_curr->registers();
+SYSCALL_DEFINE0(readdir) {
 	// unsigned int fd = get_param1(tf);
 	// // FIXME: adres kontrolu
 	// struct dirent *dirent = (struct dirent*)get_param2(tf);
@@ -149,22 +146,25 @@ asmlink void sys_readdir() {
 
 	PANIC("readdir tamamlanmadi\n");
 
-	return set_return(tf, -1);
+	return SYSCALL_RETURN(-1);
 }
+SYSCALL_END(readdir)
 
-asmlink void sys_stat() {
-	Trapframe *tf = task_curr->registers();
-	char *path = (char*)user_to_kernel_check(get_param1(tf), MAX_PATH_SIZE, 1);
-	struct stat* stat = (struct stat*)
-		user_to_kernel_check(get_param2(tf),sizeof(struct stat), 1);
+SYSCALL_DEFINE2(stat, char*, path, struct stat*, stat) {
+	path = (char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 1);
+	stat = (struct stat*)user_to_kernel_check((uint32_t)stat,sizeof(struct stat), 1);
+
 	struct DirEntry *dentry;
 	int r;
 	uint32_t eflags = eflags_read();
 	cli();
 
+	printf(">> %s\n", path);
 	r = find_dir_entry(path, &dentry);
+	printf(">> %d\n", r);
+
 	if (r < 0)
-		return set_return(tf, r);
+		return SYSCALL_RETURN(r);
 
 	stat->st_dev = 123;
 	stat->st_ino = dentry->inode->ino;
@@ -172,8 +172,9 @@ asmlink void sys_stat() {
 	stat->st_size =  dentry->inode->size;
 
 	eflags_load(eflags);
-	return set_return(tf, 0);
+	return SYSCALL_RETURN(0);
 }
+SYSCALL_END(stat)
 
 struct File* dup_file(struct File *src) {
 	struct File *f = (struct File*)kmalloc(sizeof(struct File));
@@ -192,10 +193,8 @@ void task_curr_free_files() {
 	}
 }
 
-asmlink void sys_chdir() {
-	Trapframe *tf = task_curr->registers();
-	const char *path = (const char*)
-		user_to_kernel_check(get_param1(tf), MAX_PATH_SIZE, 0);
+SYSCALL_DEFINE1(chdir, const char*, path) {
+	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
 	int r;
 	DirEntry *dentry;
 
@@ -204,20 +203,21 @@ asmlink void sys_chdir() {
 
 	r = find_dir_entry(path, &dentry);
 	if (r < 0)
-		return set_return(tf, r);
+		return SYSCALL_RETURN(r);
 
 	task_curr->pwd = dentry;
 
 	eflags_load(eflags);
-	return set_return(tf, 0);
+	return SYSCALL_RETURN(0);
 }
+SYSCALL_END(chdir)
 
-asmlink void sys_getcwd() {
-	Trapframe *tf = task_curr->registers();
-	int size = (int)get_param2(tf);
-	char *buf = (char*)user_to_kernel_check(get_param1(tf), size, 1);
+
+SYSCALL_DEFINE2(getcwd, char*, buf, int, size) {
+	buf = (char*)user_to_kernel_check((uint32_t)buf, size, 1);
 
 	dir_entry_to_path(task_curr->pwd, buf, size);
 
-	return set_return(tf, 0);
+	return SYSCALL_RETURN(0);
 }
+SYSCALL_END(getcwd)

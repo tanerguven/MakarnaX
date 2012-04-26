@@ -58,13 +58,41 @@
 /* #define SYS_fstat		108 */
 #define SYS_ipc			117
 #define SYS_getcwd		183
-#define SYS_cputs		1001
-#define SYS_cgetc		1002
-#define SYS_yield		1003
-#define SYS_wait		1004
-#define SYS_dongu		1005
-#define SYS_sleep		1006
+#define SYS_cputs		901
+#define SYS_cgetc		902
+#define SYS_yield		903
+#define SYS_wait		904
+#define SYS_dongu		905
+#define SYS_sleep		906
 // FIXME: --
-#define SYS_sbrk		1007
+#define SYS_sbrk		907
+#define MAX_SYSCALL_COUNT 1000
+
+
+#define SYSCALL_DEFINE0(name) \
+	asmlink void sys_##name() { \
+	Trapframe* tf = task_curr->registers();		\
+
+#define SYSCALL_DEFINE1(name, type1, var1) \
+	SYSCALL_DEFINE0(name) \
+	type1 var1 = (type1)get_param1(tf);
+
+#define SYSCALL_DEFINE2(name, type1, var1, type2, var2) \
+	SYSCALL_DEFINE1(name, type1, var1);					\
+	type2 var2 = (type2)get_param2(tf);
+
+#define SYSCALL_DEFINE3(name, type1, var1, type2, var2, type3, var3) \
+	SYSCALL_DEFINE2(name, type1, var1, type2, var2); \
+	type3 var3 = (type3)get_param3(tf);
+
+#define SYSCALL_DEFINE4(name, type1, var1, type2, var2, type3, var3, type4, var4) \
+	SYSCALL_DEFINE3(name, type1, var1, type2, var2, type3, var3); \
+	type4 var4 = (type4)get_param4(tf);
+
+#define SYSCALL_END(name) }
+
+#define SYSCALL_RETURN(val) \
+	set_return(task_curr->registers(), (uint32_t)val)	\
+
 
 #endif /* _INC_SYSCALL_H */

@@ -29,6 +29,7 @@
 using namespace std;
 
 #include "kernel.h"
+#include <kernel/syscall.h>
 
 // signal.cpp
 extern void free_sigstack();
@@ -221,12 +222,15 @@ void task_init() {
 	printf(">> task_init OK\n");
 }
 
-asmlink void sys_getpid(void) {
-	ASSERT(task_curr);
-	return set_return(task_curr->registers(), task_curr->id);
-}
 
-asmlink void sys_fork() {
+SYSCALL_DEFINE0(getpid) {
+	ASSERT(task_curr);
+	return SYSCALL_RETURN(task_curr->id);
+}
+SYSCALL_END(getpid)
+
+
+SYSCALL_DEFINE0(fork) {
 	int pid;
 
 	uint32_t eflags = eflags_read();
@@ -235,8 +239,10 @@ asmlink void sys_fork() {
 	pid = do_fork();
 
 	eflags_load(eflags);
-	return set_return(task_curr->registers(), pid);
+	return SYSCALL_RETURN(pid);
 }
+SYSCALL_END(fork)
+
 
 // FIXME: uygun yere tasi
 void move_stack(uint32_t ka_curr, uint32_t ka_new, uint32_t size) {

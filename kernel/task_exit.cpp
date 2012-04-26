@@ -24,6 +24,7 @@
 #include "sched.h"
 #include "time.h"
 #include "memory/virtual.h"
+#include "kernel/syscall.h"
 
 #include <wmc/idhashtable.h>
 
@@ -79,19 +80,13 @@ asmlink void do_exit(int code) {
 	schedule();
 }
 
-asmlink void sys_exit() {
-	Trapframe* tf = task_curr->registers();
-	int error_code = get_param1(tf);
-
+SYSCALL_DEFINE1(exit, int, error_code) {
 	do_exit((error_code&0xff) << 8);
-	return set_return(tf, 0);
+	return SYSCALL_RETURN(0);
 }
+SYSCALL_END(exit)
 
-asmlink void sys_kill() {
-	Trapframe* tf = task_curr->registers();
-	int pid = get_param1(tf);
-	int sig = get_param2(tf);
-
+SYSCALL_DEFINE2(kill, int, pid, int, sig) {
 	uint32_t eflags = eflags_read();
 	cli();
 
@@ -100,23 +95,22 @@ asmlink void sys_kill() {
 	eflags_load(eflags);
 
 	if (t == NULL)
-		return set_return(tf, -1);
+		return SYSCALL_RETURN(-1);
+
 	send_signal(sig, t);
-	return set_return(tf, 0);
+	return SYSCALL_RETURN(0);
 }
+SYSCALL_END(kill)
 
 /*
  * child process'in bitmesini bekle ve child process idsini dondur.
  * child process yoksa -1 dondur.
  */
-asmlink void sys_wait() {
-	Trapframe* tf = task_curr->registers();
-	int *state = (int*)get_param1(tf);
-
+SYSCALL_DEFINE1(wait, int*, state) {
 	ASSERT(task_curr);
 
 	if ( task_curr->pgdir.verify_user_addr(state, 4, PTE_U) < 0 ) {
-		printf(">> sys_wait not verified: 0x%08x - 0x%08x\n", state, state+1);
+		printf(">> wait not verified: 0x%08x - 0x%08x\n", state, state+1);
 		do_exit(111);
 	}
 	state = (int*)uaddr2kaddr((uint32_t)state);
@@ -148,3 +142,4 @@ asmlink void sys_wait() {
 
 	return set_return(task_curr->registers(), t->id);
 }
+SYSCALL_END(wait)

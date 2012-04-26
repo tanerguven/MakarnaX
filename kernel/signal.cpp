@@ -24,6 +24,7 @@
 #include <signal.h>
 
 #include "kernel.h"
+#include <kernel/syscall.h>
 
 /*
  * TODO: signal mask eklenmeli
@@ -207,11 +208,8 @@ void signal_return(Trapframe *tf) {
 	pop_stack();
 }
 
-asmlink void sys_signal() {
-	Trapframe* tf = current_registers();
-	int signum = (int)get_param1(tf);
-	uint32_t handler = get_param2(tf);
 
+SYSCALL_DEFINE2(signal, int, signum, uint32_t, handler) {
 	if (signum < 0 || signum > 32 || signum == SIGKILL || signum == SIGSTOP)
 		return set_return(tf, -EINVAL);
 
@@ -219,8 +217,10 @@ asmlink void sys_signal() {
 
 	task_curr->signal.action[signum].handler = handler;
 
-	return set_return(tf, 0);
+	return SYSCALL_RETURN(0);
 }
+SYSCALL_END(signal)
+
 
 // FIXME: uygun yere tasi
 void copy_stack(uint32_t addr) {

@@ -17,6 +17,7 @@ OBJS = \
 	trap.o\
 	traphandler.o\
 	syscall.o\
+	syscall_table.o\
 	sched.o\
 	picirq.o\
 	timer.o\

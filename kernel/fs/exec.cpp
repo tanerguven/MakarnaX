@@ -18,6 +18,7 @@
 #include "../elf.h"
 #include "../task.h"
 #include "../fs/vfs.h"
+#include <kernel/syscall.h>
 
 #include <types.h>
 
@@ -175,15 +176,15 @@ char _a[16][256];
 char _path[MAX_PATH_SIZE];
 char *_argv[16];
 
+
 // FIXME: parametre kontrolunu duzelt
-asmlink void sys_execve() {
+SYSCALL_DEFINE2(execve, const char*, path, char *const*, argv) {
+	path = (const char*)uaddr2kaddr((uint32_t)path);
+	argv = (char* const*)uaddr2kaddr((uint32_t)argv);
+
 	int i, r;
-	Trapframe *tf = task_curr->registers();
 
 	cli();
-
-	const char *path = (const char*)uaddr2kaddr(get_param1(tf));
-	char *const *argv = (char* const*)uaddr2kaddr(get_param2(tf));
 
 	/* kullanicidan gelen parametreleri kopyala */
 	strncpy(_path, path, MAX_PATH_SIZE);
@@ -197,5 +198,6 @@ asmlink void sys_execve() {
 
 	r = do_execve(_path, _argv);
 
-	return set_return(tf, r);
+	return SYSCALL_RETURN(r);
 }
+SYSCALL_END(execve)

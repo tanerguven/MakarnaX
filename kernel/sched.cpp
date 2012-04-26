@@ -16,6 +16,7 @@
  */
 
 #include "kernel.h"
+#include <kernel/syscall.h>
 
 #include "task.h"
 #include "sched.h"
@@ -118,14 +119,11 @@ void schedule() {
 	// printf(">> [%d] schedule OK\n", task_curr->id);
 }
 
-
-asmlink void sys_pause() {
-
+SYSCALL_DEFINE0(pause) {
 	/* birden fazla signal varsa, pause sonrakinin calismasini engellememeli */
 	if (task_curr->sigstack.size() > 1)
 		return;
 
-	Trapframe *tf = task_curr->registers();
 	uint32_t eflags = eflags_read();
 
 	cli();
@@ -137,14 +135,19 @@ asmlink void sys_pause() {
 	 * pause fonksiyonu sonlandiginda -1 degeri dondur:
 	 * http://www.kernel.org/doc/man-pages/online/pages/man2/pause.2.html
 	 */
-	set_return(tf, -1);
+	SYSCALL_RETURN(-1);
 
 	schedule();
 }
+SYSCALL_END(pause)
 
-asmlink void sys_yield() {
+
+SYSCALL_DEFINE0(yield) {
 	schedule();
+	SYSCALL_RETURN(0);
 }
+SYSCALL_END(yield)
+
 
 /** timer kesmesi ile calistirilan fonksiyon */
 asmlink void do_timer(Trapframe *tf) {
@@ -168,10 +171,7 @@ asmlink void do_timer(Trapframe *tf) {
 		schedule();
 }
 
-asmlink void sys_alarm() {
-	Trapframe* tf = task_curr->registers();
-	unsigned int seconds = (unsigned int)get_param1(tf);
-
+SYSCALL_DEFINE1(alarm, unsigned int, seconds) {
 	uint32_t eflags = eflags_read();
 	cli();
 
@@ -184,7 +184,7 @@ asmlink void sys_alarm() {
 
 	if (seconds == 0) {
 		eflags_load(eflags);
-		return set_return(tf, 0);
+		return SYSCALL_RETURN(0);
 	}
 
 	task_curr->alarm = jiffies_to_seconds() + seconds;
@@ -203,8 +203,10 @@ asmlink void sys_alarm() {
 
 	eflags_load(eflags);
 
-	return set_return(tf, 0);
+	return SYSCALL_RETURN(0);
 }
+SYSCALL_END(alarm)
+
 
 /** alarm suresi dolan tasklari kontrol eder */
 void check_alarm() {
@@ -300,13 +302,10 @@ void check_sleep_list() {
 	eflags_load(eflags);
 }
 
-/** zamana gore sleep yapar */
-asmlink void sys_sleep() {
-	Trapframe* tf = task_curr->registers();
-	unsigned int seconds = (unsigned int)get_param1(tf);
 
+SYSCALL_DEFINE1(sleep, unsigned int, seconds) {
 	if (seconds == 0)
-		return set_return(tf, 0);
+		return SYSCALL_RETURN(0);
 
 	uint32_t eflags = eflags_read();
 	cli();
@@ -331,5 +330,6 @@ asmlink void sys_sleep() {
 
 	int r = task_curr->sleep - jiffies_to_seconds();
 
-	return set_return(task_curr->registers(), (r < 1) ? 0 : r);
+	return SYSCALL_RETURN((r < 1) ? 0 : r);
 }
+SYSCALL_END(sleep)

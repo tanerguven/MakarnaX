@@ -16,6 +16,7 @@
  */
 
 #include "../kernel.h"
+#include <kernel/syscall.h>
 
 #include "../trap.h"
 #include "../task.h"
@@ -66,14 +67,15 @@ static void no_ipc() {
 	PANIC("no_ipc");
 }
 
-asmlink void sys_ipc() {
-	uint32_t ipc_no = get_param1(task_curr->registers());
 
+SYSCALL_DEFINE1(ipc, unsigned int, ipc_no) {
 	if (ipc_no < sizeof(ipc_func)+1)
 		ipc_func[ipc_no]();
 	else
 		no_ipc();
 }
+SYSCALL_END(ipc)
+
 
 void ipc_init() {
 	shm_init();
