@@ -107,7 +107,6 @@ SYSCALL_END(kill)
  * child process yoksa -1 dondur.
  */
 SYSCALL_DEFINE1(wait, int*, state) {
-	ASSERT(task_curr);
 
 	if ( task_curr->pgdir.verify_user_addr(state, 4, PTE_U) < 0 ) {
 		printf(">> wait not verified: 0x%08x - 0x%08x\n", state, state+1);

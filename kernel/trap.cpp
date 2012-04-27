@@ -259,8 +259,6 @@ asmlink void trap_handler(Trapframe *tf) {
 	}
 
 	/* user mode */
-	ASSERT(task_curr);
-
 	if (tf->trapno == T_SYSCALL) {
 		do_syscall(tf->regs.eax);
 		goto return_trap_handler;
@@ -274,7 +272,7 @@ asmlink void trap_handler(Trapframe *tf) {
 
 return_trap_handler:
 	cli(); // interruptlar disable olmazsa tuhaf hatalar oluyor
-	ASSERT(task_curr && task_curr->state == Task::State_running);
+	ASSERT(task_curr->state == Task::State_running);
 }
 
 void do_error(Trapframe* tf) {

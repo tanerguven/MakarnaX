@@ -224,7 +224,6 @@ void task_init() {
 
 
 SYSCALL_DEFINE0(getpid) {
-	ASSERT(task_curr);
 	return SYSCALL_RETURN(task_curr->id);
 }
 SYSCALL_END(getpid)
@@ -415,7 +414,6 @@ void switch_to_task(Task *newtask) {
 	// printf(">> [%d] switch to %d\n", task_curr->id, newtask->id);
 
 	ASSERT(!(eflags_read() & FL_IF));
-	ASSERT(task_curr);
 
 	/* eski proses calismissa */
 	if (task_curr->k_eip == 0) {

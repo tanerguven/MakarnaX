@@ -81,7 +81,6 @@ Task* find_runnable_task() {
 
 void schedule() {
 	cli();
-	ASSERT(task_curr);
 	// printf(">> [%d] schedule\n", task_curr->id);
 
 	if (task_curr && task_curr->run_before_switch_f) {
@@ -154,7 +153,6 @@ asmlink void do_timer(Trapframe *tf) {
 	ASSERT(!(eflags_read() & FL_IF));
 	jiffies++;
 
-	ASSERT(task_curr != NULL);
 	ASSERT(task_curr->state == Task::State_running);
 
 	task_curr->counter--;
