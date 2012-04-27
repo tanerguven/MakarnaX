@@ -1,0 +1,10 @@
+R = $(D)/tools/gcc_cross_compiler/local
+PATH := ${PATH}:$(R)/bin
+CC = i686-makarnax-gcc
+GCC = i686-makarnax-gcc
+LD = i686-makarnax-gcc
+
+INCLUDES = \
+	-I ${R}/i686-makarnax/include \
+	-I ${R}/lib/gcc/i686-makarnax/4.6.3/include \
+	-I ${R}/lib/gcc/i686-makarnax/4.6.3/include-fixed

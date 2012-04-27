@@ -69,16 +69,13 @@ dirs:
 	cd $$p; make; cd ..; \
     done
 
-gcc_cross_compiler:
-	cd tools/gcc_cross_compiler; ./build.sh;
-	ln -f -s `pwd`/user_programs/lib/libmakarnax.a tools/gcc_cross_compiler/local/lib/.
-	ln -f -s `pwd`/user_programs/lib/crt0.o tools/gcc_cross_compiler/local/lib/.
-	rm -rf tools/gcc_cross_compiler/build
+all-tools:
+	cd tools/gcc_cross_compiler; make
+	ln -f -s ${CURDIR}/user_programs/lib/libmakarnax.a tools/gcc_cross_compiler/local/i686-makarnax/lib/.
+	ln -f -s ${CURDIR}/user_programs/lib/crt0.o tools/gcc_cross_compiler/local/i686-makarnax/lib/.
 
-tools-clean:
-	rm -f tools/gcc_cross_compiler/*.tar.*
-	rm -rf tools/gcc_cross_compiler/build
-	rm -rf tools/gcc_cross_compiler/local
+clean-tools:
+	cd tools/gcc_cross_compiler; make clean;
 
 clean:
 	@for p in  $(DIRS); \
@@ -87,7 +84,7 @@ clean:
 	done
 	rm -f bin/kernel bin/kernel.asm;
 
-clear-test:
+clean-test:
 	echo "" > init_programs
 
 test-%:

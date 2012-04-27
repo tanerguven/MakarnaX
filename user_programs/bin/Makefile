@@ -1,23 +1,20 @@
 D = ../..
 include $(D)/Makefile.inc
-
-R = $(D)/tools/gcc_cross_compiler/local
-PATH := ${PATH}:$(R)/bin
-CC = i686-makarnax-gcc
-GCC = i686-makarnax-gcc
-LD = i686-makarnax-gcc
+include ../MakarnaXMakefile
 
 CFLAGS = -nostdinc -O0 -g3 -Wall -Werror=implicit-function-declaration \
-	-I$(R)/include \
-	-I$(R)/lib/gcc/i686-makarnax/4.6.3/include
+	${INCLUDES}
 
 USER_LIBS = -lc -lmakarnax
-LDFLAGS = -static -L$(R)/lib
+LDFLAGS = -static -L$(R)/lib -L../lib
 
 PROGRAMS = \
 	hello_newlib.bin \
 
-all: $(PROGRAMS)
+all: errors $(PROGRAMS)
+
+errors:
+	ln -s ../test/cross_compile_error.bin ../test/hello_newlib.bin
 
 hello_newlib.bin: hello_newlib.o
 	@echo [$(LD)] hello_newlib.bin

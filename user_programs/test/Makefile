@@ -22,6 +22,7 @@ PROGRAMS = \
 	processmemtest.bin \
 	kill.bin \
 	fs.bin \
+	cross_compile_error.bin 
 
 all: $(PROGRAMS)
 
@@ -32,6 +33,10 @@ test.bin: test.o
 hello.bin: hello.o
 	@echo [ld] test.bin
 	@$(LD) -T"link.ld" -o hello.bin hello.o $(LIBS)
+
+cross_compile_error.bin: cross_compile_error.o
+	@echo [ld] cross_compile_error.bin
+	@$(LD) -T"link.ld" -o cross_compile_error.bin cross_compile_error.o $(LIBS)
 
 divide_error.bin: divide_error.o
 	@echo [ld] divide_error.bin

@@ -1,16 +1,9 @@
 D = ../..
 include $(D)/Makefile.inc
-
-R = $(D)/tools/gcc_cross_compiler/local
-PATH := ${PATH}:$(R)/bin
-CC = i686-makarnax-gcc
-GCC = i686-makarnax-gcc
-LD = i686-makarnax-gcc
-
+include ../MakarnaXMakefile
 
 CFLAGS = -nostdinc -O0 -g3 -Wall \
-	-I$(R)/include \
-	-I$(R)/lib/gcc/i686-makarnax/4.6.3/include \
+	${INCLUDES} \
 	-I$(D)/include
 
 LDFLAGS = -static -nostdlib --L$(R)/lib
