@@ -11,16 +11,18 @@ LDFLAGS = -static -L$(R)/lib -L../lib
 PROGRAMS = \
 	hello_newlib.bin \
 
-all: errors $(PROGRAMS)
+all: $(PROGRAMS)
 
-errors:
-	ln -sf ../test/cross_compile_error.bin ../test/hello_newlib.bin
+ln_error-%:
+	ln -sf ../test/cross_compile_error.bin ../test/$*;
 
-hello_newlib.bin: hello_newlib.o
+ln_program-%:
+	ln -sf ${CURDIR}/$* ../test/$*;
+
+hello_newlib.bin: ln_error-"hello_newlib.bin" hello_newlib.o
 	@echo [$(LD)] hello_newlib.bin
 	@$(LD) $(LDFLAGS) -o hello_newlib.bin hello_newlib.o $(USER_LIBS)
-	rm -f ../test/hello_newlib.bin
-	ln -sf `pwd`/hello_newlib.bin ../test/hello_newlib.bin
+	make ln_program-"hello_newlib.bin"
 
 clean:
 	rm -f *.o *.bin *.d
