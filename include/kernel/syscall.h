@@ -71,7 +71,7 @@
 
 #define SYSCALL_DEFINE0(name) \
 	asmlink void sys_##name() { \
-	Trapframe* tf = task_curr->registers();		\
+	Trapframe* tf __attribute__((unused)) = task_curr->registers();	\
 
 #define SYSCALL_DEFINE1(name, type1, var1) \
 	SYSCALL_DEFINE0(name) \

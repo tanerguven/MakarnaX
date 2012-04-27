@@ -27,7 +27,6 @@ int main(int argc, char** argv) {
 }
 
 void test2() {
-	int c;
 	char *x, *y;
 
 	printf("newlib malloc test\n");
@@ -52,11 +51,11 @@ void test2() {
 	printf("y: %p\n", y);
 
 	printf("devam etmek icin bir tusa basin\n");
-	c = getchar();
+	getchar();
 	free(y);
 
 	printf("devam etmek icin bir tusa basin\n");
-	c = getchar();
+	getchar();
 
 	printf("newlib malloc test OK\n");
 }

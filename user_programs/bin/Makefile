@@ -14,13 +14,13 @@ PROGRAMS = \
 all: errors $(PROGRAMS)
 
 errors:
-	ln -s ../test/cross_compile_error.bin ../test/hello_newlib.bin
+	ln -sf ../test/cross_compile_error.bin ../test/hello_newlib.bin
 
 hello_newlib.bin: hello_newlib.o
 	@echo [$(LD)] hello_newlib.bin
 	@$(LD) $(LDFLAGS) -o hello_newlib.bin hello_newlib.o $(USER_LIBS)
 	rm -f ../test/hello_newlib.bin
-	ln -s `pwd`/hello_newlib.bin ../test/hello_newlib.bin
+	ln -sf `pwd`/hello_newlib.bin ../test/hello_newlib.bin
 
 clean:
 	rm -f *.o *.bin *.d
