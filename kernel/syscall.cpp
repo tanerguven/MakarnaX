@@ -161,7 +161,6 @@ uint32_t user_to_kernel_check(uint32_t base, uint32_t limit, int rw) {
 		printf(">> user addr not verified: 0x%08x - 0x%08x\n", base,
 			   base+limit);
 		do_exit(111);
-		PANIC("user_to_kernel");
 	}
 
 	return uaddr2kaddr(base);

@@ -153,7 +153,6 @@ void check_signals() {
 					/*(SIG_DA & _S(sig)) | (SIG_DT & _S(sig))*/
 					task_curr->signal.sig |= _S(sig);
 					do_exit(sig);
-					PANIC("--");
 				}
 
 				push_stack();

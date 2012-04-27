@@ -78,6 +78,7 @@ asmlink void do_exit(int code) {
 	printf(">> [%d] exit OK\n", task_curr->id);
 
 	schedule();
+	PANIC("do_exit return");
 }
 
 SYSCALL_DEFINE1(exit, int, error_code) {
