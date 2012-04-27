@@ -1,10 +1,10 @@
 D = ../..
 include $(D)/Makefile.inc
 
-CFLAGS = $(M) -I$(D)/include -O1 -g3 -Wall -Wno-unused-but-set-variable -c \
-	 -nostdlib -fno-builtin -fno-stack-protector -Isysdeps/i386/ -I./ -Isysdeps/generic
+NEWLIB_VER=1.20.0
 
-CPPFLAGS = $(CFLAGS)
+CFLAGS = $(M) -nostdlib -fno-builtin -fno-stack-protector -O1 -Wall \
+	-Inewlib-${NEWLIB_VER}/newlib/libc/include
 
 OBJS = memcpy.o \
 	memmove.o \
@@ -17,13 +17,28 @@ OBJS = memcpy.o \
 	strncmp.o \
 	strncpy.o \
 	strnlen.o \
-	memcmp.o \
+	memcmp.o
 
-all: $(OBJS)
+
+all:
+	@
+
+download:
+	@if [ ! -d newlib-${NEWLIB_VER} ]; \
+	then \
+		wget -c "ftp://sources.redhat.com/pub/newlib/newlib-${NEWLIB_VER}.tar.gz"; \
+		tar xf newlib-${NEWLIB_VER}.tar.gz; \
+		cp newlib-1.20.0/newlib/libc/string/*.c .; \
+	fi
+
+compile: $(OBJS)
 	@echo [ar] string.a
 	@ar cr string.a $(OBJS)
 	@echo [ld] string.O
 	@$(LD) -r -o string.O $(OBJS)
 
 clean:
-	rm -f *.o *.O *.a;
+	rm -rf *.o *.O *.c *.d *.a newlib-${NEWLIB_VER}
+
+clean-all: clean
+	rm -rf newlib-${NEWLIB_VER}*

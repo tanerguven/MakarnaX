@@ -20,7 +20,7 @@ all: user_lib
 -include $(DEPS_USER_LIB)
 
 libstring:
-	@cd string; make;
+	@cd string; make download; make compile;
 
 lib: $(OBJ_LIB)
 	@echo [ld] lib.O
