@@ -51,6 +51,9 @@ kernel: dirs
 	@$(LD) -Tscripts/link.ld -o"bin/kernel" $(OBJS) $(LIBS) -b binary $(PROGRAMS) init_programs
 	@objdump -S bin/kernel > bin/kernel.asm
 
+clean-kernel:
+	cd kernel; make clean;
+
 usr_lib:
 	cd user_programs/lib; make clean; make;
 
