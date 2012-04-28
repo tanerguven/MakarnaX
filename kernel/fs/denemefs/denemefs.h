@@ -28,6 +28,7 @@ extern struct Deneme_inode* inode_to_deneme(struct inode *inode);
 
 /* inode operations */
 extern int denemefs_lookup(struct inode *i_dir, const char* name, struct inode *i_dest);
+extern int denemefs_permission(struct inode *i, int flags);
 
 /* file operations */
 extern uint32_t denemefs_read(struct File *f, char *buf, size_t size);

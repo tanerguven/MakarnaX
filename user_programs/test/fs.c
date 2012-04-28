@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 int openfile() {
 	int r;
 
-	r = open("dosya1", 0, 0);
+	r = open("dosya1", 1, 0);
 	printf("r %d\n", r);
 
 	r = close(r);
@@ -71,7 +71,7 @@ int readfile() {
 
 	/* dosya1 isimli dosyayi ac */
 	printf("open dosya1\n");
-	fd1 = open("dosya1", 0, 0);
+	fd1 = open("dosya1", 1, 0);
 	if (fd1 < 0)
 		return fd1;
 	printf("fd1: %d\n", fd1);
@@ -82,7 +82,7 @@ int readfile() {
 
 	/* forktest programini dosya olarak ac */
 	printf("\nopen forktest\n");
-	fd2 = open("forktest", 0, 0);
+	fd2 = open("forktest", 1, 0);
 	if (fd2 < 0)
 		return fd2;
 	printf("fd2: %d\n", fd2);
@@ -99,7 +99,7 @@ int readfile() {
 	}
 
 	printf("open dosya2\n");
-	fd1 = open("dosya2", 0, 0);
+	fd1 = open("dosya2", 1, 0);
 	if (fd1 < 0)
 		return fd1;
 	printf("fd1: %d\n", fd1);
@@ -121,19 +121,19 @@ int writefile() {
 	const char *yazi = "dosyaya yazma deneme";
 
 	/*
-	 * dosya1 isimli dosyayi 2 kere ac ve birinde yazip digerinde oku
+	 * dosya1 isimli dosyayi 2 kere ro ac ve birinde yazip digerinde oku
 	 * dosya readonly oldugu icin yazmamali
 	 */
-	printf("open dosya1\n");
-	fd1 = open("dosya1", 0, 0);
+	printf("open dosya1 R\n");
+	fd1 = open("dosya1", 1, 0);
+	printf("fd1: %d\n", fd1);
 	if (fd1 < 0)
 		return fd1;
-	printf("fd1: %d\n", fd1);
 
-	fd2 = open("dosya1", 0, 0);
+	fd2 = open("dosya1", 1, 0);
+	printf("fd2: %d\n", fd2);
 	if (fd2 < 0)
 		return fd2;
-	printf("fd2: %d\n", fd2);
 
 	r = write(fd1, yazi, strlen(yazi));
 	printf("r %d\n", r);
@@ -152,19 +152,19 @@ int writefile() {
 	printf("\n");
 
 	/*
-	 * dosya2 isimli dosyayi 2 kere ac ve birinde yazip digerinde oku
+	 * dosya2 isimli dosyayi rw ve ro ac
 	 * dosya rw oldugu icin yazilabilmeli
 	 */
-	printf("open dosya2\n");
-	fd1 = open("dosya2", 0, 0);
+	printf("open dosya2 W\n");
+	fd1 = open("dosya2", 2, 0);
+	printf("fd1: %d\n", fd1);
 	if (fd1 < 0)
 		return fd1;
-	printf("fd1: %d\n", fd1);
 
-	fd2 = open("dosya2", 0, 0);
+	fd2 = open("dosya2", 1, 0);
+	printf("fd2: %d\n", fd2);
 	if (fd2 < 0)
 		return fd2;
-	printf("fd2: %d\n", fd2);
 
 	r = write(fd1, yazi, strlen(yazi));
 	printf("r %d\n", r);
@@ -179,6 +179,22 @@ int writefile() {
 	printf("rw file write OK\n");
 	close(fd1);
 	close(fd2);
+
+	printf("\n");
+
+	/* dosya1'i w ac */
+	printf("open dosya1 W\n");
+	fd1 = open("dosya1", 2, 0);
+	printf("fd1: %d\n", fd1);
+	//TODO: assert(fd1 > 0)
+
+	/* dosya1'i rw ac */
+	printf("open dosya1 RW\n");
+	fd1 = open("dosya1", 2, 0);
+	printf("fd1: %d\n", fd1);
+	//TODO: assert(fd1 < 0)
+
+	return 0;
 }
 
 int test_readdir() {

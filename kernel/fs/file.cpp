@@ -23,7 +23,13 @@
 
 // FIXME: path size
 
-int do_open(File **f, const char *path) {
+int permission(struct inode* inode, int flags) {
+	if (inode->op->permission && inode->op->permission(inode, flags))
+		return 1;
+	return 0;
+}
+
+int do_open(File **f, const char *path, int flags) {
 	DirEntry *file_dentry;
 	int r;
 	File *file;
@@ -34,6 +40,9 @@ int do_open(File **f, const char *path) {
 	if (r < 0)
 		return r;
 
+	if ( ! permission(file_dentry->inode, flags) )
+		return -1; // FIXME: erisim izni hatasi
+
 	file = (File*)kmalloc(sizeof(File));
 
 	strcpy(file->path, "/");
@@ -41,6 +50,7 @@ int do_open(File **f, const char *path) {
 	file->inode = file_dentry->inode;
 	file->fo = file->inode->op->default_file_ops;
 	file->fpos = 0;
+	file->flags = flags;
 	file->fo->open(file);
 
 	// FIXME: --
@@ -61,10 +71,9 @@ void do_close(File *f) {
 }
 
 /* open, opendir cagrilari */
-SYSCALL_DEFINE1(open, const char*, path) {
+SYSCALL_DEFINE2(open, const char*, path, int, flags) {
 	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
-	// int flags = (int)get_param2(tf);
-	// int mode = (int)get_param3(tf);
+	int flags = (int)get_param2(tf);
 	int fd;
 	int r;
 	File *f;
@@ -72,7 +81,7 @@ SYSCALL_DEFINE1(open, const char*, path) {
 	uint32_t eflags = eflags_read();
 	cli();
 
-	r = do_open(&f, path);
+	r = do_open(&f, path, flags);
 	if (r < 0)
 		return SYSCALL_RETURN(r);
 
@@ -117,6 +126,9 @@ SYSCALL_END(close)
 int do_read(File *f, char *buf, size_t size) {
 	int r;
 
+	if ((f->flags & 1) != 1)
+		return -1; // FIXME: readonly file error
+
 	r = f->fo->read(f, buf, size);
 	if (r < 0)
 		return -1;
@@ -139,7 +151,7 @@ SYSCALL_END(read)
 int do_write(File *f, const char *buf, size_t size) {
 	int r;
 
-	if (f->fo->write == NULL)
+	if ((f->flags & 2) != 2)
 		return -1; // FIXME: readonly file error
 
 	r = f->fo->write(f, buf, size);

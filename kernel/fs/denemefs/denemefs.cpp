@@ -21,12 +21,7 @@ static File_operations denemefs_file_op = {
 	denemefs_release
 };
 
-static struct inode_operations denemefs_inode_op = {
-	&denemefs_file_op,
-    denemefs_lookup,
-};
-
-static File_operations denemefs_ro_file_op = {
+static File_operations denemefs_dir_op = {
 	denemefs_read,
 	NULL,
 	NULL,
@@ -34,9 +29,17 @@ static File_operations denemefs_ro_file_op = {
 	denemefs_release
 };
 
-static struct inode_operations denemefs_ro_inode_op = {
-	&denemefs_ro_file_op,
+static struct inode_operations denemefs_file_inode_op = {
+	&denemefs_file_op,
     denemefs_lookup,
+	denemefs_permission
+};
+
+
+static struct inode_operations denemefs_dir_inode_op = {
+	&denemefs_dir_op,
+	denemefs_lookup,
+	denemefs_permission
 };
 
 /*
@@ -153,7 +156,7 @@ int denemefs_read_super(struct SuperBlock* sb) {
 	strcpy(sb->root->name, "");
 
 	sb->root->inode = (struct inode*)kmalloc(sizeof(struct inode));
-	sb->root->inode->init(0, sb, &denemefs_inode_op, di[0].size);
+	sb->root->inode->init(0, sb, &denemefs_dir_inode_op, di[0].size);
 
 	return 0;
 }
@@ -168,9 +171,10 @@ int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest)
 	Deneme_subdentry *sd = (Deneme_subdentry*)inode->data;
 	for (int i = 0 ; i < sd->n ; i++) {
 		if ( strcmp(sd->name[i], name) == 0) {
-			const inode_operations *iop = &denemefs_ro_inode_op;
-			if (di[sd->no[i]].flags.rw)
-				iop = &denemefs_inode_op;
+			/* dosya ise file_op, dizin ise dir_op */
+			const inode_operations *iop = &denemefs_file_inode_op;
+			if (di[sd->no[i]].ft == Deneme_inode::FT_DIR)
+				iop = &denemefs_dir_inode_op;
 
 			i_dest->init(sd->no[i], i_dir->superblock, iop, di[sd->no[i]].size);
 			return 0;
@@ -219,5 +223,19 @@ int denemefs_open(struct File *f) {
 
 int denemefs_release(struct File *f) {
 	// printf("denemefs_release\n");
+	return 0;
+}
+
+int denemefs_permission(struct inode *i, int flags) {
+	struct Deneme_inode *in = inode_to_deneme(i);
+
+	/* dosya rw ise tum erisim tiplerine izin ver */
+	if (in->flags.rw)
+		return 1;
+
+	/* readonly erisime her zaman izin ver (denemefs'de writeonly dosya yok) */
+	if ((flags & 0x3) == 1)
+		return 1;
+
 	return 0;
 }

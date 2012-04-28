@@ -79,6 +79,7 @@ struct File {
 	struct File_operations *fo;
 	struct inode *inode;
 	int fpos;
+	int flags;
 };
 
 struct File_operations {
@@ -97,6 +98,11 @@ struct inode_operations {
 
 	/* dir icerisinde name isimli dosyayi arar, dest ile dondurur */
 	int (*lookup)(struct inode *i_dir, const char* name, struct inode *i_dest);
+	// create(struct inode *i_dir, const char* name, struct inode *i_dest);
+	// mkdir(struct inode *i_dir, const char *name)
+	// rmdir(struct inode *i_dir, const char *name)
+	// mknod(struct inode *i_dir, cost char *name, dev (???))
+	int (*permission)(struct inode* i, int flags);
 };
 
 
@@ -104,7 +110,7 @@ extern int lookup(struct DirEntry *dir, const char *fn, struct DirEntry **dentry
 extern int find_dir_entry(const char *path, struct DirEntry **dest);
 extern int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size);
 
-extern int do_open(File **f, const char *path);
+extern int do_open(File **f, const char *path, int flags);
 extern void do_close(File *f);
 extern int do_read(File *f, char *buf, unsigned int count);
 

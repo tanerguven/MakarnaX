@@ -117,8 +117,8 @@ int do_execve(const char *path, char *const argv[]) {
 
 	cli();
 
-	/* dosyayi ac ve dosya headerini oku */
-	r = do_open(&f, path);
+	/* dosyayi readonly ac ve dosya headerini oku */
+	r = do_open(&f, path, 1);
 	if (r < 0)
 		return r;
 	r = do_read(f, (char*)&header, sizeof(header));

@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
 	int size;
 	int i, i_line = 0;
 
-	fd = open("/init_script", 0, 0);
+	fd = open("/init_script", 1, 0);
 	if (fd < 0) {
 		printf("/init_script not found\n");
 		return -1;
