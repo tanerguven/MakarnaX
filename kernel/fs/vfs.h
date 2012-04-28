@@ -35,9 +35,9 @@ struct inode {
 	SuperBlock *superblock;
 	int ref_count;
 	uint32_t size;
-	struct inode_operations *op;
+	const struct inode_operations *op;
 
-	inline void init(uint32_t ino, SuperBlock *sb, struct inode_operations *op,
+	inline void init(uint32_t ino, SuperBlock *sb, const struct inode_operations *op,
 					 uint32_t size) {
 		this->ino = ino;
 		this->superblock = sb;
@@ -82,7 +82,10 @@ struct File {
 };
 
 struct File_operations {
+	/** @return: okunan byte sayisi, -1: hata (?) */
 	uint32_t (*read)(struct File *f, char *buf, size_t size);
+	/** @return: yazilan byte sayisi, -1: hata (?) */
+	uint32_t (*write)(struct File* f, const char *buf, size_t size);
 	int (*readdir)(struct File *f, struct dirent *dirent, uint32_t count);
 	int (*open)(struct File *f);
 	int (*release)(struct File *f);

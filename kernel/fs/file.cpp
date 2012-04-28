@@ -114,29 +114,51 @@ SYSCALL_DEFINE1(close, unsigned int, fd) {
 SYSCALL_END(close)
 
 
-int do_read(File *f, char *buf, unsigned int count) {
+int do_read(File *f, char *buf, size_t size) {
 	int r;
 
-	r = f->fo->read(f, buf, count);
+	r = f->fo->read(f, buf, size);
 	if (r < 0)
-		return r;
+		return -1;
 
 	f->fpos += r;
 	return r;
 }
 
-SYSCALL_DEFINE3(read, unsigned int, fd, char*, buf, unsigned int, count) {
-	buf = (char*)user_to_kernel_check((uint32_t)buf, count, 1);
+SYSCALL_DEFINE3(read, unsigned int, fd, char*, buf, size_t, size) {
+	buf = (char*)user_to_kernel_check((uint32_t)buf, size, 1);
 	size_t r;
 
-	r = task_curr->files[fd]->fo->read(task_curr->files[fd], buf, count);
-
-	// FIXME: bu islem nerede yapilmali ?
-	task_curr->files[fd]->fpos += r;
-
+	// TODO: olmayan dosya girilirse hata ver
+	r = do_read(task_curr->files[fd], buf, size);
 	return SYSCALL_RETURN(r);
 }
 SYSCALL_END(read)
+
+
+int do_write(File *f, const char *buf, size_t size) {
+	int r;
+
+	if (f->fo->write == NULL)
+		return -1; // FIXME: readonly file error
+
+	r = f->fo->write(f, buf, size);
+	if (r < 0)
+		return -1;
+
+	f->fpos += r;
+	return r;
+}
+
+SYSCALL_DEFINE3(write, unsigned int, fd, const char*, buf, size_t, size) {
+	buf = (const char*)user_to_kernel_check((uint32_t)buf, size, 1);
+	size_t r;
+
+	// TODO: olmayan dosya girilirse hata ver
+	r = do_write(task_curr->files[fd], buf, size);
+	return SYSCALL_RETURN(r);
+}
+SYSCALL_END(write)
 
 SYSCALL_DEFINE0(readdir) {
 	// unsigned int fd = get_param1(tf);

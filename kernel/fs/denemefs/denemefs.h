@@ -18,6 +18,9 @@ struct Deneme_inode {
 	};
 	FileType ft;
 	size_t size;
+	struct {
+		uint32_t rw:1;
+	} flags;
 	void *data;
 };
 
@@ -28,6 +31,7 @@ extern int denemefs_lookup(struct inode *i_dir, const char* name, struct inode *
 
 /* file operations */
 extern uint32_t denemefs_read(struct File *f, char *buf, size_t size);
+extern uint32_t denemefs_write(struct File *f, const char *buf, size_t size);
 extern int denemefs_open(struct File *f);
 extern int denemefs_release(struct File *f);
 

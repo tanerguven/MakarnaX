@@ -12,6 +12,7 @@
 
 int openfile();
 int readfile();
+int writefile();
 int test_readdir();
 int test_chdir();
 int test_stat();
@@ -26,6 +27,7 @@ struct {
 	{"readdir", "readdir", test_readdir},
 	{"chdir", "chdir", test_chdir},
 	{"stat", "stat", test_stat},
+	{"writefile", "writefile", writefile},
 };
 #define TEST_COUNT (sizeof(tests)/sizeof(tests[0]))
 
@@ -110,6 +112,73 @@ int readfile() {
 	close(fd2);
 
 	return 0;
+}
+
+int writefile() {
+	int r;
+	int fd1, fd2;
+	char buf[1000];
+	const char *yazi = "dosyaya yazma deneme";
+
+	/*
+	 * dosya1 isimli dosyayi 2 kere ac ve birinde yazip digerinde oku
+	 * dosya readonly oldugu icin yazmamali
+	 */
+	printf("open dosya1\n");
+	fd1 = open("dosya1", 0, 0);
+	if (fd1 < 0)
+		return fd1;
+	printf("fd1: %d\n", fd1);
+
+	fd2 = open("dosya1", 0, 0);
+	if (fd2 < 0)
+		return fd2;
+	printf("fd2: %d\n", fd2);
+
+	r = write(fd1, yazi, strlen(yazi));
+	printf("r %d\n", r);
+	// TODO: assert(r == -1);
+
+	r = read(fd2, buf, 10);
+	printf("r %d\n", r);
+	printf("buf: %s\n", buf);
+	// TODO: assert(r == 7);
+	// TODO: assert(buf == data 1);
+
+	close(fd1);
+	close(fd2);
+	printf("ro file write error OK\n");
+
+	printf("\n");
+
+	/*
+	 * dosya2 isimli dosyayi 2 kere ac ve birinde yazip digerinde oku
+	 * dosya rw oldugu icin yazilabilmeli
+	 */
+	printf("open dosya2\n");
+	fd1 = open("dosya2", 0, 0);
+	if (fd1 < 0)
+		return fd1;
+	printf("fd1: %d\n", fd1);
+
+	fd2 = open("dosya2", 0, 0);
+	if (fd2 < 0)
+		return fd2;
+	printf("fd2: %d\n", fd2);
+
+	r = write(fd1, yazi, strlen(yazi));
+	printf("r %d\n", r);
+	// TODO: assert(r == -1);
+
+	r = read(fd2, buf, -1);
+	printf("r %d\n", r);
+	printf("buf: %s\n", buf);
+	// TODO: assert(r == 100);
+	// TODO: assert(buf == yazi);
+
+	printf("rw file write OK\n");
+	close(fd1);
+	close(fd2);
 }
 
 int test_readdir() {

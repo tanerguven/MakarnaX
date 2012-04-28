@@ -4,6 +4,7 @@
 asmlink void sys_exit();
 asmlink void sys_fork();
 asmlink void sys_read();
+asmlink void sys_write();
 asmlink void sys_open();
 asmlink void sys_close();
 asmlink void sys_execve();
@@ -34,6 +35,7 @@ void (* const syscalls[])() = {
 	[SYS_exit] = sys_exit,
 	[SYS_fork] = sys_fork,
 	[SYS_read] = sys_read,
+	[SYS_write] = sys_write,
 	[SYS_open] = sys_open,
 	[SYS_close] = sys_close,
 	[SYS_execve] = sys_execve,

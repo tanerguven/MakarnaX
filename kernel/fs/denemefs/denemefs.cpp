@@ -11,10 +11,11 @@ struct Deneme_inode* inode_to_deneme(struct inode *inode) {
 
 /* RAM'de tanimli 2 dosyanin icerikleri */
 static const char *dosya1 = "data 1";
-static const char *dosya2 = "data 2";
+static char dosya2[100] = "data 2";
 
 static File_operations denemefs_file_op = {
 	denemefs_read,
+	denemefs_write,
 	NULL,
 	denemefs_open,
 	denemefs_release
@@ -22,6 +23,19 @@ static File_operations denemefs_file_op = {
 
 static struct inode_operations denemefs_inode_op = {
 	&denemefs_file_op,
+    denemefs_lookup,
+};
+
+static File_operations denemefs_ro_file_op = {
+	denemefs_read,
+	NULL,
+	NULL,
+	denemefs_open,
+	denemefs_release
+};
+
+static struct inode_operations denemefs_ro_inode_op = {
+	&denemefs_ro_file_op,
     denemefs_lookup,
 };
 
@@ -36,27 +50,38 @@ void denemefs_init() {
 	unsigned int i;
 	int n_file = 5;
 
+	memset(di, 0, sizeof(di));
+
 	di[0].ft = Deneme_inode::FT_DIR;
 	di[0].data = kmalloc(sizeof(struct Deneme_subdentry));
 	di[0].size = sizeof(struct Deneme_subdentry);
+	di[0].flags.rw = 0;
 
 	di[1].ft = Deneme_inode::FT_FILE;
 	di[1].data = (void*)dosya1;
 	di[1].size = strlen("data 1")+1;
+	di[1].flags.rw = 0;
+
 
 	di[2].ft = Deneme_inode::FT_FILE;
 	di[2].data = (void*)dosya2;
-	di[2].size = strlen("data 2")+1;
+	di[2].size = 100;
+	di[2].flags.rw = 1;
+
 
 	di[3].ft = Deneme_inode::FT_DIR;
 	di[3].data = kmalloc(sizeof(struct Deneme_subdentry));
 	di[3].size = sizeof(struct Deneme_subdentry);
+	di[3].flags.rw = 0;
+
 	Deneme_subdentry *sd_3 = (Deneme_subdentry*)di[3].data;
 	sd_3->n = 0;
 
 	di[4].ft = Deneme_inode::FT_DIR;
 	di[4].data = kmalloc(sizeof(struct Deneme_subdentry));
 	di[4].size = sizeof(struct Deneme_subdentry);
+	di[4].flags.rw = 0;
+
 	Deneme_subdentry *sd_4 = (Deneme_subdentry*)di[4].data;
 	sd_4->n = 0;
 	/* sd_4'u sd_3 altina ekle */
@@ -78,6 +103,8 @@ void denemefs_init() {
 	Deneme_subdentry *bindir = (Deneme_subdentry*)
 		(di[n_file].data = kmalloc(sizeof(struct Deneme_subdentry)));
 	di[n_file].size = sizeof(struct Deneme_subdentry);
+	di[n_file].flags.rw = 0;
+
 	sd->no[sd->n] = n_file;
 	strcpy(sd->name[sd->n], "bin");
 	n_file++;
@@ -93,6 +120,8 @@ void denemefs_init() {
 		di[n_file].data = test_programs[i].addr;
 		di[n_file].size = (uint32_t)test_programs[i].end -
 			(uint32_t)test_programs[i].addr;
+		di[n_file].flags.rw = 0;
+
 		bindir->no[bindir->n] = n_file;
 		strcpy(bindir->name[bindir->n], test_programs[i].name);
 		n_file++;
@@ -103,6 +132,8 @@ void denemefs_init() {
 	di[n_file].ft = Deneme_inode::FT_FILE;
 	di[n_file].data = &_binary_init_programs_start;
 	di[n_file].size = (uint32_t)&_binary_init_programs_size;
+	di[n_file].flags.rw = 0;
+
 	sd->no[sd->n] = n_file;
 	strcpy(sd->name[sd->n], "init_script");
 	n_file++;
@@ -137,8 +168,11 @@ int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest)
 	Deneme_subdentry *sd = (Deneme_subdentry*)inode->data;
 	for (int i = 0 ; i < sd->n ; i++) {
 		if ( strcmp(sd->name[i], name) == 0) {
-			i_dest->init(sd->no[i], i_dir->superblock, &denemefs_inode_op,
-				di[sd->no[i]].size);
+			const inode_operations *iop = &denemefs_ro_inode_op;
+			if (di[sd->no[i]].flags.rw)
+				iop = &denemefs_inode_op;
+
+			i_dest->init(sd->no[i], i_dir->superblock, iop, di[sd->no[i]].size);
 			return 0;
 		}
 	}
@@ -158,6 +192,21 @@ uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
 	const char *src = ((char*)in->data) + f->fpos;
 	for(i = 0 ; (i + f->fpos < in->size) && (size > 0) ; i++, size--) {
 		buf[i] = src[i];
+	}
+
+	return i;
+}
+
+uint32_t denemefs_write(struct File *f, const char *buf, size_t size) {
+	struct Deneme_inode *in = inode_to_deneme(f->inode);
+	unsigned int i;
+
+	if (in->ft != Deneme_inode::FT_FILE)
+		return -1;
+
+	char *dest = ((char*)in->data) + f->fpos;
+	for (i = 0 ; (i + f->fpos < in->size) && (size > 0) ; i++, size--) {
+		dest[i] = buf[i];
 	}
 
 	return i;
