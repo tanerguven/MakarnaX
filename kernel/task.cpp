@@ -178,7 +178,7 @@ void task_free(Task *t) {
 	ipc_task_free(t);
 	task_curr_free_files();
 
-	uint32_t count_brk = (t->pgdir.end_brk - t->pgdir.start_brk) / 0x1000;
+	uint32_t count_brk = (roundUp(t->pgdir.end_brk) - roundDown(t->pgdir.start_brk)) / 0x1000;
 	/* code, heap ve stack alanlari toplami user alanina esit olmali */
 	ASSERT(t->pgdir.count_stack + t->pgdir.count_program + count_brk ==
 		   t->pgdir.count_user);

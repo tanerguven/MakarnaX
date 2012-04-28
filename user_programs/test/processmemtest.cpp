@@ -51,6 +51,34 @@ int stacklimit() {
 	return stacklimit();
 }
 
+int brktest2() {
+	int r;
+	void *start_brk;
+	void *b;
+
+	start_brk = sbrk(0);
+	printf("brk = %08x\n", start_brk);
+
+	r = brk((char*)start_brk - 1);
+	printf("brk(start-1) return: %d\n", r);
+
+	r = brk((char*)start_brk + 0x3ffe);
+	printf("brk(start+0x3ffe)  return: %d\n", r);
+
+	*((char*)start_brk+0x3ff0) = 'a';
+
+	b = sbrk(0);
+	printf("brk = %08x\n", b);
+
+	r = brk((char*)start_brk + 0xf);
+	printf("brk(start+0xF) return: %d\n", r);
+
+	*((char*)start_brk+0xa) = 'a';
+
+	b = sbrk(0);
+	printf("brk = %08x\n", b);
+
+}
 
 int brktest() {
 	int r;
@@ -79,6 +107,8 @@ int brktest() {
 
 	b = sbrk(0);
 	printf("brk = %08x\n", b);
+
+	brktest2();
 
 	return 0;
 }

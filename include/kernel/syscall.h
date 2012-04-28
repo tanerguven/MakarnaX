@@ -55,7 +55,7 @@
 #define SYS_readdir		89
 #define SYS_stat		106
 /* #define SYS_lstat		107 */
-/* #define SYS_fstat		108 */
+#define SYS_fstat		108
 #define SYS_ipc			117
 #define SYS_getcwd		183
 #define SYS_cputs		901
@@ -64,8 +64,6 @@
 #define SYS_wait		904
 #define SYS_dongu		905
 #define SYS_sleep		906
-// FIXME: --
-#define SYS_sbrk		907
 #define MAX_SYSCALL_COUNT 1000
 
 
@@ -94,5 +92,57 @@
 #define SYSCALL_RETURN(val) \
 	set_return(task_curr->registers(), (uint32_t)val)	\
 
+
+#include <kernel/trap.h>
+#include <types.h>
+
+static inline int32_t syscall(int num, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
+{
+	int32_t ret;
+
+	asm volatile("int %1\n"
+		: "=a" (ret)
+		: "i" (T_SYSCALL),
+		  "a" (num),
+		  "d" (a1),
+		  "c" (a2),
+		  "b" (a3),
+		  "D" (a4),
+		  "S" (a5)
+		: "cc", "memory");
+
+	return ret;
+}
+
+
+#define _syscall0(r, name) \
+	r name() {											\
+		return (r)syscall(SYS_##name, 0, 0, 0, 0, 0);	\
+	}
+
+#define _syscall1(r, name, t1, p1) \
+	r name(t1 p1) { \
+		return (r)(syscall(SYS_##name, (uint32_t)p1, 0, 0, 0, 0));	\
+	}
+
+#define _syscall2(r, name, t1, p1, t2, p2)			\
+	r name(t1 p1, t2 p2) {													\
+		return (r)syscall(SYS_##name, (uint32_t)p1, (uint32_t)p2, 0, 0, 0); \
+	}
+
+#define _syscall3(r, name, t1, p1, t2, p2, t3, p3)							\
+	r name(t1 p1, t2 p2, t3 p3) {												\
+		return (r)syscall(SYS_##name, (uint32_t)p1, (uint32_t)p2, (uint32_t)p3, 0, 0); \
+	}
+
+#define _syscall4(r, name, t1, p1, t2, p2, t3, p3, t4, p4)					\
+	r name(t1 p1, t2 p2, t3 p3, t4 p4) {										\
+		return (r)syscall(SYS_##name, (uint32_t)p1, (uint32_t)p2, (uint32_t)p3, (uint32_t)p4, 0); \
+	}
+
+#define _syscall5(r, name, t1, p1, t2, p2, t3, p3, t4, p4, t5, p5)			\
+	r name(t1 p1, t2 p2, t3 p3, t4 p4, t5 p5) {								\
+		return (r)syscall(SYS_##name, (uint32_t)p1, (uint32_t)p2, (uint32_t)p3, (uint32_t)p4, (uint32_t)p5); \
+	}
 
 #endif /* _INC_SYSCALL_H */

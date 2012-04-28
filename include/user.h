@@ -18,7 +18,7 @@ extern int kill(int pid, int sig);
 extern int pause();
 extern int wait(int *status);
 /* shared memory ve semaphore bu cagri uzerinden kullaniliyor */
-extern int sys_ipc(unsigned int ipc_no, int a2, int a3, int a4, int a5);
+extern int ipc(unsigned int ipc_no, int a2, int a3, int a4, int a5);
 extern int sleep(unsigned int seconds);
 extern int brk(void *addr);
 extern void *sbrk(unsigned int increment);

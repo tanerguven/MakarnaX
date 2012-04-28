@@ -86,9 +86,10 @@ SYSCALL_DEFINE0(dongu) {
 SYSCALL_END(dongu)
 
 
+/**
+ * @return end_brk: normal, 0: hata
+ */
 SYSCALL_DEFINE1(brk, uint32_t, brk) {
-	ASSERT(isRounded(task_curr->pgdir.start_brk));
-
 	int r;
 	uint32_t i;
 
@@ -97,62 +98,36 @@ SYSCALL_DEFINE1(brk, uint32_t, brk) {
 
 	if (brk < task_curr->pgdir.start_brk) {
 		eflags_load(eflags);
-		return SYSCALL_RETURN(-1);
+		return SYSCALL_RETURN(task_curr->pgdir.end_brk);
 	}
 
-	brk = roundUp(brk);
-
 	if (brk > task_curr->pgdir.end_brk) {
-		for (i = task_curr->pgdir.end_brk ; i < brk ; i += 0x1000) {
+		for (i = roundUp(task_curr->pgdir.end_brk) ; i < roundUp(brk) ; i += 0x1000) {
 			r = task_curr->pgdir.page_alloc_insert(uaddr2va(i), PTE_P | PTE_U | PTE_W);
 			if (r < 0)
 				goto bad_sys_brk_alloc;
-			// printf(">> insert %08x\n", uaddr2va(i));
 		}
 	} else {
-		for (i = task_curr->pgdir.end_brk - 0x1000 ; i >= brk ; i -= 0x1000) {
+		for (i = roundUp(task_curr->pgdir.end_brk) - 0x1000 ; i >= roundUp(brk) ; i -= 0x1000) {
 			r = task_curr->pgdir.page_remove(uaddr2va(i), 1);
-			if (r < 0) {
-				printf(">> brk bug olabilir\n");
-				goto bad_sys_brk;
-			}
-			// printf(">> remove %08x\n", uaddr2va(i));
+			/* heap icerisinde map edilmemis bir page olamaz */
+			ASSERT(r > -1);
 		}
 	}
 
 	task_curr->pgdir.end_brk = brk;
 
-	ASSERT(isRounded(task_curr->pgdir.end_brk));
 	eflags_load(eflags);
-
-	return SYSCALL_RETURN(0);
+	return SYSCALL_RETURN(task_curr->pgdir.end_brk);
 
 bad_sys_brk_alloc:
 	for ( ; i >= task_curr->pgdir.end_brk ; i -= 0x1000) {
 		task_curr->pgdir.page_remove(uaddr2va(i), 1);
 	}
 bad_sys_brk:
-	return SYSCALL_RETURN(-1);
+	return SYSCALL_RETURN(0);
 }
 SYSCALL_END(brk)
-
-
-SYSCALL_DEFINE1(sbrk, uint32_t, increment) {
-	uint32_t eflags = eflags_read();
-	cli();
-
-	if (increment == 0) {
-		/* sbrk(0), end_brk dondurur */
-		eflags_load(eflags);
-		return SYSCALL_RETURN(task_curr->pgdir.end_brk);
-	}
-
-	printf(">> sbrk tamamlanmadi\n");
-
-	eflags_load(eflags);
-	return SYSCALL_RETURN(-1);
-}
-SYSCALL_END(sbrk)
 
 
 uint32_t user_to_kernel_check(uint32_t base, uint32_t limit, int rw) {

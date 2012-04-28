@@ -25,7 +25,6 @@ asmlink void sys_yield();
 asmlink void sys_wait();
 asmlink void sys_dongu();
 asmlink void sys_sleep();
-asmlink void sys_sbrk();
 asmlink void sys_nosys();
 
 
@@ -56,5 +55,4 @@ void (* const syscalls[])() = {
 	[SYS_wait] = sys_wait,
 	[SYS_dongu] = sys_dongu,
 	[SYS_sleep] = sys_sleep,
-	[SYS_sbrk] = sys_sbrk,
 };

@@ -1,82 +1,88 @@
 #include <types.h>
 #include <kernel/syscall.h>
-#include <kernel/trap.h>
 
-#include "sys/syscall.h"
+asmlink _syscall0(int, getpid)
+asmlink _syscall0(int, fork)
+asmlink _syscall1(int, wait, int*, status)
+// FIXME: --
+/* asmlink _syscall2(sighandler_t, signal, int, signum, sighandler_t, func) */
+asmlink _syscall1(unsigned int, alarm, unsigned int, seconds)
+asmlink _syscall2(int, kill, int, pid, int, sig)
+asmlink _syscall0(int, pause)
+asmlink _syscall5(int, ipc, unsigned int, ipc_no, int, a1, int, a2, int, a3, int, a4)
+asmlink _syscall1(int, sleep, unsigned int, seconds)
 
-int getpid() {
-	return syscall(SYS_getpid, 0, 0, 0, 0, 0, 0);
-}
+#define SYS__exit SYS_exit
+#define return while(1)
+asmlink _syscall1(void, _exit, int, error_no)
+#undef return
 
-void _exit(int error_no) {
-	syscall(SYS_exit, 1, error_no, 0, 0, 0, 0);
-	while(1);
+void sys_dongu() {
+	syscall(SYS_dongu, 0, 0, 0, 0, 0);
 }
 
 void sys_yield() {
-	syscall(SYS_yield, 0, 0, 0, 0, 0, 0);
+	syscall(SYS_yield, 0, 0, 0, 0, 0);
 }
 
-int fork() {
-	return syscall(SYS_fork, 0, 0, 0, 0, 0, 0);
-}
+#define SYS__brk SYS_brk
+asmlink _syscall1(void*, _brk, void*, addr)
 
-int wait(int *status) {
-	return syscall(SYS_wait, 0, (uint32_t)status, 0, 0, 0, 0);
-}
-
-void sys_dongu() {
-	syscall(SYS_dongu, 0, 0, 0, 0, 0, 0);
-}
-
-// FIXME: --
-/* #include <user.h> */
-/* sighandler_t signal(int signum, sighandler_t func) { */
-/* 	return (sighandler_t)syscall(SYS_signal, 0, signum, (uint32_t)func, 0, 0, 0); */
-/* } */
-
-unsigned int alarm(unsigned int seconds) {
-	return syscall(SYS_alarm, 0, seconds, 0, 0, 0, 0);
-}
-
-int kill(int pid, int sig) {
-	return syscall(SYS_kill, 0, pid, sig, 0, 0, 0);
-}
-
-int pause() {
-	return syscall(SYS_pause, 0, 0, 0, 0, 0, 0);
-}
-
-int sys_ipc(unsigned int ipc_no, int a1, int a2, int a3, int a4) {
-	return syscall(SYS_ipc, 0, ipc_no, a1, a2, a3, a4);
-}
-
-int sleep(unsigned int seconds) {
-	return syscall(SYS_sleep, 0, seconds, 0, 0, 0, 0);
-}
 
 int brk(void *addr) {
-	return syscall(SYS_brk, 0, (uint32_t)addr, 0, 0, 0, 0);
+	ptr_t new_brk = (ptr_t)_brk(addr);
+	if (new_brk != addr)
+		return -1;
+	return 0;
 }
 
 void *sbrk(unsigned int increment) {
-	int r;
-	char *b;
+	// TODO: curr_brk saklanirsa, iki sistem cagrisi yapmaya gerek kalmaz
+	ptr_t old_brk = (ptr_t)_brk(0);
+	ptr_t new_brk = (ptr_t)_brk(old_brk + increment);
 
-	b = (char*)syscall(SYS_sbrk, 0, 0, 0, 0, 0, 0);
-	r = brk(b+increment);
-	if (r == 0)
-		return b;
-	return (void*)syscall(SYS_sbrk, 0, increment, 0, 0, 0, 0);
+	if (new_brk != old_brk + increment)
+		return (void*)-1;
+
+	return old_brk;
 }
 
-int open(const char *filename, int flags, int mode) {
-	return (int)syscall(SYS_open, 0, (uint32_t)filename, (uint32_t)flags,
-						(uint32_t)mode, 0, 0);
+asmlink _syscall3(int, open, const char*, filename, int, flags, int, mode)
+asmlink _syscall1(int, close, unsigned int, fd)
+asmlink _syscall1(int, chdir, const char*, path)
+asmlink _syscall2(int, getcwd, char*, buf, size_t, size)
+asmlink _syscall3(int, execve, const char*, path, char *const*, argv, char *const*, envp)
+
+void chown() {
+	syscall(50, 0, 0, 0, 0, 0);
 }
 
-int close(unsigned int fd) {
-	return (int)syscall(SYS_close, 0, (uint32_t)fd, 0, 0, 0, 0);
+void gettimeofday() {
+	syscall(52, 0, 0, 0, 0, 0);
+}
+
+void isatty() {
+	syscall(53, 0, 0, 0, 0, 0);
+}
+
+void link() {
+	syscall(54, 0, 0, 0, 0, 0);
+}
+
+void lseek() {
+	syscall(55, 0, 0, 0, 0, 0);
+}
+
+void readlink() {
+	syscall(56, 0, 0, 0, 0, 0);
+}
+
+void symlink() {
+	syscall(57, 0, 0, 0, 0, 0);
+}
+
+void unlink() {
+	syscall(58, 0, 0, 0, 0, 0);
 }
 
 size_t read(unsigned int fd, char *buf, unsigned int count) {
@@ -84,62 +90,18 @@ size_t read(unsigned int fd, char *buf, unsigned int count) {
 	if (fd == 0) {
 		int c;
 		/* bir durumdan dolayi (alarm vb.) wake up olursa diye kontrol */
-		while( (c = syscall(SYS_cgetc, 0, 0, 0, 0, 0, 0)) == 0);
+		while( (c = syscall(SYS_cgetc, 0, 0, 0, 0, 0)) == 0);
 		buf[0] = c;
 		return 1;
 	}
-	return (size_t)syscall(SYS_read, 0, fd, (uint32_t)buf, count, 0, 0);
-}
-
-int chdir(const char *path) {
-	return (int)syscall(SYS_chdir, 0, (uint32_t)path, 0, 0, 0, 0);
-}
-
-char *getcwd(char *buf, size_t size) {
-	return (char*)syscall(SYS_getcwd, 0, (uint32_t)buf, size, 0, 0, 0);
-}
-
-int execve(const char *path, char *const argv[], char *const envp[]) {
-	return (int)syscall(SYS_execve, 0, (uint32_t)path, (uint32_t)argv, 0, 0, 0);
-}
-
-void chown() {
-	syscall(50, 0, 0, 0, 0, 0, 0);
-}
-
-void gettimeofday() {
-	syscall(52, 0, 0, 0, 0, 0, 0);
-}
-
-void isatty() {
-	syscall(53, 0, 0, 0, 0, 0, 0);
-}
-
-void link() {
-	syscall(54, 0, 0, 0, 0, 0, 0);
-}
-
-void lseek() {
-	syscall(55, 0, 0, 0, 0, 0, 0);
-}
-
-void readlink() {
-	syscall(56, 0, 0, 0, 0, 0, 0);
-}
-
-void symlink() {
-	syscall(57, 0, 0, 0, 0, 0, 0);
-}
-
-void unlink() {
-	syscall(58, 0, 0, 0, 0, 0, 0);
+	return (size_t)syscall(SYS_read, fd, (uint32_t)buf, count, 0, 0);
 }
 
 size_t write(int fd, char *buf, int nbytes) {
 	/* stdout tanimli degil, cputs kullan */
 	if (fd == 1) {
-		syscall(SYS_cputs, 0, (uint32_t)buf, nbytes, 0, 0, 0);
+		syscall(SYS_cputs, (uint32_t)buf, nbytes, 0, 0, 0);
 		return nbytes;
 	}
-	return syscall(58, 0, 0, 0, 0, 0, 0);
+	return syscall(58, 0, 0, 0, 0, 0);
 }
