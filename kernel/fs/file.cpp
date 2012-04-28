@@ -73,7 +73,6 @@ void do_close(File *f) {
 /* open, opendir cagrilari */
 SYSCALL_DEFINE2(open, const char*, path, int, flags) {
 	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
-	int flags = (int)get_param2(tf);
 	int fd;
 	int r;
 	File *f;
