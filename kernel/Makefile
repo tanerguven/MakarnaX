@@ -28,6 +28,7 @@ OBJS = \
 	fs/vfs.o\
 	fs/superblock.o\
 	fs/file.o\
+	fs/dir.o\
 	fs/denemefs/denemefs.o\
 	fs/denemefs/file.o\
 	fs/denemefs/dir.o\

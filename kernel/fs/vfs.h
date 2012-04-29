@@ -114,6 +114,7 @@ extern int find_dir_entry(const char *path, size_t len, struct DirEntry **dest);
 extern int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size);
 extern int find_file_and_dir(const char* path, DirEntry **dentry, const char **name);
 extern void remove_from_dir_entry_cache(const char* path);
+extern int permission(struct inode* inode, int flags);
 
 extern int do_open(File **f, const char *path, int flags);
 extern void do_close(File *f);
