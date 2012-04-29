@@ -19,14 +19,13 @@ void denemefs_init() {
 	Deneme_inode *in;
 
 	memset(di, 0, sizeof(di));
-	for (i = 0 ; i < 100 ; i++)
-		di[i].ft = Deneme_inode::FT_NULL;
 
 	/* / (root) */
-	di[0].ft = Deneme_inode::FT_DIR;
+	di[0].nlinks = 1;
+	di[0].mode.type = FileMode::FT_dir;
+	di[0].mode.read = 1;
 	di[0].data = kmalloc(sizeof(struct Deneme_subdentry));
 	di[0].size = sizeof(struct Deneme_subdentry);
-	di[0].flags.rw = 0;
 	Deneme_subdentry *root_sd = (Deneme_subdentry*)di[0].data;
 	root_sd->n = 0;
 	root_inode.ino = 0;
@@ -104,20 +103,36 @@ int denemefs_read_super(struct SuperBlock* sb) {
 
 int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest) {
 
-	Deneme_inode *inode = inode_to_deneme(i_dir);
+	Deneme_inode *dir = inode_to_deneme(i_dir);
 
-	if (inode->ft != Deneme_inode::FT_DIR)
+	if (dir->mode.type != FileMode::FT_dir)
 		return -2;
 
-	Deneme_subdentry *sd = (Deneme_subdentry*)inode->data;
+	Deneme_subdentry *sd = (Deneme_subdentry*)dir->data;
 	for (int i = 0 ; i < sd->n ; i++) {
 		if ( strcmp(sd->name[i], name) == 0) {
-			/* dosya ise file_op, dizin ise dir_op */
-			const inode_operations *iop = &denemefs_file_inode_op;
-			if (di[sd->no[i]].ft == Deneme_inode::FT_DIR)
-				iop = &denemefs_dir_inode_op;
+			Deneme_inode *inode = &di[sd->no[i]];
+			ASSERT(inode->nlinks > 0);
 
-			i_dest->init(sd->no[i], i_dir->superblock, iop, di[sd->no[i]].size);
+			switch(inode->mode.type) {
+			case FileMode::FT_dir:
+				i_dest->op = &denemefs_dir_inode_op;
+				break;
+			case FileMode::FT_regular:
+				i_dest->op = &denemefs_file_inode_op;
+				break;
+			case FileMode::FT_chrdev:
+				i_dest->dev = di[sd->no[i]].dev;
+				i_dest->op = &chrdev_inode_operations;
+				break;
+			default:
+				printf("file type: %d\n", di[sd->no[i]].mode.type);
+				PANIC("Unknown file type");
+			}
+			i_dest->ino = sd->no[i];
+			i_dest->superblock = i_dir->superblock;
+			i_dest->size = di[sd->no[i]].size;
+			i_dest->mode = di[sd->no[i]].mode;
 			return 0;
 		}
 	}
@@ -129,7 +144,7 @@ void denemefs_free_inode(struct inode *i) {
 	if (di[i->ino].data)
 		kfree(di[i->ino].data);
 	memset(&di[i->ino], 0, sizeof(di[i->ino]));
-	di[i->ino].ft = Deneme_inode::FT_NULL;
+	di[i->ino].nlinks = 0;
 }
 
 int denemefs_new_inode(struct inode *i_dir, struct inode *dest) {
@@ -138,7 +153,7 @@ int denemefs_new_inode(struct inode *i_dir, struct inode *dest) {
 		return -1; /* diskte inode kalmadi */
 
 	/* inode olustur */
-	di[ino].ft = Deneme_inode::FT_UNUSED;
+	di[ino].nlinks = 1;
 	dest->ino = ino;
 
 	return 0;
@@ -147,7 +162,7 @@ int denemefs_new_inode(struct inode *i_dir, struct inode *dest) {
 int denemefs_permission(struct inode *i, int flags) {
 	struct Deneme_inode *in = inode_to_deneme(i);
 	/* dosya rw ise tum erisim tiplerine izin ver */
-	if (in->flags.rw)
+	if (in->mode.write & in->mode.read)
 		return 1;
 	/* readonly erisime her zaman izin ver (denemefs'de writeonly dosya yok) */
 	if ((flags & 0x3) == 1)
@@ -160,8 +175,8 @@ int find_empty_di() {
 	int i;
 	//FIXME: assert insterrupts disable
 	for (i = 0 ; i < 100 ; i++) {
-		if (di[i].ft == Deneme_inode::FT_NULL) {
-			di[i].ft = Deneme_inode::FT_UNUSED; // baska processler bos gormesin
+		if (di[i].nlinks == 0) {
+			di[i].nlinks = 1; // baska processler bos gormesin
 			return i;
 		}
 	}

@@ -20,6 +20,7 @@ int test_chdir();
 int test_stat();
 int mkdir_rmdir();
 int creat_unlink();
+int stdio();
 
 struct {
 	const char *name;
@@ -34,6 +35,7 @@ struct {
 	{"writefile", "writefile", writefile},
 	{"mkdir_rmdir", "mkdir_rmdir", mkdir_rmdir},
 	{"creat_unlink", "creat_unlink", creat_unlink},
+	{"stdio", "stdio", stdio},
 };
 #define TEST_COUNT (sizeof(tests)/sizeof(tests[0]))
 
@@ -421,6 +423,27 @@ int creat_unlink() {
 	/* silinmis ro dosyayi acmaya calis */
 	fd = open("/home/ro.txt", 1, 0);
 	assertNotLess(-1, fd);
+
+	return 0;
+}
+
+int stdio() {
+	int fd;
+	int r;
+	const char *yazi = "stdout'a yazilan birsey\n";
+
+	fd = open("/stdout", 1, 0);
+	assertNotLess(-1, fd);
+
+	fd = open("/stdout", 3, 0);
+	assertNotLess(-1, fd);
+
+	printf("open /stdout\n");
+	fd = open("/stdout", 2, 0);
+	assertNotLess(fd, 0);
+
+	r = write(fd, yazi, strlen(yazi));
+	assertEquals(strlen(yazi), r);
 
 	return 0;
 }

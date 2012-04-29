@@ -33,6 +33,7 @@ OBJS = \
 	fs/denemefs/file.o\
 	fs/denemefs/dir.o\
 	fs/exec.o\
+	fs/devices.o\
 
 DEPS = $(OBJS:.o=.d)
 

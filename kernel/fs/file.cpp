@@ -24,8 +24,13 @@
 // FIXME: path size
 
 int permission(struct inode* inode, int flags) {
+
 	if (inode->op->permission && inode->op->permission(inode, flags))
 		return 1;
+
+	if ((inode->mode.get_mode() & flags) == flags)
+		return 1;
+
 	return 0;
 }
 
@@ -41,6 +46,7 @@ int do_open(File **f, const char *path, int flags) {
 	if (r < 0)
 		return r;
 
+
 	if ( ! permission(file_dentry->inode, flags) )
 		return -1; // FIXME: erisim izni hatasi
 
@@ -52,7 +58,11 @@ int do_open(File **f, const char *path, int flags) {
 	file->fo = file->inode->op->default_file_ops;
 	file->fpos = 0;
 	file->flags = flags;
-	file->fo->open(file);
+	if (file->fo->open) {
+		r = file->fo->open(file);
+		if (r < 0)
+			PANIC("FIXME");
+	}
 
 	// FIXME: --
 	file->inode->ref_count++;
@@ -67,7 +77,9 @@ void do_close(File *f) {
 
 	// FIXME: --
 	f->inode->ref_count--;
-	f->fo->release(f);
+
+	if (f->fo->release)
+		f->fo->release(f);
 
 	kfree(f);
 }
@@ -290,3 +302,22 @@ SYSCALL_DEFINE1(unlink, const char*, path) {
 	return SYSCALL_RETURN(r);
 }
 SYSCALL_END(rmdir)
+
+
+int do_mknod(const char* pathname, FileMode mode, int dev) {
+	DirEntry *dir;
+	const char *name;
+	int r;
+
+	ASSERT(!(eflags_read() & FL_IF));
+
+	r = find_file_and_dir(pathname, &dir, &name);
+	if (r < 0)
+		return -1;
+
+	r = dir->inode->op->mknod(dir->inode, name, mode, dev);
+	if (r < 0)
+		return -1;
+
+	return 0;
+}

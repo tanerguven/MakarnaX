@@ -44,6 +44,9 @@ extern int do_execve(const char *path, char *const argv[]);
 void kernel_task();
 void init_task();
 
+#include "fs/vfs.h"
+int do_mknod(const char* pathname, FileMode mode, int dev);
+
 asmlink int main() {
 	struct DirEntry *root_dir;
 	int r;
@@ -76,6 +79,14 @@ asmlink int main() {
 
 	printf("init_kernel_task\n");
 	init_kernel_task(root_dir);
+
+	/* stdout dosyasi denemesi: */
+	FileMode fm;
+	fm.type = FileMode::FT_chrdev;
+	fm.write = 1;
+	r = do_mknod("/stdout", fm, 11);
+	ASSERT(r == 0);
+	/* */
 
 	r = do_fork();
 	ASSERT(r > -1);

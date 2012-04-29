@@ -18,7 +18,7 @@ struct inode_operations denemefs_dir_inode_op = {
 	denemefs_unlink,
 	denemefs_mkdir,
 	denemefs_rmdir,
-	NULL, /* mknod */
+	denemefs_mknod,
 	denemefs_permission
 };
 
@@ -69,9 +69,10 @@ int denemefs_mkdir(struct inode *i_dir, const char *name, int mode) {
 	inode_new = inode_to_deneme(&i);
 	inode_new->data = kmalloc(sizeof(struct Deneme_subdentry));
 	inode_new->size = sizeof(struct Deneme_subdentry);
-	inode_new->flags.rw = ((mode & 3) == 3) ? 1 : 0;
+	inode_new->mode.read = (mode & 1);
+	inode_new->mode.write = (mode & 2) >> 1;
 	memset(inode_new->data, 0, inode_new->size);
-	inode_new->ft = Deneme_inode::FT_DIR;
+	inode_new->mode.type = FileMode::FT_dir;
 
 	return 0;
 }

@@ -24,6 +24,28 @@
 #define MAX_DIR_ENTRY_SIZE 256
 #define MAX_PATH_SIZE 1536
 
+struct FileMode {
+	uint32_t read: 1;
+	uint32_t write: 1;
+	uint32_t __: 6;
+	uint32_t type: 8;
+
+	enum {
+		FT_regular = 1,
+		FT_dir = 2,
+		FT_symlink = 3,
+		FT_chrdev = 4,
+		FT_blkdev = 5,
+		FT_fifo = 6,
+	};
+
+	inline uint16_t get_mode() {
+		return (*(uint16_t*)this) & 0xFF;
+	}
+
+} __attribute__((packed));
+
+
 struct SuperBlock {
 	int dev;
 	int fs_type;
@@ -36,6 +58,8 @@ struct inode {
 	int ref_count;
 	uint32_t size;
 	const struct inode_operations *op;
+	int dev;
+	FileMode mode;
 
 	// TODO: file lock
 
@@ -76,9 +100,10 @@ struct DirEntry {
 	}
 };
 
+
 struct File {
 	char path[MAX_PATH_SIZE];
-	struct File_operations *fo;
+	const struct File_operations *fo;
 	struct inode *inode;
 	int fpos;
 	int flags;
@@ -96,7 +121,7 @@ struct File_operations {
 
 struct inode_operations {
 
-	struct File_operations *default_file_ops;
+	const struct File_operations *default_file_ops;
 
 	/* dir icerisinde name isimli dosyayi arar, dest ile dondurur */
 	int (*lookup)(struct inode *i_dir, const char* name, struct inode *i_dest);
@@ -104,7 +129,7 @@ struct inode_operations {
 	int (*unlink)(struct inode *i_dir, const char* name);
 	int (*mkdir)(struct inode *i_dir, const char *name, int mode);
 	int (*rmdir)(struct inode *i_dir, const char *name);
-	int (*mknod)(struct inode *i_dir, const char *name, int dev);
+	int (*mknod)(struct inode *i_dir, const char *name, FileMode mode, int dev);
 	int (*permission)(struct inode* i, int flags);
 };
 
@@ -119,5 +144,8 @@ extern int permission(struct inode* inode, int flags);
 extern int do_open(File **f, const char *path, int flags);
 extern void do_close(File *f);
 extern int do_read(File *f, char *buf, unsigned int count);
+
+
+extern const inode_operations chrdev_inode_operations;
 
 #endif /* _VFS_H_ */

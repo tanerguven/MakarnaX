@@ -12,17 +12,10 @@ struct Deneme_subdentry {
 };
 
 struct Deneme_inode {
-	enum FileType {
-		FT_UNUSED = 0,
-		FT_NULL = 1,
-		FT_FILE = 2,
-		FT_DIR = 3,
-	};
-	FileType ft;
+	FileMode mode;
+	unsigned short nlinks;
 	size_t size;
-	struct {
-		uint32_t rw:1;
-	} flags;
+	int dev; // special file icin, dir ve regular'da 0
 	void *data;
 };
 
@@ -35,7 +28,7 @@ extern int denemefs_create(struct inode *i_dir, const char* name, int mode, stru
 extern int denemefs_unlink(struct inode *i_dir, const char* name);
 extern int denemefs_mkdir(struct inode *i_dir, const char *name, int mode);
 extern int denemefs_rmdir(struct inode *i_dir, const char *name);
-extern int denemefs_mknod(struct inode *i_dir, const char *name, int dev);
+extern int denemefs_mknod(struct inode *i_dir, const char *name, FileMode mode, int dev);
 extern struct inode_operations denemefs_file_inode_op;
 extern struct inode_operations denemefs_dir_inode_op;
 

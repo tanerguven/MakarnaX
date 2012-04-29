@@ -27,7 +27,7 @@ uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
 	struct Deneme_inode *in = inode_to_deneme(f->inode);
 	unsigned int i;
 
-	if (in->ft != Deneme_inode::FT_FILE) {
+	if (in->mode.type != FileMode::FT_regular) {
 		// PANIC("tanimsiz durum");
 		return -1;
 	}
@@ -44,7 +44,7 @@ uint32_t denemefs_write(struct File *f, const char *buf, size_t size) {
 	struct Deneme_inode *in = inode_to_deneme(f->inode);
 	unsigned int i;
 
-	if (in->ft != Deneme_inode::FT_FILE)
+	if (in->mode.type != FileMode::FT_regular)
 		return -1;
 
 	char *dest = ((char*)in->data) + f->fpos;
@@ -84,9 +84,10 @@ int denemefs_create(struct inode *i_dir, const char* name, int mode, struct inod
 	inode_new = inode_to_deneme(&i);
 	inode_new->data = kmalloc(1000);
 	inode_new->size = 1000;
-	inode_new->flags.rw = ((mode & 3) == 3) ? 1 : 0;
+	inode_new->mode.read = (mode & 1);
+	inode_new->mode.write = (mode & 2) >> 1;
 	memset(inode_new->data, 0, inode_new->size);
-	inode_new->ft = Deneme_inode::FT_FILE;
+	inode_new->mode.type = FileMode::FT_regular;
 
 	r = denemefs_lookup(i_dir, name, i_dest);
 	ASSERT(r == 0); /* dosyayi yeni olusturduk, dosya bulunmali */
@@ -106,6 +107,31 @@ int denemefs_unlink(struct inode *i_dir, const char* name) {
 	ASSERT(r == 0); // lookup ile bulunabiliyorsa, olmak zorunda
 
 	denemefs_free_inode(&inode);
+
+	return 0;
+}
+
+int denemefs_mknod(struct inode *i_dir, const char *name, FileMode mode, int dev) {
+	struct inode i;
+	int r;
+	Deneme_inode *inode_new;
+
+	r = denemefs_new_inode(i_dir, &i);
+	if (r < 0)
+		return -1; /* diskte inode kalmadi */
+
+	r = denemefs_add_entry(i_dir, name, &i);
+	if (r < 0) {
+		denemefs_free_inode(&i);
+		/* i exist or i_dir not dir */
+		return -1;
+	}
+
+	inode_new = inode_to_deneme(&i);
+	inode_new->mode = mode;
+	inode_new->dev = dev;
+	inode_new->data = NULL;
+	inode_new->size = 0;
 
 	return 0;
 }

@@ -65,6 +65,7 @@ int lookup(struct DirEntry *dir, const char *name, struct DirEntry **dentry) {
 		kfree(inode);
 		return r;
 	}
+
 	/* diskte bulunan dosya icin DirEntry ve inode olustur */
 	*dentry = (struct DirEntry*)kmalloc(sizeof(struct DirEntry));
 	(*dentry)->init();
@@ -143,8 +144,12 @@ int find_file_and_dir(const char* path, DirEntry **dentry, const char **name) {
 	return 0;
 }
 
+// FIXME: --
+void init_devices();
+
 DirEntry* init_vfs() {
 	denemefs_init();
+	init_devices();
 	return mount_root();
 }
 
@@ -153,7 +158,6 @@ DirEntry* init_vfs() {
 void remove_from_dir_entry_cache(const char* path) {
 	DirEntry *dir;
 	const char *name;
-	int r;
 
 	find_file_and_dir(path, &dir, &name);
 
