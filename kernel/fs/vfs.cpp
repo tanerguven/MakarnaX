@@ -103,7 +103,7 @@ int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size) {
 	return j;
 }
 
-int find_dir_entry(const char *path, struct DirEntry **dirent) {
+int find_dir_entry(const char *path, size_t len, struct DirEntry **dirent) {
 	int i = 0, r = 0;
 	char buf[MAX_DIR_ENTRY_SIZE];
 
@@ -115,7 +115,7 @@ int find_dir_entry(const char *path, struct DirEntry **dirent) {
 		curr = task_curr->pwd;
 
 	do {
-		i = parse_path_i(path, i, buf);
+		i = parse_path_i(path, len, i, buf);
 		if (buf[0] == '\0')
 			continue;
 		r = lookup(curr, buf, &next);
@@ -128,7 +128,41 @@ int find_dir_entry(const char *path, struct DirEntry **dirent) {
 	return r;
 }
 
+int find_file_and_dir(const char* path, DirEntry **dentry, const char **name) {
+	int r;
+	const char *s = strrchr(path, '/');
+	if (s == NULL) {
+		*name = path;
+		*dentry = task_curr->pwd;
+	} else {
+		*name = s+1;
+		r = find_dir_entry(path, (size_t)(s - path), dentry);
+		if (r < 0)
+			return -1;
+	}
+	return 0;
+}
+
 DirEntry* init_vfs() {
 	denemefs_init();
 	return mount_root();
+}
+
+
+/* return degerine gerek yok, hata varsa zaten cache'de yoktur */
+void remove_from_dir_entry_cache(const char* path) {
+	DirEntry *dir;
+	const char *name;
+	int r;
+
+	find_file_and_dir(path, &dir, &name);
+
+	DirEntry::Subdirs::iterator it = dir->subdirs.begin();
+	DirEntry::Subdirs::iterator end = dir->subdirs.end();
+	for ( ; it != end ; it++) {
+		if ( strcmp(it->value()->name, name) == 0) {
+			ASSERT( dir->subdirs.erase(it) != dir->subdirs.error() );
+			return;
+		}
+	}
 }

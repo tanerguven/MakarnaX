@@ -9,9 +9,9 @@
 #define SYS_open		5
 #define SYS_close		6
 /* #define SYS_waitpid		  7 */
-/* #define SYS_creat		  8 */
+#define SYS_creat		  8
 /* #define SYS_link		  9 */
-/* #define SYS_unlink		 10 */
+#define SYS_unlink		 10
 #define SYS_execve		 11
 #define SYS_chdir		12
 /* #define SYS_time		 13 */
@@ -40,8 +40,8 @@
 /* #define SYS_sync		 36 */
 #define SYS_kill		37
 /* #define SYS_rename		 38 */
-/* #define SYS_mkdir		 39 */
-/* #define SYS_rmdir		 40 */
+#define SYS_mkdir		 39
+#define SYS_rmdir		 40
 /* #define SYS_dup		 41 */
 /* #define SYS_pipe		 42 */
 /* #define SYS_times		 43 */

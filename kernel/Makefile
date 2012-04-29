@@ -29,6 +29,8 @@ OBJS = \
 	fs/superblock.o\
 	fs/file.o\
 	fs/denemefs/denemefs.o\
+	fs/denemefs/file.o\
+	fs/denemefs/dir.o\
 	fs/exec.o\
 
 DEPS = $(OBJS:.o=.d)

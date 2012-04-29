@@ -9,141 +9,82 @@ struct Deneme_inode* inode_to_deneme(struct inode *inode) {
 	return &di[inode->ino];
 }
 
-/* RAM'de tanimli 2 dosyanin icerikleri */
-static const char *dosya1 = "data 1";
-static char dosya2[100] = "data 2";
-
-static File_operations denemefs_file_op = {
-	denemefs_read,
-	denemefs_write,
-	NULL,
-	denemefs_open,
-	denemefs_release
-};
-
-static File_operations denemefs_dir_op = {
-	denemefs_read,
-	NULL,
-	NULL,
-	denemefs_open,
-	denemefs_release
-};
-
-static struct inode_operations denemefs_file_inode_op = {
-	&denemefs_file_op,
-    denemefs_lookup,
-	denemefs_permission
-};
-
-
-static struct inode_operations denemefs_dir_inode_op = {
-	&denemefs_dir_op,
-	denemefs_lookup,
-	denemefs_permission
-};
-
 /*
  * RAM uzerinde saklanan sahte bir dosya sistemi olusturuyoruz
- * di[0] -> root
- * dosya1 ve dosya2 isimli iki karakter dosyasi var
- * kernel monitordeki test programlari var
- *   (yield, hello, dongu vb.)
  */
 void denemefs_init() {
 	unsigned int i;
-	int n_file = 5;
+	struct inode root_inode, dir1_inode, bin_inode, newinode;
+	int r;
+	Deneme_inode *in;
 
 	memset(di, 0, sizeof(di));
+	for (i = 0 ; i < 100 ; i++)
+		di[i].ft = Deneme_inode::FT_NULL;
 
+	/* / (root) */
 	di[0].ft = Deneme_inode::FT_DIR;
 	di[0].data = kmalloc(sizeof(struct Deneme_subdentry));
 	di[0].size = sizeof(struct Deneme_subdentry);
 	di[0].flags.rw = 0;
+	Deneme_subdentry *root_sd = (Deneme_subdentry*)di[0].data;
+	root_sd->n = 0;
+	root_inode.ino = 0;
 
-	di[1].ft = Deneme_inode::FT_FILE;
-	di[1].data = (void*)dosya1;
-	di[1].size = strlen("data 1")+1;
-	di[1].flags.rw = 0;
+	/* /home */
+	r = denemefs_mkdir(&root_inode, "home", 3);
+	ASSERT(r == 0);
+	r = denemefs_lookup(&root_inode, "home", &dir1_inode);
+	ASSERT(r == 0);
 
+	/* /dosya1 */
+	r = denemefs_create(&root_inode, "dosya1", 1, &newinode);
+	ASSERT(r == 0);
+	strcpy((char*)di[newinode.ino].data, "d1 icerik");
 
-	di[2].ft = Deneme_inode::FT_FILE;
-	di[2].data = (void*)dosya2;
-	di[2].size = 100;
-	di[2].flags.rw = 1;
+	/* /dosya2 */
+	r = denemefs_create(&root_inode, "dosya2", 3, &newinode);
+	ASSERT(r == 0);
+	strcpy((char*)di[newinode.ino].data, "data2");
 
+	/* /dir1 */
+	r = denemefs_mkdir(&root_inode, "dir1", 3);
+	ASSERT(r == 0);
+	r = denemefs_lookup(&root_inode, "dir1", &dir1_inode);
+	ASSERT(r == 0);
 
-	di[3].ft = Deneme_inode::FT_DIR;
-	di[3].data = kmalloc(sizeof(struct Deneme_subdentry));
-	di[3].size = sizeof(struct Deneme_subdentry);
-	di[3].flags.rw = 0;
+	/* /dir1/dir11 */
+	r = denemefs_mkdir(&dir1_inode, "dir11", 3);
+	ASSERT(r == 0);
 
-	Deneme_subdentry *sd_3 = (Deneme_subdentry*)di[3].data;
-	sd_3->n = 0;
+	/* /bin */
+	r = denemefs_mkdir(&root_inode, "bin", 1);
+	ASSERT(r == 0);
+	r = denemefs_lookup(&root_inode, "bin", &bin_inode);
+	ASSERT(r == 0);
 
-	di[4].ft = Deneme_inode::FT_DIR;
-	di[4].data = kmalloc(sizeof(struct Deneme_subdentry));
-	di[4].size = sizeof(struct Deneme_subdentry);
-	di[4].flags.rw = 0;
-
-	Deneme_subdentry *sd_4 = (Deneme_subdentry*)di[4].data;
-	sd_4->n = 0;
-	/* sd_4'u sd_3 altina ekle */
-	sd_3->n++;
-	sd_3->no[0] = 4;
-	strcpy(sd_3->name[0], "dir11");
-
-	Deneme_subdentry *sd = (Deneme_subdentry*)di[0].data;
-	sd->no[0] = 1;
-	strcpy(sd->name[0], "dosya1");
-	sd->no[1] = 2;
-	strcpy(sd->name[1], "dosya2");
-	sd->no[2] = 3;
-	strcpy(sd->name[2], "dir1");
-	sd->n = 3;
-
-	/* /bin dizini */
-	di[n_file].ft = Deneme_inode::FT_DIR;
-	Deneme_subdentry *bindir = (Deneme_subdentry*)
-		(di[n_file].data = kmalloc(sizeof(struct Deneme_subdentry)));
-	di[n_file].size = sizeof(struct Deneme_subdentry);
-	di[n_file].flags.rw = 0;
-
-	sd->no[sd->n] = n_file;
-	strcpy(sd->name[sd->n], "bin");
-	n_file++;
-	sd->n++;
-
-	/* /bin dizini icerisindeki dosyalar */
-	bindir->n = 0;
-	/* kullanici programlarini dosya sistemine ekle */
+	/* /bin/ * */
 	ASSERT(nr_test_programs < Deneme_subdentry_count);
 	for (i = 0 ; i < nr_test_programs ; i++) {
-		di[n_file].ft = Deneme_inode::FT_FILE;
-
-		di[n_file].data = test_programs[i].addr;
-		di[n_file].size = (uint32_t)test_programs[i].end -
-			(uint32_t)test_programs[i].addr;
-		di[n_file].flags.rw = 0;
-
-		bindir->no[bindir->n] = n_file;
-		strcpy(bindir->name[bindir->n], test_programs[i].name);
-		n_file++;
-		bindir->n++;
+		r = denemefs_create(&bin_inode, test_programs[i].name, 1, &newinode);
+		ASSERT(r == 0);
+		/* kernel'e gomulu dosyalari map et */
+		in = inode_to_deneme(&newinode);
+		kfree(in->data);
+		in->data = test_programs[i].addr;
+		in->size = (uint32_t)test_programs[i].end - (uint32_t)test_programs[i].addr;
 	}
 
-	/* init_programs dosyasini ekle */
-	di[n_file].ft = Deneme_inode::FT_FILE;
-	di[n_file].data = &_binary_init_programs_start;
-	di[n_file].size = (uint32_t)&_binary_init_programs_size;
-	di[n_file].flags.rw = 0;
-
-	sd->no[sd->n] = n_file;
-	strcpy(sd->name[sd->n], "init_script");
-	n_file++;
-	sd->n++;
+	/* /init_script */
+	r = denemefs_create(&root_inode, "init_script", 1, &newinode);
+	ASSERT(r == 0);
+	/* kernel gomulu init_programs dosyasini map et */
+	in = inode_to_deneme(&newinode);
+	kfree(in->data);
+	in->data = &_binary_init_programs_start;
+	in->size = (uint32_t)&_binary_init_programs_size;
 
 	printf(">> denemefs init OK\n");
-	printf(">> denemefs: %d dir and %d file\n", 1, n_file-1);
 }
 
 int denemefs_read_super(struct SuperBlock* sb) {
@@ -166,7 +107,7 @@ int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest)
 	Deneme_inode *inode = inode_to_deneme(i_dir);
 
 	if (inode->ft != Deneme_inode::FT_DIR)
-		return -1;
+		return -2;
 
 	Deneme_subdentry *sd = (Deneme_subdentry*)inode->data;
 	for (int i = 0 ; i < sd->n ; i++) {
@@ -184,58 +125,45 @@ int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest)
 	return -1;
 }
 
-uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
-	struct Deneme_inode *in = inode_to_deneme(f->inode);
-	unsigned int i;
-
-	if (in->ft != Deneme_inode::FT_FILE) {
-		// PANIC("tanimsiz durum");
-		return -1;
-	}
-
-	const char *src = ((char*)in->data) + f->fpos;
-	for(i = 0 ; (i + f->fpos < in->size) && (size > 0) ; i++, size--) {
-		buf[i] = src[i];
-	}
-
-	return i;
+void denemefs_free_inode(struct inode *i) {
+	if (di[i->ino].data)
+		kfree(di[i->ino].data);
+	memset(&di[i->ino], 0, sizeof(di[i->ino]));
+	di[i->ino].ft = Deneme_inode::FT_NULL;
 }
 
-uint32_t denemefs_write(struct File *f, const char *buf, size_t size) {
-	struct Deneme_inode *in = inode_to_deneme(f->inode);
-	unsigned int i;
+int denemefs_new_inode(struct inode *i_dir, struct inode *dest) {
+	int ino = find_empty_di();
+	if (ino < 0)
+		return -1; /* diskte inode kalmadi */
 
-	if (in->ft != Deneme_inode::FT_FILE)
-		return -1;
+	/* inode olustur */
+	di[ino].ft = Deneme_inode::FT_UNUSED;
+	dest->ino = ino;
 
-	char *dest = ((char*)in->data) + f->fpos;
-	for (i = 0 ; (i + f->fpos < in->size) && (size > 0) ; i++, size--) {
-		dest[i] = buf[i];
-	}
-
-	return i;
-}
-
-int denemefs_open(struct File *f) {
-	// printf("denemefs_open ino %d\n", f->inode->ino);
-	return 0;
-}
-
-int denemefs_release(struct File *f) {
-	// printf("denemefs_release\n");
 	return 0;
 }
 
 int denemefs_permission(struct inode *i, int flags) {
 	struct Deneme_inode *in = inode_to_deneme(i);
-
 	/* dosya rw ise tum erisim tiplerine izin ver */
 	if (in->flags.rw)
 		return 1;
-
 	/* readonly erisime her zaman izin ver (denemefs'de writeonly dosya yok) */
 	if ((flags & 0x3) == 1)
 		return 1;
-
 	return 0;
+}
+
+
+int find_empty_di() {
+	int i;
+	//FIXME: assert insterrupts disable
+	for (i = 0 ; i < 100 ; i++) {
+		if (di[i].ft == Deneme_inode::FT_NULL) {
+			di[i].ft = Deneme_inode::FT_UNUSED; // baska processler bos gormesin
+			return i;
+		}
+	}
+	return -1;
 }

@@ -29,6 +29,9 @@ extern void *memmove (void *__dest, __const void *__src, size_t __n);
 
 extern int memcmp(const void* ptr1, const void* ptr2, size_t num);
 
+extern char *strchr(const char *s, int c);
+extern char *strrchr(const char *s, int c);
+
 #ifdef __cplusplus
 }
 #endif

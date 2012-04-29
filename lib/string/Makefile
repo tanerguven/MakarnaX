@@ -17,7 +17,9 @@ OBJS = memcpy.o \
 	strncmp.o \
 	strncpy.o \
 	strnlen.o \
-	memcmp.o
+	memcmp.o \
+	strchr.o \
+	strrchr.o 
 
 
 all:

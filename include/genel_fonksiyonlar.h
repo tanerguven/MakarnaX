@@ -55,10 +55,10 @@ static inline char isSet(uint8_t* ptr, uint32_t size) {
  * // gibi durumlarda buf = "" olabilir
  * @return path'de kalinan yer
  */
-static inline int parse_path_i(const char *path, int i, char buf[256]) {
+static inline int parse_path_i(const char *path, size_t len, unsigned int i, char buf[256]) {
 	int j = 0;
 
-	while (path[i] != '\0') {
+	while ((i < len) && path[i] != '\0') {
 		/* basta olmayan / yerine \0 */
 		if ( j > 0 && path[i] == '/' ) {
 			buf[j] = '\0';

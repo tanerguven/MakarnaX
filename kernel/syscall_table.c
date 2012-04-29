@@ -19,6 +19,10 @@ asmlink void sys_readdir();
 asmlink void sys_stat();
 asmlink void sys_ipc();
 asmlink void sys_getcwd();
+asmlink void sys_mkdir();
+asmlink void sys_rmdir();
+asmlink void sys_creat();
+asmlink void sys_unlink();
 
 asmlink void sys_cputs();
 asmlink void sys_cgetc();
@@ -27,7 +31,6 @@ asmlink void sys_wait();
 asmlink void sys_dongu();
 asmlink void sys_sleep();
 asmlink void sys_nosys();
-
 
 void (* const syscalls[])() = {
 	[0 ... MAX_SYSCALL_COUNT] = sys_nosys,
@@ -50,6 +53,10 @@ void (* const syscalls[])() = {
 	[SYS_stat] = sys_stat,
 	[SYS_ipc] = sys_ipc,
 	[SYS_getcwd] = sys_getcwd,
+	[SYS_mkdir] = sys_mkdir,
+	[SYS_rmdir] = sys_rmdir,
+	[SYS_creat] = sys_creat,
+	[SYS_unlink] = sys_unlink,
 
 	[SYS_cputs] = sys_cputs,
 	[SYS_cgetc] = sys_cgetc,

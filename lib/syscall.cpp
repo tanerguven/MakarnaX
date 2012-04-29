@@ -21,7 +21,10 @@ asmlink _syscall1(int, chdir, const char*, path)
 asmlink _syscall2(char*, getcwd, char*, buf, size_t, size)
 asmlink _syscall2(int, stat, const char*, path, struct stat*, buf)
 asmlink _syscall2(int, execve, const char*, path, char* const*, argv)
-
+asmlink _syscall2(int, mkdir, const char*, pathname, int, mode)
+asmlink _syscall1(int, rmdir, const char*, pathname)
+asmlink _syscall2(int, creat, const char*, pathname, int, mode)
+asmlink _syscall1(int, unlink, const char*, pathname)
 
 asmlink int brk(void *addr) {
 	ptr_t new_brk = (ptr_t)syscall(SYS_brk, (uint32_t)addr, 0, 0, 0, 0);

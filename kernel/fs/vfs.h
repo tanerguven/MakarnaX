@@ -37,6 +37,8 @@ struct inode {
 	uint32_t size;
 	const struct inode_operations *op;
 
+	// TODO: file lock
+
 	inline void init(uint32_t ino, SuperBlock *sb, const struct inode_operations *op,
 					 uint32_t size) {
 		this->ino = ino;
@@ -98,17 +100,20 @@ struct inode_operations {
 
 	/* dir icerisinde name isimli dosyayi arar, dest ile dondurur */
 	int (*lookup)(struct inode *i_dir, const char* name, struct inode *i_dest);
-	// create(struct inode *i_dir, const char* name, struct inode *i_dest);
-	// mkdir(struct inode *i_dir, const char *name)
-	// rmdir(struct inode *i_dir, const char *name)
-	// mknod(struct inode *i_dir, cost char *name, dev (???))
+	int (*create)(struct inode *i_dir, const char* name, int mode, struct inode *i_dest);
+	int (*unlink)(struct inode *i_dir, const char* name);
+	int (*mkdir)(struct inode *i_dir, const char *name, int mode);
+	int (*rmdir)(struct inode *i_dir, const char *name);
+	int (*mknod)(struct inode *i_dir, const char *name, int dev);
 	int (*permission)(struct inode* i, int flags);
 };
 
 
 extern int lookup(struct DirEntry *dir, const char *fn, struct DirEntry **dentry);
-extern int find_dir_entry(const char *path, struct DirEntry **dest);
+extern int find_dir_entry(const char *path, size_t len, struct DirEntry **dest);
 extern int dir_entry_to_path(struct DirEntry *dirent, char *buf, size_t size);
+extern int find_file_and_dir(const char* path, DirEntry **dentry, const char **name);
+extern void remove_from_dir_entry_cache(const char* path);
 
 extern int do_open(File **f, const char *path, int flags);
 extern void do_close(File *f);

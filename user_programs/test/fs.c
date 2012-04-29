@@ -10,12 +10,16 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "test.h"
+
 int openfile();
 int readfile();
 int writefile();
 int test_readdir();
 int test_chdir();
 int test_stat();
+int mkdir_rmdir();
+int creat_unlink();
 
 struct {
 	const char *name;
@@ -28,6 +32,8 @@ struct {
 	{"chdir", "chdir", test_chdir},
 	{"stat", "stat", test_stat},
 	{"writefile", "writefile", writefile},
+	{"mkdir_rmdir", "mkdir_rmdir", mkdir_rmdir},
+	{"creat_unlink", "creat_unlink", creat_unlink},
 };
 #define TEST_COUNT (sizeof(tests)/sizeof(tests[0]))
 
@@ -72,9 +78,9 @@ int readfile() {
 	/* dosya1 isimli dosyayi ac */
 	printf("open dosya1\n");
 	fd1 = open("dosya1", 1, 0);
+	printf("fd1: %d\n", fd1);
 	if (fd1 < 0)
 		return fd1;
-	printf("fd1: %d\n", fd1);
 
 	r = read(fd1, buf, 10);
 	printf("r %d\n", r);
@@ -82,10 +88,10 @@ int readfile() {
 
 	/* forktest programini dosya olarak ac */
 	printf("\nopen forktest\n");
-	fd2 = open("forktest", 1, 0);
+	fd2 = open("/bin/forktest", 1, 0);
+	printf("fd2: %d\n", fd2);
 	if (fd2 < 0)
 		return fd2;
-	printf("fd2: %d\n", fd2);
 
 	r = read(fd2, buf, 10);
 	printf("r %d\n", r);
@@ -299,6 +305,122 @@ int test_stat() {
 	printf("rdev\t%d\n", (unsigned int)s.st_rdev);
 	printf("size\t%d\n", (unsigned int)s.st_size);
 	printf("\n");
+
+	return 0;
+}
+
+int mkdir_rmdir() {
+	int r;
+
+	/* / ro, home silinemez */
+	r = rmdir("/home");
+	assertNotEquals(0, r);
+
+	/* /home/dir2 olustur ve sil */
+	r = mkdir("/home/dir2", 1);
+	assertNotLess(r, 0);
+	r = rmdir("/home/dir2");
+	assertNotLess(r, 0);
+
+	/* /home/dir2 silindi, erisilemez */
+	r = chdir("/home/dir2");
+	assertNotEquals(0, r);
+
+	/* /home/dir2 tekrar olustur, chdir ve sil */
+	r = mkdir("/home/dir2", 1);
+	assertNotLess(r, 0);
+	r = chdir("/home/dir2");
+	assertNotLess(r, 0);
+	r = rmdir("/home/dir2");
+	assertNotLess(r, 0);
+
+	/* silinmis /home/dir2 ye chdir ve sil */
+	r = chdir("/home/dir2");
+	assertNotEquals(0, r);
+	r = rmdir("/home/dir2");
+	assertNotEquals(0, r);
+
+	/* ic ice dizin */
+	r = mkdir("/home/dir1", 3);
+	assertNotLess(r, 0);
+	r = mkdir("/home/dir1/dir11", 1);
+	assertNotLess(r, 0);
+
+	/* ro dizine (/home/dir1/dir11), dizin olusturlamaz */
+	r = mkdir("/home/dir1/dir11/dir111", 1);
+	assertNotEquals(0, r);
+
+	/* ayni isimde dizinler */
+	r = mkdir("/home/home", 3);
+	assertNotLess(r, 0);
+	r = mkdir("/home/home/dir1", 3);
+	assertNotLess(r, 0);
+	r = rmdir("/home/home/dir1");
+	assertNotLess(r, 0);
+
+	/* // FIXME: bos olmayan dizinler silinmemeli */
+	/* r = rmdir("/home/dir1"); */
+	/* asssertNotEquals(0, r); */
+
+	printf("mkdir_rmdir OK\n");
+
+	return 0;
+}
+
+int creat_unlink() {
+	int r;
+	int fd;
+	char buf[256];
+
+	r = creat("/home/deneme.txt", 3);
+	if (r < 0)
+		printf("hata %s:%d\n", __FILE__, __LINE__);
+
+	/* olusturulan dosyaya birseyler yaz */
+	fd = open("/home/deneme.txt", 3, 0);
+	assertNotLess(fd, 0);
+	r = write(fd, "deneme", 6);
+	assertEquals(6, r);
+	r = close(fd);
+	assertNotLess(r, 0);
+
+	/* olusturulan dosyayi ro modunda ac */
+	fd = open("/home/deneme.txt", 1, 0);
+	assertNotLess(r, 0);
+
+	/* yazmaya calis */
+	r = write(fd, "aaaaa", 5);
+	assertNotEquals(5, r);
+	/* oku */
+	r = read(fd, buf, 256);
+	assertEquals(256, r);
+	assertEquals(0, strcmp(buf, "deneme"));
+	r = close(fd);
+	assertNotLess(r, 0);
+
+	/* sil */
+	r = unlink("/home/deneme.txt");
+	assertNotLess(r, 0);
+
+	/* silinmis dosyayi acmaya calis */
+	fd = open("/home/deneme.txt", 1, 0);
+	assertNotLess(-1, fd);
+
+	/* ro dosya olustur */
+	r = creat("/home/ro.txt", 1);
+	assertNotLess(r, 0);
+
+	/* ro dosyayi rw olarak acmaya calis */
+	fd = open("/home/ro.txt", 3, 0);
+	assertNotLess(r, 0);
+
+	/* ro dosyayi sil */
+	r = unlink("/home/ro.txt");
+	assertNotLess(r, 0);
+
+	/* silinmis ro dosyayi acmaya calis */
+	fd = open("/home/ro.txt", 1, 0);
+	assertNotLess(-1, fd);
 
 	return 0;
 }

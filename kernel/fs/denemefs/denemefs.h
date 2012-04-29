@@ -13,8 +13,10 @@ struct Deneme_subdentry {
 
 struct Deneme_inode {
 	enum FileType {
-		FT_FILE = 1,
-		FT_DIR = 2,
+		FT_UNUSED = 0,
+		FT_NULL = 1,
+		FT_FILE = 2,
+		FT_DIR = 3,
 	};
 	FileType ft;
 	size_t size;
@@ -29,6 +31,13 @@ extern struct Deneme_inode* inode_to_deneme(struct inode *inode);
 /* inode operations */
 extern int denemefs_lookup(struct inode *i_dir, const char* name, struct inode *i_dest);
 extern int denemefs_permission(struct inode *i, int flags);
+extern int denemefs_create(struct inode *i_dir, const char* name, int mode, struct inode *i_dest);
+extern int denemefs_unlink(struct inode *i_dir, const char* name);
+extern int denemefs_mkdir(struct inode *i_dir, const char *name, int mode);
+extern int denemefs_rmdir(struct inode *i_dir, const char *name);
+extern int denemefs_mknod(struct inode *i_dir, const char *name, int dev);
+extern struct inode_operations denemefs_file_inode_op;
+extern struct inode_operations denemefs_dir_inode_op;
 
 /* file operations */
 extern uint32_t denemefs_read(struct File *f, char *buf, size_t size);
@@ -37,5 +46,13 @@ extern int denemefs_open(struct File *f);
 extern int denemefs_release(struct File *f);
 
 extern int denemefs_read_super(struct SuperBlock* sb);
+
+extern void denemefs_free_inode(struct inode *i);
+extern int denemefs_new_inode(struct inode *i_dir, struct inode *dest);
+extern int denemefs_add_entry(struct inode *dir, const char *name, struct inode *i);
+extern int denemefs_remove_entry(struct inode *dir, const char *name);
+
+extern struct Deneme_inode di[100];
+int find_empty_di();
 
 #endif /* _DENEMEFS_H_ */

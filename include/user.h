@@ -40,6 +40,10 @@ extern int chdir(const char *path);
 extern char *getcwd(char *buf, size_t size);
 extern int stat(const char *path, struct stat *buf);
 extern int execve(const char *path, char *const argv[]);
+extern int mkdir(const char* pathname, int mode);
+extern int rmdir(const char* pathname);
+extern int creat(const char* pathname, int mode);
+extern int unlink(const char* pathname);
 
 /******************************
  * Shared Memory
