@@ -29,24 +29,7 @@ extern void wakeup_uninterruptible(TaskList_t *list);
 
 extern void schedule();
 
-extern TaskList_t __task_runnable_queue[41];
-
-inline void add_to_runnable_list(Task* t) {
-	ASSERT_int_disable();
-
-	t->state = Task::State_running;
-	ASSERT(t->list_node.is_free());
-	ASSERT( __task_runnable_queue[t->priority].push_back(&t->list_node) );
-}
-
-inline void remove_from_runnable_list(Task* t) {
-	ASSERT_int_disable();
-
-	ASSERT(t->list_node.__list == &__task_runnable_queue[t->priority]);
-	ASSERT(t->state == Task::State_running);
-	ASSERT( __task_runnable_queue[t->priority].erase(&t->list_node)
-			!= __task_runnable_queue[t->priority].error());
-	ASSERT(t->list_node.is_free());
-}
+extern void add_to_runnable_list(Task* t);
+extern void remove_from_runnable_list(Task* t);
 
 #endif /* SCHED_H_ */

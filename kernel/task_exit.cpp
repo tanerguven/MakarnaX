@@ -57,7 +57,7 @@ void notify_parent(Task *t) {
 }
 
 asmlink void do_exit(int code) {
-	cli();
+	pushcli();
 
 	if (task_curr->id == 1)
 		PANIC(">> exit task 1");
@@ -77,6 +77,8 @@ asmlink void do_exit(int code) {
 	notify_parent(task_curr);
 	print_info(">> [%d] exit OK\n", task_curr->id);
 
+	popif();
+
 	schedule();
 	PANIC("do_exit return");
 }
@@ -88,12 +90,11 @@ SYSCALL_DEFINE1(exit, int, error_code) {
 SYSCALL_END(exit)
 
 SYSCALL_DEFINE2(kill, int, pid, int, sig) {
-	uint32_t eflags = eflags_read();
-	cli();
+	pushcli();
 
 	Task *t = task_id_ht.get(pid);
 
-	eflags_load(eflags);
+	popif();
 
 	if (t == NULL)
 		return SYSCALL_RETURN(-1);
@@ -116,11 +117,10 @@ SYSCALL_DEFINE1(wait, int*, state) {
 	}
 	state = (int*)uaddr2kaddr((uint32_t)state);
 
-	uint32_t eflags = eflags_read();
-	cli();
+	pushcli();
 
 	if (task_curr->childs.size() == 0) {
-		eflags_load(eflags);
+		popif();
 		return set_return(tf, -1);
 	}
 
@@ -129,7 +129,7 @@ SYSCALL_DEFINE1(wait, int*, state) {
 	task_curr->state = Task::State_interruptible;
 	task_curr->waiting_child = 1;
 
-	eflags_load(eflags);
+	popif();
 
 	schedule();
 

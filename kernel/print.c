@@ -3,7 +3,7 @@
 #include <kernel/kernel.h>
 
 // console.cpp
-asmlink void putchar(int c);
+asmlink void console_putc(int c);
 
 // lib/vsprintf.c
 asmlink int vsprintf(char *buf, const char *fmt, va_list args);
@@ -19,7 +19,7 @@ int __kernel_print(const char *fmt, ...) {
 
 	const char *c = buf;
 	for (; *c != '\0' ; c++)
-	    putchar(*c);
+	    console_putc(*c);
 
 	return i;
 }

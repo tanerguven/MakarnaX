@@ -112,7 +112,7 @@ struct GateDesc {
 	/** exceptions */
 	inline void set_trap_gate(void (*off)()) {
 		/* set_gate(STS_TG32, GD_KT, (uint32_t)off, 0); */
-		set_gate(STS_IG32, GD_KT, (uint32_t)off, 0);
+		set_gate(STS_TG32, GD_KT, (uint32_t)off, 0);
 	}
 
 	/** User ve kernel moddan cagirilabilen traplar (system call) */
@@ -123,7 +123,7 @@ struct GateDesc {
 
 	/** interrupt gate */
 	inline void set_int_gate(void (*off)()) {
-		set_gate(STS_IG32, GD_KT, (uint32_t)off, 0);
+		set_gate(STS_TG32, GD_KT, (uint32_t)off, 0);
 	}
 
 	uint32_t off_15_0 : 16;

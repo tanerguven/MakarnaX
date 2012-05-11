@@ -272,13 +272,15 @@ inline PTE_t * PageDirInfo::page_get_c(VA_t va) {
 
 /** hatada errno, normal durumda refCount dondurur */
 inline int PageDirInfo::page_insert(Page *p, VA_t va, int perm) {
-	ASSERT_int_disable();
+	pushcli();
 
 	/* FuncLevelTester(&(this->function_level)); */
 	int r;
 	PTE_t * pte = page_get_c(va);
-	if (pte == NULL)
+	if (pte == NULL) {
+		popif();
 		return -ENOMEM;
+	}
 
 	if (pte->present) {
 		r = page_remove(va, 1);
@@ -296,12 +298,11 @@ inline int PageDirInfo::page_insert(Page *p, VA_t va, int perm) {
     else
 		PANIC("page_insert: bilinmeyen adres alani");
 
+	popif();
 	return rc;
 }
 
 inline int PageDirInfo::pde_alloc(uint32_t pde_no) {
-	ASSERT_int_disable();
-
 	/* pde olarak kullanmak icin, bir fiziksel page bul ve sıfırla */
 	Page *p;
 	uint32_t pt_va;
@@ -310,14 +311,17 @@ inline int PageDirInfo::pde_alloc(uint32_t pde_no) {
 	pt_va = va2kaddr(pt_va);
 	memset((void*)pt_va, 0, 0x1000);
 	/* */
+
+	pushcli();
 	pgdir->e[pde_no] = PDE_t(p->addr(),  PTE_P | PTE_U | PTE_W);
 	pgtables[pde_no] = (PageTable*)pt_va;
 	count_kernel++;
+	popif();
 	return 0;
 }
 
 inline int PageDirInfo::pde_free(uint32_t pde_no) {
-	ASSERT_int_disable();
+	pushcli();
 
 	uint32_t pgtable_va = (uint32_t)pgtables[pde_no];
 	int r = tmp_page_free(kaddr2va(pgtable_va));
@@ -329,18 +333,21 @@ inline int PageDirInfo::pde_free(uint32_t pde_no) {
 	 */
 	pgdir->e[pde_no].present = 0;
 	pgtables[pde_no] = NULL;
+	popif();
 	return 0;
 }
 
 /** hata durumunda errno, normal refCount dondurur */
 inline int PageDirInfo::page_remove(VA_t va, int invl) {
-	ASSERT_int_disable();
+	pushcli();
 
 	/* FuncLevelTester(&(this->function_level)); */
 
 	PTE_t *pte = page_get(va);
-	if (pte == NULL || !pte->present)
+	if (pte == NULL || !pte->present) {
+		popif();
 		return -ENOMEM;
+	}
 
 	int refCount = page_dec_refCount(pte->physAddr());
 	*pte = PTE_t(0, 0);
@@ -357,23 +364,27 @@ inline int PageDirInfo::page_remove(VA_t va, int invl) {
 	if (invl && (this == kernel_dir || cr3 == pgdir_pa))
 		tlb_invalidate(v);
 
+	popif();
 	return refCount;
 }
 
 /** hatada errno, normal durumda refCount dondurur */
 inline int PageDirInfo::page_alloc_insert(uint32_t va, int perm) {
-	ASSERT_int_disable();
+	pushcli();
 
 	Page *p;
 	int r;
 	r = page_alloc(&p);
-	if (r < 0)
+	if (r < 0) {
+		popif();
 		return r;
+	}
 
 	r = page_insert(p, va, perm);
 	if (r < 0)
 		page_free(p);
 
+	popif();
 	return r;
 }
 

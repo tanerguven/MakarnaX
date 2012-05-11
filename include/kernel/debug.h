@@ -16,8 +16,10 @@
 
 #if debug_test(interrupt_check)
 # define ASSERT_int_disable() ASSERT(!(eflags_read() & FL_IF))
+# define ASSERT_int_enable() ASSERT(eflags_read() & FL_IF)
 #else
 # define ASSERT_int_disable() (void)0
+# define ASSERT_int_enable() (void)0
 #endif
 
 // TODO: fonksiyonlarin kac kere cagrildigini sayan birsey

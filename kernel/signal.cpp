@@ -15,6 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * signal fonksiyonlarinda senkronizasyon yontemi:
+ *
+ * process'in kendisi disindaki processlerin eristigi fonksiyonlarda cli yapmak
+ * yani sadece send_signal fonksiyonunda kullaniliyor
+ *
+ * diger durumlarda, process kendi verileri uzerinde degisiklik yaptigi icin
+ * senkronizasyona gerek yok
+ */
+
 #include "task.h"
 #include "sched.h"
 
@@ -30,7 +40,6 @@
 
 // task_exit.cpp
 extern void notify_parent(Task *t);
-//
 
 #define _S(x) (1<<x)
 
@@ -72,8 +81,12 @@ int send_signal(uint32_t sig, Task* t) {
 	if (!t || sig > 32)
 		return -EINVAL;
 
-	if (t->signal.pending & _S(sig))
+	pushcli();
+
+	if (t->signal.pending & _S(sig)) {
+		popif();
 		return 0;
+	}
 
 	t->signal.sig |= _S(sig);
 
@@ -87,8 +100,10 @@ int send_signal(uint32_t sig, Task* t) {
  * - wait child durumunda SIGCHLD ile uyaniyor
  */
 			/* FIXME: gecici cozum, wait child durumunda degilse ignore yap */
-			if (!t->waiting_child)
+			if (!t->waiting_child) {
+				popif();
 				return 0;
+			}
 		}
 
 		uint32_t eflags = eflags_read();
@@ -114,14 +129,18 @@ int send_signal(uint32_t sig, Task* t) {
 		PANIC("--");
 	}
 
+	popif();
 	return 0;
 }
 
 void check_signals() {
-	ASSERT_int_disable();
+	ASSERT_int_enable();
+
+	// FIXME: bu testler kaldirilmali
 	uint32_t cr3; read_reg(%cr3, cr3);
 	ASSERT(task_curr->pgdir.pgdir_pa == cr3);
 
+	pushcli();
 	if (task_curr->signal.sig) {
 		Trapframe *tf = NULL;
 
@@ -143,14 +162,18 @@ void check_signals() {
 						remove_from_runnable_list(task_curr);
 						task_curr->exit_code = (sig << 8) | 0x7f;
 						notify_parent(task_curr);
+						popif();
 						schedule();
+						PANIC("--");
 					} else if (SIG_DC & _S(sig)) {
 						// TODO: continued durumu icin birseyler yapilmali
 						continue;
 					}
 					/*(SIG_DA & _S(sig)) | (SIG_DT & _S(sig))*/
 					task_curr->signal.sig |= _S(sig);
+					popif();
 					do_exit(sig);
+					PANIC("--");
 				}
 
 				push_stack();
@@ -182,14 +205,12 @@ void check_signals() {
 			}
 		}
 	}
+	popif();
 }
 
 /* user signal handler fonksiyonundan return yapildiginda calisir */
 void signal_return(Trapframe *tf) {
-	ASSERT_int_disable();
-
 	uint32_t* esp = (uint32_t*)uaddr2kaddr(tf->esp);
-
 /*
  * schedule.cpp, schedule()
  * esp[-1] = n->registers.eip;     //-> esp[1]
@@ -247,6 +268,7 @@ static void push_stack() {
 	s->list_node.init();
 	ASSERT(s->list_node.is_free());
 
+
 	r = task_curr->pgdir.segment_alloc(MMAP_KERNEL_STACK_2_BASE,
 									   MMAP_KERNEL_STACK_SIZE,
 									   PTE_P | PTE_W);
@@ -265,7 +287,7 @@ static void push_stack() {
 	s->esp -= MMAP_KERNEL_STACK_OFFSET;
 	copy_stack(MMAP_KERNEL_STACK_2_BASE);
 
-	/* pop_stack fonksiyonundan buraya atlaniyor  */
+	/* pop_stack fonksiyonundan buraya atlaniyor */
 	eip = read_eip();
 	if (eip == 1)
 		return;
@@ -274,7 +296,8 @@ static void push_stack() {
 	s->sleep = task_curr->sleep;
 
 	ASSERT( s->list_node.is_free() );
-	ASSERT( task_curr->sigstack.push_front(&s->list_node) );
+	r = task_curr->sigstack.push_front(&s->list_node);
+	ASSERT( r );
 }
 
 static void pop_stack() {

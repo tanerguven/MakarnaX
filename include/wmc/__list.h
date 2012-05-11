@@ -127,9 +127,11 @@ struct List {
 	unsigned int __size;
 	/* hayali eleman */
 	node_t __;
+	void *lock;
 
 	inline void init() {
 		__size = 0;
+		lock = NULL;
 		__.__next = &__;
 		__.__prev = &__;
 #ifdef NODE_LIST_LINK

@@ -29,7 +29,7 @@ void keyboard_interrupt();
 
 static void serial_init();
 static void cga_putc(int c);
-void console_putc(int c);
+asmlink void console_putc(int c);
 
 static uint16_t COM1 = 0;
 static uint16_t COM2 = 0;
@@ -60,11 +60,12 @@ struct Console {
 	}
 };
 
+static struct spinlock console_lock;
 static Console console;
-
 TaskList_t console_input_list;
 
 void init_console() {
+	spinlock_init(&console_lock);
 	console.init();
 	serial_init();
 	keyboard_init();
@@ -77,24 +78,21 @@ void init_console() {
  */
 void console_interrupt(int (*proc)()) {
 	int c;
-	ASSERT_int_disable();
 
+	spinlock_acquire(&console_lock);
 	while ( (c = (*proc)()) != -1) {
 		if (c == 0)
 			continue;
 		console.buff[console.wpos++] = c;
 		if (console.wpos == 512)
 			console.wpos = 0;
-		// console_putc(c);
-		// wakeup_interruptible_2(&console_input_list, c);
 		wakeup_interruptible(&console_input_list);
 	}
+	spinlock_release(&console_lock);
 }
 
-int console_getc() {
-	// ASSERT(!(eflags_read() & FL_IF));
-	uint32_t eflags = eflags_read();
-	cli();
+asmlink int console_getc() {
+	int c = 0;
 
 	keyboard_interrupt();
 
@@ -103,20 +101,19 @@ int console_getc() {
 		console_interrupt(COM1_getc);
 	#endif
 
+	spinlock_acquire(&console_lock);
 	if (console.rpos != console.wpos) {
-		int c = console.buff[console.rpos++];
+		c = console.buff[console.rpos++];
 		if (console.rpos == 512)
 			console.rpos = 0;
-		eflags_load(eflags);
-		return c;
 	}
+	spinlock_release(&console_lock);
 
-	eflags_load(eflags);
-	return 0;
+	return c;
 }
 
 
-void console_putc(int c) {
+asmlink void console_putc(int c) {
 	/* console'a bağlı tüm çıkış aygıtlarına, çıktıyı gönder */
 	cga_putc(c);
 
@@ -130,27 +127,9 @@ void console_putc(int c) {
  * Console kullanimi icin ust seviye islemler
  ****************************************************/
 
-/** bir karakter girdi okur. girdi yoksa gelene kadar bekler */
-asmlink int getchar() {
-	int c;
-
-	uint32_t eflags = eflags_read();
-	sti();
-	while ((c = console_getc()) == 0) {
-		/* karakter yoksa kesme gelene kadar bekle */
-		asm("hlt");
-	}
-	eflags_load(eflags);
-	return c;
-}
-
-asmlink void putchar(int c) {
-	console_putc(c);
-}
-
-asmlink int iscons(int fdnum) {
-	return 1;
-}
+// asmlink int iscons(int fdnum) {
+// 	return 1;
+// }
 
 /*******************************************************************
  * 							Serial
@@ -185,14 +164,13 @@ static void serial_init() {
 #define COM_N_getc(COM) \
 static int COM##_getc() {	\
 	int r; \
-	uint32_t eflags = eflags_read(); \
 	ASSERT(COM != 0); \
-	cli(); \
+	pushcli(); \
 	if ((inb(COM1 + 5) & 1) == 0) /* if not received */ \
 		r = -1; \
 	else \
 		r = inb(COM1); \
-	eflags_load(eflags); \
+	popif();; \
 	return r; \
 }
 
@@ -204,12 +182,11 @@ COM_N_getc(COM4);
 #define COM_N_putc(COM) \
 static void COM##_putc(int c) { \
 	ASSERT(COM != 0); \
-	uint32_t eflags = eflags_read(); \
-	cli(); \
+	pushcli(); \
 	while ((inb(COM + 5) & 0x20) == 0) \
 		/* if transmit not empty, wait */; \
 	outb(COM, c); \
-	eflags_load(eflags); \
+	popif(); \
 }
 
 COM_N_putc(COM1);
@@ -237,8 +214,7 @@ static uint16_t (*cga_memory)[80] = (uint16_t(*)[80])0xb8000;
 static void cga_putc(int c) {
 	int cursor_pos;
 
-	uint32_t eflags = eflags_read();
-	cli();
+	pushcli();
 
 	// read cursor position
 	outb(CRTPORT, 14);
@@ -288,5 +264,5 @@ static void cga_putc(int c) {
 	outb(CRTPORT + 1, cursor_pos);
 	cga_memory[cursor_y][cursor_x] = ' ' | CHAR_COLOR;
 
-	eflags_load(eflags);
+	popif();
 }

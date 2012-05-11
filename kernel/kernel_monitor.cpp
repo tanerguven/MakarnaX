@@ -36,14 +36,16 @@
 #define printf(args...) __kernel_print(args)
 
 // console.cpp
-asmlink int getchar();
-asmlink void putchar(int c);
+asmlink int console_getc();
+asmlink void console_putc(int c);
 
 extern size_t kmalloc_size(size_t size);
 extern int do_fork();
 extern int do_execve(const char *path, char *const argv[]);
 
-int readline(const char *prompt, char* buf, int buflen);
+static int getchar();
+static void putchar(int c);
+static int readline(const char *prompt, char* buf, int buflen);
 
 uint32_t free_memory_start;
 
@@ -107,17 +109,19 @@ int runcmd(char *cmd) {
 
 void start_kernel_monitor() {
 	char buf[1000];
-	uint32_t eflags = eflags_read();
-	cli();
+	// uint32_t eflags = eflags_read();
+	// cli();
+	pushcli();
 	kernel_monitor_running = true;
 	while (kernel_monitor_running) {
-		ASSERT(!(eflags_read() & FL_IF));
+		// ASSERT(!(eflags_read() & FL_IF));
 		printf("\n");
 		int r = readline("$:", buf, 1000);
 		if (r > 0)
 			runcmd(buf);
 	}
-	eflags_load(eflags);
+	popif();
+	// eflags_load(eflags);
 }
 
 static int command_help(int argc, char** argv) {
@@ -360,7 +364,7 @@ static int command_memdebug(int argc, char **argv) {
 	return 0;
 }
 
-int readline(const char *prompt, char* buf, int buflen)
+static int readline(const char *prompt, char* buf, int buflen)
 {
 	int i, c;
 
@@ -387,4 +391,22 @@ int readline(const char *prompt, char* buf, int buflen)
 	}
 
 	return -1;
+}
+
+
+/** bir karakter girdi okur. girdi yoksa gelene kadar bekler */
+static int getchar() {
+	int c;
+
+	pushsti();
+	while ((c = console_getc()) == 0) {
+		/* karakter yoksa kesme gelene kadar bekle */
+		asm("hlt");
+	}
+	popif();
+	return c;
+}
+
+static void putchar(int c) {
+	console_putc(c);
 }

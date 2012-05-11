@@ -75,6 +75,9 @@ asmlink void do_syscall(int no);
 // kernel_monitor.cpp
 extern bool kernel_monitor_running;
 
+// spinlock.cpp
+extern int n_stackif;
+
 // fonksiyon prototipleri
 void do_error(Trapframe*);
 void do_unknown(Trapframe*);
@@ -222,62 +225,52 @@ asmlink void trap_handler(Trapframe *tf) {
 	 * devam eder. (traphandler.S, trapret)
 	 */
 
-	const bool user_mode_trap = (tf->cs & 3) == 3;
-
+	bool user_mode_trap;
 	ASSERT_DTEST(task_curr);
 
+	/* kernel monitor calisiyorsa tum kesmeler devre disi */
+	if (kernel_monitor_running)
+		return;
+
+	user_mode_trap = (tf->cs & 3) == 3;
 	task_curr->popped_kstack = 0;
 
+	/* IRQ kesmeleri */
 	if (tf->trapno >= IRQ_OFFSET && tf->trapno < 48) {
-		/* kernel monitor calisiyorsa, donanim kesmeleri devre disi */
-		if (kernel_monitor_running)
-			return;
-
-		ASSERT_int_disable();
-
+		ASSERT_int_enable(); // FIXME: --
 		irq_handlers[tf->trapno-IRQ_OFFSET].fn(tf);
-/*
-* user modda donanim kesmesi olduysa task switch yapilabilir (timer).
-* taskin signal durumlarindan dolayi return_trap_handler ile devam edilmeli
-*/
-		if (user_mode_trap)
-			goto return_trap_handler;
-
-		/* kernel moddaki donanim kesmelerinde kaldigi yerden devam eder */
-		return;
-	}
-
-	/* fonksiyonun devamina kernel mod traplarindan ulasilmamali */
-	if (!user_mode_trap) {
-		print_error("trapno: %d\n", tf->trapno);
-		print_trapframe(tf);
-		uint32_t cr2; read_reg(%cr2, cr2);
-		print_error("cr2: %08x\n", cr2);
-		PANIC("kernel mode trap");
-		return;
-	}
-
-	/* user mode */
-	if (tf->trapno == T_SYSCALL) {
-		do_syscall(tf->regs.eax);
 		goto return_trap_handler;
 	}
 
-	ASSERT_int_disable();
+	/* sistem cagrisi veya exception kesmesi */
+	if (user_mode_trap) {
 
-	if (tf->trapno < sizeof(exceptions)/sizeof(exceptions[0]))
-		exceptions[tf->trapno].fn(tf);
-	else
-		do_unknown(tf);
+		/* sistem cagrisi kesmesi */
+		if (tf->trapno == T_SYSCALL) {
+			do_syscall(tf->regs.eax);
+			goto return_trap_handler;
+		}
 
+		/* exception */
+		if (tf->trapno < sizeof(exceptions)/sizeof(exceptions[0]))
+			exceptions[tf->trapno].fn(tf);
+		else
+			do_unknown(tf);
+		goto return_trap_handler;
+	}
+
+	/* tanimsiz kernel mode trap */
+	print_error("trapno: %d\n", tf->trapno);
+	print_trapframe(tf);
+	uint32_t cr2; read_reg(%cr2, cr2);
+	print_error("cr2: %08x\n", cr2);
+	PANIC("kernel mode trap");
 return_trap_handler:
-	// cli(); // interruptlar disable olmazsa tuhaf hatalar oluyor
-	ASSERT(task_curr->state == Task::State_running);
+	/* butun pushcli yapilan yerlerden popif yapilmis olmali */
+	ASSERT(n_stackif == 0);
 }
 
 void do_error(Trapframe* tf) {
-	ASSERT_int_disable();
-
 	const TrapFunction *e = &exception_unknown;
 	if (tf->trapno < sizeof(exceptions)/sizeof(exceptions[0]))
 		e = &exceptions[tf->trapno];
@@ -287,8 +280,6 @@ void do_error(Trapframe* tf) {
 }
 
 void do_unknown(Trapframe* tf) {
-	ASSERT_int_disable();
-
 	if (tf->trapno >= IRQ_OFFSET && tf->trapno < 48) {
 		print_warning(">> unknown IRQ %d\n", tf->trapno);
 		return;
@@ -304,7 +295,6 @@ void do_unknown(Trapframe* tf) {
 }
 
 void do_page_fault(Trapframe *tf) {
-	ASSERT_int_disable();
 
 	/* bu fonksiyon kernel mode page faultta calismaz */
 	ASSERT_DTEST((tf->cs & 3) == 3);
@@ -326,34 +316,36 @@ void do_page_fault(Trapframe *tf) {
 		return;
 	}
 
+
+	// TODO: stack buyumesi durumunu fonksiyon haline getir
+	pushcli();
 	/* stackin buyumesi durumu */
 	uint32_t stack_base = MMAP_USER_STACK_TOP - task_curr->pgdir.count_stack * 0x1000;
 	if (stack_base - fault_va < 0x1000) {
 		/* stackin bir altinda page'de fault olduysa */
 
 		/* stack limiti asilmissa processi sonlandir */
-		if (fault_va < MMAP_USER_STACK_BASE_LIMIT) {
+		while (fault_va < MMAP_USER_STACK_BASE_LIMIT) {
+			// dongu 1 kere calisir (do_exit)
 			print_warning(">> stack limiti asildi\n"
 				   "\tfault_va: %08x\n"
 				   "\tstack_base_limit: %08x\n",
 				   fault_va,
 				   MMAP_USER_STACK_BASE_LIMIT);
 			do_exit(111);
-			return;
 		}
 
 		/* stack limiti asilmamissa page insert yap */
 		stack_base -= 0x1000;
 		r = task_curr->pgdir.page_alloc_insert(stack_base, PTE_P | PTE_U | PTE_W);
-		if (r < 0) {
+		while (r < 0) {
 			/* bellek yetmediyse processi sonlandir */
 			print_warning(">> stacki buyutmek icin bellek yetmedi\n");
 			do_exit(222);
-			return;
 		}
 		task_curr->pgdir.count_stack++;
-		return;
 	}
+	popif();
 
 	print_trapframe(tf);
 	print_warning(">> fault va: %08x\n", fault_va);

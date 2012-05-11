@@ -30,6 +30,17 @@ asmlink void do_exit(int);
 // syscall.cpp
 extern uint32_t user_to_kernel_check(uint32_t base, uint32_t limit, int rw);
 
+// spinlock.cpp
+struct spinlock {
+	uint32_t locked;
+};
+asmlink void pushcli();
+asmlink void popif();
+asmlink void pushsti();
+asmlink void spinlock_init(struct spinlock *l);
+asmlink void spinlock_acquire(struct spinlock* l);
+asmlink void spinlock_release(struct spinlock* l);
+
 #include "debug.h"
 
 #endif /* _KERNEL_H_ */

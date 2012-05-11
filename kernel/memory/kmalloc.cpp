@@ -35,7 +35,10 @@ PageHeader page_headers[1024];
 
 ptr_t LI_FreeBlock::offset_node_value = (ptr_t)offsetof(FreeBlock,list_node);
 
+struct spinlock kmalloc_lock;
+
 void kmalloc_init() {
+	spinlock_init(&kmalloc_lock);
 	ASSERT(sizeof(FreeBlock) <= (1<<(FIRST_SIZENO+5)));
 
 	for (uint32_t i = 0 ; i < n_sizes ; i++) {
@@ -53,7 +56,6 @@ size_t kmalloc_size(size_t size) {
 }
 
 void *kmalloc(size_t size) {
-	ASSERT_int_disable();
 	int i;
 	int uygun_sizeno = -1;
 	FreeBlock *b = NULL;
@@ -62,6 +64,8 @@ void *kmalloc(size_t size) {
 		print_warning(">> kmalloc icin cok buyuk\n");
 		return NULL;
 	}
+
+	spinlock_acquire(&kmalloc_lock);
 
 	for (i = FIRST_SIZENO ; i < LAST_SIZENO+1 ; i++) {
 		if (sizes[i].size - sizeof(BlockHeader) >= size) {
@@ -105,11 +109,13 @@ void *kmalloc(size_t size) {
 
 	b->set_used();
 
+	spinlock_release(&kmalloc_lock);
+
 	return b->addr();
 }
 
 void kfree(void *v) {
-	ASSERT_int_disable();
+	spinlock_acquire(&kmalloc_lock);
 
 	BlockHeader *bh = BlockHeader::bh(v);
 	ASSERT(bh->flags() == BlockFlag_used);
@@ -138,10 +144,14 @@ void kfree(void *v) {
 		// FIXME: burada bir bug var. kvm'de cr3_reload yapmayinca sacma hatalar veriyor.
 		cr3_reload();
 	}
+
+	spinlock_release(&kmalloc_lock);
 }
 
 
 void FreeBlock::init() {
+	ASSERT_int_disable();
+
 	header.sizeno = LAST_SIZENO+1;
 	header.__set_free();
 
@@ -155,6 +165,8 @@ void FreeBlock::init() {
 }
 
 FreeBlock* FreeBlock::split() {
+	ASSERT_int_disable();
+
 	int used = header.ph()->count_used.get(header.sizeno-1);
 	int count = header.ph()->count.get(header.sizeno-1);
 	int r;
@@ -184,6 +196,8 @@ FreeBlock* FreeBlock::split() {
 }
 
 FreeBlock* FreeBlock::merge() {
+	ASSERT_int_disable();
+
 	FreeBlock *_pair = pair();
 	ASSERT(_pair->header.is_free());
 	ASSERT(header.is_free());

@@ -225,12 +225,8 @@ SYSCALL_END(getpid)
 SYSCALL_DEFINE0(fork) {
 	int pid;
 
-	uint32_t eflags = eflags_read();
-	cli();
-
 	pid = do_fork();
 
-	eflags_load(eflags);
 	return SYSCALL_RETURN(pid);
 }
 SYSCALL_END(fork)
@@ -294,9 +290,9 @@ int do_fork() {
 	Task *t;
 	uint32_t eip;
 	int e = 0; // error (bad_fork_* icin)
-	uint32_t eflags;
 
-	ASSERT_int_disable();
+	pushcli();
+	// ASSERT_int_disable();
 
 	t = (Task*)kmalloc(sizeof(Task));
 	if (!t)
@@ -351,7 +347,7 @@ int do_fork() {
 
 	/* burasi 2 kere calisiyor */
 	eip = read_eip();
-	if (eip == 1)
+	if (eip == 1) /* child process'de popif yapilmamali */
 		return 0;
 
 	/* child prosesin register bilgileri */
@@ -362,8 +358,6 @@ int do_fork() {
 	/* child prosesin baslangic zamani */
 	t->time_start = jiffies;
 
-	eflags = eflags_read();
-	cli();
 
 	/* child listesine ekle */
 	ASSERT( task_curr->childs.push_back(&t->childlist_node) );
@@ -371,7 +365,7 @@ int do_fork() {
 	set_task_id(t);
 	add_to_runnable_list(t);
 
-	eflags_load(eflags);
+	popif();
 
 	return t->id;
 
@@ -398,6 +392,8 @@ bad_fork_task_alloc:
 	if (e++ == 0)
 		print_warning("!! bad_fork_task_alloc\n");
 	ASSERT(t == NULL);
+
+	popif();
 	return -1;
 }
 
@@ -424,17 +420,16 @@ void switch_to_task(Task *newtask) {
  */
 	if (task_curr->k_eip) {
 		asm volatile(
-			"movl (%0), %%eax\n\t"
-			"movl $0, (%0)\n\t" // k_eip = 0
+			"movl %0, %%eax\n\t"
+			"movl $0, %0\n\t" // k_eip = 0
 			"movl %1, %%esp\n\t" // %esp = k_esp
 			"movl %2, %%ebp\n\t" // %ebp = k_ebp
 			"movl %3, %%cr3\n\t" // %cr3 = pgdir.pgdir_pa
 			"pushl $1\n\t" // read_eip() icin return degeri 1
 			"pushl %%eax\n\t" // ret ile yuklenecek program counter (k_eip)
 			"ret"
-			:
-			: "r"(&task_curr->k_eip),
-			  "r"(task_curr->k_esp),
+			: "+m"(task_curr->k_eip)
+			: "r"(task_curr->k_esp),
 			  "r"(task_curr->k_ebp),
 			  "r"(task_curr->pgdir.pgdir_pa)
 			: "eax"

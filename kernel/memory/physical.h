@@ -177,7 +177,7 @@ static inline void page_free(Page *p) {
 }
 
 inline int Page::refcount_dec() {
-	ASSERT_int_disable();
+	pushcli();
 
 	ASSERT(!free);
 	ASSERT(this->index() != 0);
@@ -187,6 +187,7 @@ inline int Page::refcount_dec() {
 	if (rc == 0)
 		page_free(this);
 
+	popif();
 	return rc;
 }
 

@@ -22,6 +22,7 @@
 #ifndef TASK_H_
 #define TASK_H_
 
+#include <kernel/kernel.h>
 #include <types.h>
 #include <wmc/list.h>
 #include <wmc/idhashtable.h>
@@ -99,6 +100,8 @@ struct Task {
 	/* struct inode * executable; */
 	struct File *files[TASK_MAX_FILE_NR];
 
+	struct spinlock lock;
+
 	inline void init();
 	inline Trapframe* registers();
 };
@@ -148,6 +151,7 @@ inline void Task::init() {
 	id_hash_node.init();
 	run_before_switch_f = NULL;
 	sigstack.init();
+	spinlock_init(&this->lock);
 }
 
 inline Trapframe* Task::registers() {

@@ -23,6 +23,7 @@ OBJS = \
 	picirq.o\
 	timer.o\
 	signal.o\
+	spinlock.o\
 	ipc/ipc.o\
 	ipc/semaphore.o\
 	ipc/shared_memory.o\

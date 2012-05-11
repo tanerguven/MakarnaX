@@ -27,8 +27,8 @@
 
 // console.cpp
 extern TaskList_t console_input_list;
-extern int console_getc();
-asmlink void putchar(int c);
+asmlink void console_putc(int c);
+asmlink int console_getc();
 
 // syscall_table.c
 extern void (* const syscalls[])();
@@ -62,7 +62,7 @@ SYSCALL_DEFINE2(cputs, const char*, s, size_t, len) {
 	s = (const char*)uaddr2kaddr((uint32_t)s);
 
 	for (uint32_t i = 0 ; (i < len) && (*s != '\0') ; i++, s++) {
-		putchar(*s);
+		console_putc(*s);
 	}
 }
 SYSCALL_END(cputs)
