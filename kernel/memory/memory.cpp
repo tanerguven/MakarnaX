@@ -15,10 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../kernel.h"
 #include <string.h>
 
-#include <types.h>
+#include <kernel/kernel.h>
 #include <asm/x86.h>
 
 #include "physical.h"
@@ -27,16 +26,13 @@
 // memory_physical.cpp
 extern void detect_memory();
 extern void pm_init();
-//
 
 // memory_virtual.cpp
 extern void vm_init();
-//
 
 // kmalloc.cpp
 extern void test_kmalloc();
 extern void kmalloc_init();
-//
 
 int memory_init() {
     /*
@@ -56,13 +52,13 @@ int memory_init() {
 	/* page test */
 	#if 0
 	test_free_pages();
-	printf(">> test_free_pages OK\n");
+	print_info(">> test_free_pages OK\n");
 	#endif
 	/* */
 
 	/* kmalloc test */
 	test_kmalloc();
-	printf(">> test_kmalloc OK\n");
+	print_info(">> test_kmalloc OK\n");
 
 	return 0;
 }
@@ -113,7 +109,7 @@ static void test_free_pages() {
 	}
 	ASSERT(free_page_count == freePageList._count);
 
-	printf(">> Free Page List Test OK\n");
+	print_info(">> Free Page List Test OK\n");
 	/* */
 
 	/* test physical pages */
@@ -137,7 +133,7 @@ static void test_free_pages() {
 		}
 	} end_while:
 	ASSERT(freePageList._count == 0);
-	printf(">> Physical Pages Test OK\n");
+	print_info(">> Physical Pages Test OK\n");
 
     for (uint32_t i = 0xE0000000 ; i < 0xF0000000 ; i += 0x1000) {
 		kernel_dir.page_remove(VA_t(i), 1);

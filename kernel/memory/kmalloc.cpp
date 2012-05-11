@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../kernel.h"
 #include <string.h>
 
 #include "kmalloc.h"
@@ -54,13 +53,13 @@ size_t kmalloc_size(size_t size) {
 }
 
 void *kmalloc(size_t size) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 	int i;
 	int uygun_sizeno = -1;
 	FreeBlock *b = NULL;
 
 	if (size > (2048 - sizeof(BlockHeader))) {
-		printf(">> kmalloc icin cok buyuk\n");
+		print_warning(">> kmalloc icin cok buyuk\n");
 		return NULL;
 	}
 
@@ -86,7 +85,7 @@ void *kmalloc(size_t size) {
 		if (tmp_page_alloc_map(&p, &va, PTE_P | PTE_W) < 0)
 			return NULL;
 		b = (FreeBlock*)va2kaddr(va);
-		// printf("page alindi %08x\n", b->header.page_addr());
+		// print_info("page alindi %08x\n", b->header.page_addr());
 		b->init();
 		FreeBlockList_t::iterator r = b->list_node.__list->erase(&b->list_node);
 		ASSERT( r != FreeBlockList_t::error());
@@ -110,7 +109,7 @@ void *kmalloc(size_t size) {
 }
 
 void kfree(void *v) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	BlockHeader *bh = BlockHeader::bh(v);
 	ASSERT(bh->flags() == BlockFlag_used);
@@ -133,7 +132,7 @@ void kfree(void *v) {
 	} else {
 		uint32_t va = kaddr2va((uint32_t)fb->header.page_addr());
 		ASSERT(fb->size() == 0x1000);
-		// printf(">> page %08x tamamen bos, siliniyor\n", va);
+		// print_info(">> page %08x tamamen bos, siliniyor\n", va);
 		tmp_page_free(va2kaddr(va));
 
 		// FIXME: burada bir bug var. kvm'de cr3_reload yapmayinca sacma hatalar veriyor.
@@ -236,29 +235,29 @@ static PH_count cu[2];
 
 void test_kmalloc() {
 	test1();
-	// printf("test 1 OK\n");
+	// print_info("test 1 OK\n");
 
 	/* test 2 aradan rastgele birseyler siliyoruz */
 	test2();
-	// printf("test 2 OK\n");
+	// print_info("test 2 OK\n");
 
 	/* test 3 rastgele boyutta veriler ekle ve rasgele sil */
 	test3();
-	// printf("test 3 OK\n");
+	// print_info("test 3 OK\n");
 
 	/* test 3'e devam */
 	test4();
-	// printf("test 4 OK\n");
+	// print_info("test 4 OK\n");
 
 	return;
 }
 
 #if 0
 static void listele(PageHeader *ph) {
-	printf("\n");
-	printf("size:\tcount\tused\n");
+	print_info("\n");
+	print_info("size:\tcount\tused\n");
 	for (int i = LAST_SIZENO ; i > FIRST_SIZENO-1 ; i--) {
-		printf("%d:\t%d\t%d\n", 1<<(5+i), ph->count.get(i),
+		print_info("%d:\t%d\t%d\n", 1<<(5+i), ph->count.get(i),
 			   ph->count_used.get(i));
 	}
 }
@@ -267,7 +266,7 @@ static void listele(PageHeader *ph) {
 static void test1() {
 	i = 0;
 	for ( ; i < 5 ; ) {
-		// printf(">> malloc %d\n", i);
+		// print_info(">> malloc %d\n", i);
 		x[++i] = kmalloc(1);
 		bh[i] = BlockHeader::bh(x[i]);
 		kfree(x[i]);
@@ -298,20 +297,20 @@ static void test1() {
 
 	/* hepsini sil */
 	do {
-		// printf(">> free %d\n", i);
+		// print_info(">> free %d\n", i);
 		kfree(x[i]);
 	} while (--i > 0);
 
 	/* tekrar al */
 	i = 0;
 	for ( ; i < 5 ; ) {
-		// printf(">> malloc %d\n", i);
+		// print_info(">> malloc %d\n", i);
 		ASSERT( x[++i] = kmalloc(1) );
 	}
 
 	/* artan boyutlarda bellek al */
 	for ( ; i < 10 ; ) {
-		// printf(">> malloc %d\n", i);
+		// print_info(">> malloc %d\n", i);
 		++i;
 		x[i] = kmalloc(i * 7);
 		bh[i] = BlockHeader::bh(x[i]);
@@ -323,28 +322,28 @@ static void test1() {
 	do {
 		if ((i == 3) | (i == 9))
 			i--;
-		// printf(">> free %d\n", i);
+		// print_info(">> free %d\n", i);
 		kfree(x[i]);
 	} while (--i > 0);
 
 	for (i=0 ; i < 5 ; ) {
 		if (i == 2)
 			i++;
-		// printf(">> malloc %d\n", i);
+		// print_info(">> malloc %d\n", i);
 		ASSERT( x[++i] = kmalloc(1) );
 	}
 
 	for ( ; i < 10 ; ) {
 		if (i == 8)
 			i++;
-		// printf(">> malloc %d\n", i);
+		// print_info(">> malloc %d\n", i);
 		ASSERT( x[++i] = kmalloc(1) );
 	}
 
 	/* hepsini sil */
 	i = 10;
 	do {
-		// printf(">> free %d\n", i);
+		// print_info(">> free %d\n", i);
 		kfree(x[i]);
 	} while (--i > 0);
 }
@@ -356,7 +355,7 @@ static void test2() {
 	for (i = 0 ; i < 30 ; ) {
 		++i;
 		int b = i * 11;
-		// printf(">> malloc %d\n", i);
+		// print_info(">> malloc %d\n", i);
 		x[i] = kmalloc(b);
 
 		bh[i] = BlockHeader::bh(x[i]);
@@ -374,14 +373,14 @@ static void test2() {
 
 	for (int j = 7 ; j < 23 ; j++) {
 		if (j % 5 == 2 || j % 5 == 3) {
-			// printf("free %d\n", j);
+			// print_info("free %d\n", j);
 			kfree(x[j]);
 		}
 	}
 
 	for (int j = 7 ; j < 23 ; j++) {
 		if (j % 5 == 2 || j % 5 == 3) {
-			// printf("malloc %d\n", j);
+			// print_info("malloc %d\n", j);
 			uint32_t b = j * 11;
 			x[j] = kmalloc(b);
 			ASSERT( x_size[j] == b);
@@ -394,14 +393,14 @@ static void test2() {
 
 	for (int j = 7 ; j < 23 ; j++) {
 		if (j % 5 == 1 || j % 5 == 2) {
-			// printf("free %d\n", j);
+			// print_info("free %d\n", j);
 			kfree(x[j]);
 		}
 	}
 
 	for (int j = 7 ; j < 23 ; j++) {
 		if (j % 5 == 1 || j % 5 == 2) {
-			// printf("malloc %d\n", j);
+			// print_info("malloc %d\n", j);
 			uint32_t b = 0;
 			switch (j% 3) {
 			case 0:
@@ -422,7 +421,7 @@ static void test2() {
 
 	/* hepsini sil */
 	do {
-		// printf(">> free %d\n", i);
+		// print_info(">> free %d\n", i);
 		kfree(x[i]);
 	} while (--i > 0);
 }
@@ -444,7 +443,7 @@ static void test3() {
 			b = i * 11;
 			break;
 		};
-		// printf(">> malloc %d\n", i);
+		// print_info(">> malloc %d\n", i);
 		x[i] = kmalloc(b);
 
 		bh[i] = BlockHeader::bh(x[i]);
@@ -462,14 +461,14 @@ static void test3() {
 
 	for (int j = 3 ; j < 19 ; j++) {
 		if (j % 5 == 2 || j % 5 == 3) {
-			// printf("free %d\n", j);
+			// print_info("free %d\n", j);
 			kfree(x[j]);
 		}
 	}
 
 	for (int j = 3 ; j < 19 ; j++) {
 		if (j % 5 == 2 || j % 5 == 3) {
-			// printf("malloc %d\n", j);
+			// print_info("malloc %d\n", j);
 			uint32_t b = 0;
 			switch (j % 3) {
 			case 0:
@@ -498,14 +497,14 @@ static void test3() {
 
 	for (int j = 3 ; j < 19 ; j++) {
 		if (j % 5 == 1 || j % 5 == 2) {
-			// printf("free %d\n", j);
+			// print_info("free %d\n", j);
 			kfree(x[j]);
 		}
 	}
 
 	for (int j = 3 ; j < 19 ; j++) {
 		if (j % 5 == 1 || j % 5 == 2) {
-			// printf("malloc %d\n", j);
+			// print_info("malloc %d\n", j);
 			uint32_t b = 0;
 			switch (j% 3) {
 			case 0:
@@ -543,14 +542,14 @@ static void test4() {
 	for ( ; baslangic < bitis ; baslangic++) {
 		for (int j = baslangic ; j < bitis ; j++) {
 			if (j % 5 == 2 || j % 5 == 3) {
-				// printf("free %d\n", j);
+				// print_info("free %d\n", j);
 				kfree(x[j]);
 			}
 		}
 
 		for (int j = baslangic ; j < bitis ; j++) {
 			if (j % 5 == 2 || j % 5 == 3) {
-				// printf("malloc %d\n", j);
+				// print_info("malloc %d\n", j);
 				uint32_t b = 0;
 				switch (j % 3) {
 				case 0:
@@ -583,12 +582,12 @@ static void test4() {
 		// listele(&page_headers[1]);
 
 		for (int j = baslangic ; j < bitis ; j++) {
-			// printf("free %d\n", j);
+			// print_info("free %d\n", j);
 			kfree(x[j]);
 		}
 
 		for (int j = baslangic ; j < bitis ; j++) {
-			// printf("malloc %d\n", j);
+			// print_info("malloc %d\n", j);
 			uint32_t b = 0;
 			switch (j % 3) {
 			case 0:
@@ -622,12 +621,12 @@ static void test4() {
 
 	for (baslangic = 1, bitis = 30 ; baslangic < bitis ; bitis--) {
 		for (int j = baslangic ; j < bitis ; j++) {
-			// printf("free %d\n", j);
+			// print_info("free %d\n", j);
 			kfree(x[j]);
 		}
 
 		for (int j = baslangic ; j < bitis ; j++) {
-			// printf("malloc %d\n", j);
+			// print_info("malloc %d\n", j);
 			uint32_t b = 0;
 			switch (j % 3) {
 			case 0:
@@ -652,7 +651,7 @@ static void test4() {
 	/* hepsini sil */
 	i = 30;
 	do {
-		// printf(">> free %d\n", i);
+		// print_info(">> free %d\n", i);
 		kfree(x[i]);
 	} while (--i > 0);
 

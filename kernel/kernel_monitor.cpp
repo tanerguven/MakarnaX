@@ -19,27 +19,31 @@
  * FIXME: fikir, jos kernel/monitor.c
  */
 
+#include <kernel/kernel.h>
 #include <asm/x86.h>
-#include <types.h>
-#include <string.h>
-#include <stdio.h>
 
+#include <wmc/list.h>
+#include <string.h>
 #include <genel_fonksiyonlar.h>
 
 #include "multiboot.h"
-#include <genel_fonksiyonlar.h>
 #include "memory/physical.h"
-
 #include "test_programs.h"
-
-#include <wmc/list.h>
 #include "task.h"
 #include "sched.h"
-#include <asm/x86.h>
+
+// FIXME: --
+#define printf(args...) __kernel_print(args)
+
+// console.cpp
+asmlink int getchar();
+asmlink void putchar(int c);
 
 extern size_t kmalloc_size(size_t size);
 extern int do_fork();
 extern int do_execve(const char *path, char *const argv[]);
+
+int readline(const char *prompt, char* buf, int buflen);
 
 uint32_t free_memory_start;
 
@@ -102,16 +106,16 @@ int runcmd(char *cmd) {
 }
 
 void start_kernel_monitor() {
+	char buf[1000];
 	uint32_t eflags = eflags_read();
 	cli();
 	kernel_monitor_running = true;
 	while (kernel_monitor_running) {
 		ASSERT(!(eflags_read() & FL_IF));
 		printf("\n");
-		char *buf = readline("$:");
-		if (buf) {
+		int r = readline("$:", buf, 1000);
+		if (r > 0)
 			runcmd(buf);
-		}
 	}
 	eflags_load(eflags);
 }
@@ -354,4 +358,33 @@ static int command_memdebug(int argc, char **argv) {
 	printf("unknown memory: %d kb\n", unknown_mem/1024);
 
 	return 0;
+}
+
+int readline(const char *prompt, char* buf, int buflen)
+{
+	int i, c;
+
+	if (prompt != NULL)
+		printf("%s", prompt);
+
+	i = 0;
+	while (1) {
+		c = getchar();
+		if (c < 0) {
+			printf("read error: %e\n", c);
+			return -1;
+		} else if ((c == '\b' || c == '\x7f') && i > 0) {
+			putchar('\b');
+			i--;
+		} else if (c >= ' ' && i < buflen-1) {
+			putchar(c);
+			buf[i++] = c;
+		} else if (c == '\n' || c == '\r') {
+			putchar('\n');
+			buf[i] = 0;
+			return i;
+		}
+	}
+
+	return -1;
 }

@@ -25,11 +25,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <types.h>
-#include <asm/io.h>
-
-#include <stdio.h>
+#include <kernel/kernel.h>
 #include <kernel/trap.h>
+#include <asm/io.h>
 
 /** Master (IRQs 0-7) */
 #define IO_PIC1 0x20
@@ -103,5 +101,5 @@ void picirq_init() {
 	if(irqmask != 0xFFFF)
 		pic_setmask(irqmask);
 
-	printf(">> picirq_init OK\n");
+	print_info(">> picirq_init OK\n");
 }

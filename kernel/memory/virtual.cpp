@@ -15,10 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../kernel.h"
 #include <string.h>
 
-#include <types.h>
 #include <asm/x86.h>
 #include <data_structures/bitmap.h>
 
@@ -26,6 +24,7 @@
 #include "physical.h"
 #include "../trap.h"
 
+#include <kernel/kernel.h>
 #include <errno.h>
 
 // memory_phys.cpp
@@ -131,7 +130,7 @@ void vm_init() {
 	cr0 |= CR0_PE|CR0_PG|CR0_AM|CR0_NE|CR0_TS|CR0_EM|CR0_MP|CR0_WP;
 	cr0 &= ~(CR0_TS|CR0_EM);
 	load_reg(%cr0, cr0);
-	printf(">> cr0 OK\n");
+	print_info(">> cr0 OK\n");
 	/* */
 
 	/* 2 - segmentation'u etkinleştir */
@@ -152,7 +151,7 @@ void vm_init() {
 	load_reg(%ss, GD_KD);
 	cs_set(GD_KT);
 	asm volatile("lldt %%ax" :: "a" (0));
-	printf(">> segmentation OK\n");
+	print_info(">> segmentation OK\n");
 	/* */
 
 #if MMAP_SEG_KERNEL_BASE != 0
@@ -169,7 +168,7 @@ void vm_init() {
 
 /** hatada errno, normalde 0 dondurur */
 int PageDirInfo::segment_alloc(uint32_t va, size_t len, int perm) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/* debug only */
 	uint32_t mem_before_segment_alloc = mem_free();
@@ -217,7 +216,7 @@ bad_segment_alloc:
 }
 
 void PageDirInfo::segment_free(uint32_t va, size_t len) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	uint32_t i, end;
 	int err;
@@ -238,7 +237,7 @@ void PageDirInfo::segment_free(uint32_t va, size_t len) {
  * hatada errno, normalde 0 dondurur.
  */
 static inline int __copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va, int perm) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/*
 	 * FIXME: Sacma bir yontem olabilir. Gecici map ederek fiziksel pageleri
@@ -271,7 +270,7 @@ static inline int __copy_page_from_current(PageDirInfo *dest_pgdir, uint32_t va,
 }
 
 static inline int copy_page(PageDirInfo *dest, PageDirInfo *src, uint32_t va, int perm) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	PANIC("tamamlanmadi");
 	return -1;
@@ -279,7 +278,7 @@ static inline int copy_page(PageDirInfo *dest, PageDirInfo *src, uint32_t va, in
 
 /** hatada errno, normalde 0 dondurur */
 int PageDirInfo::copy_pages(PageDirInfo *src, uint32_t start, uint32_t end) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	uint32_t i;
 	PTE_t *pte;
@@ -306,7 +305,7 @@ int PageDirInfo::copy_pages(PageDirInfo *src, uint32_t start, uint32_t end) {
 
 
 int PageDirInfo::link_pgtables(PageDirInfo *src, uint32_t start, uint32_t end) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	for (uint32_t i = VA_t(start).pdx; i < VA_t(end).pdx ; i++) {
 		this->pgdir->e[i] = src->pgdir->e[i];
@@ -316,7 +315,7 @@ int PageDirInfo::link_pgtables(PageDirInfo *src, uint32_t start, uint32_t end) {
 }
 
 int PageDirInfo::link_pages(PageDirInfo *src, uint32_t start, uint32_t end, int perm) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 	int r;
 
 	for (uint32_t i = start; i < end ; i+=0x1000) {
@@ -376,7 +375,7 @@ static void tmp_page_init(uint32_t pa) {
 }
 
 static inline uint32_t tmp_page_get() {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	int r = bitmap_find_first_zero(tmp_pages, sizeof(tmp_pages));
 	if (r > -1) {
@@ -388,7 +387,7 @@ static inline uint32_t tmp_page_get() {
 }
 
 static inline void tmp_page_put(uint32_t va) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	uint32_t i = (va - MMAP_KERNEL_TMP_PAGE_BASE) / 0x1000;
 	ASSERT( bitmap_test(tmp_pages, i) );
@@ -400,7 +399,7 @@ static inline void tmp_page_put(uint32_t va) {
  * kernelde malloc yerine kullanilabilir
  */
 int tmp_page_alloc_map(Page **p, uint32_t *va, int perm) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	int err;
 	*va = tmp_page_get();
@@ -428,7 +427,7 @@ bad_tmp_page_alloc_map__page_alloc:
 }
 
 int tmp_page_free(uint32_t va) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	// FIXME: MAMP_KERNEL_TMP_PAGE_TOP
 	ASSERT(va >= MMAP_KERNEL_TMP_PAGE_BASE && va < MMAP_KERNEL_TOP);

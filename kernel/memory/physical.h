@@ -23,9 +23,7 @@
 #define _MEMORY_PHYSICAL_H_
 #include <asm/x86.h>
 
-#include "../kernel.h"
-
-#include <types.h>
+#include <kernel/kernel.h>
 #include <genel_fonksiyonlar.h>
 #include <errno.h>
 
@@ -138,7 +136,7 @@ struct FreePageList {
 extern FreePageList freePageList;
 
 inline int page_dec_refCount(uint32_t paddr) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 	ASSERT(isRounded(paddr));
 	Page *p = &pages[pageIndex(paddr)];
 	return p->refcount_dec();
@@ -150,7 +148,7 @@ inline int page_dec_refCount(uint32_t paddr) {
  */
 inline int page_alloc(Page **p) {
 	int r;
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	*p = freePageList.getFirst();
 	if (*p) {
@@ -167,7 +165,7 @@ inline int page_alloc(Page **p) {
 
 /* girilen frame adresini boş listesine ekler */
 static inline void page_free(Page *p) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	ASSERT(p->type == Page::Type_available);
 	ASSERT(! p->free);
@@ -179,7 +177,7 @@ static inline void page_free(Page *p) {
 }
 
 inline int Page::refcount_dec() {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	ASSERT(!free);
 	ASSERT(this->index() != 0);

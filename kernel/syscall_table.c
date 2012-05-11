@@ -1,5 +1,4 @@
 #include <kernel/syscall.h>
-#include <types.h>
 
 asmlink void sys_exit();
 asmlink void sys_fork();

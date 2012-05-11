@@ -32,7 +32,7 @@ extern void schedule();
 extern TaskList_t __task_runnable_queue[41];
 
 inline void add_to_runnable_list(Task* t) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	t->state = Task::State_running;
 	ASSERT(t->list_node.is_free());
@@ -40,7 +40,7 @@ inline void add_to_runnable_list(Task* t) {
 }
 
 inline void remove_from_runnable_list(Task* t) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	ASSERT(t->list_node.__list == &__task_runnable_queue[t->priority]);
 	ASSERT(t->state == Task::State_running);

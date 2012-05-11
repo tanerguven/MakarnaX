@@ -15,11 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "vfs.h"
-
+#include <kernel/kernel.h>
 #include <string.h>
-#include "../kernel.h"
 
+#include "vfs.h"
 #include "denemefs/denemefs.h"
 
 #define NR_SUPERBLOCKS 32
@@ -34,7 +33,7 @@ DirEntry* mount_root() {
 
 	denemefs_read_super(&superblocks[0]);
 
-	printf(">> mount_root OK\n");
+	print_info(">> mount_root OK\n");
 
 	return superblocks[0].root;
 }

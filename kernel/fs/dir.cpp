@@ -15,9 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <kernel/kernel.h>
 #include <kernel/syscall.h>
+
 #include "../task.h"
-#include "../kernel.h"
 #include "vfs.h"
 
 SYSCALL_DEFINE1(chdir, const char*, path) {
@@ -55,7 +56,7 @@ int do_mkdir(const char *path, int mode) {
 	int r;
 	const char *name;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	r = find_file_and_dir(path, &dir, &name);
 	if (r < 0)
@@ -92,7 +93,7 @@ int do_rmdir(const char *path) {
 	int r;
 	const char *name;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	r = find_file_and_dir(path, &dir, &name);
 	if (r < 0)

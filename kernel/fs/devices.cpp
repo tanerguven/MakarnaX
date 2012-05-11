@@ -1,9 +1,8 @@
 
-#include <types.h>
+#include <kernel/kernel.h>
 #include <string.h>
 
 #include "vfs.h"
-#include <stdio.h>
 
 #define MAX_CHRDEV 64
 
@@ -74,7 +73,8 @@ uint32_t stdio_read(struct File *f, char *buf, size_t size) {
 }
 
 uint32_t stdio_write(struct File* f, const char *buf, size_t size) {
-	printf("%s", buf);
+	// FIXME: --
+	__kernel_print("%s", buf);
 	return size;
 }
 

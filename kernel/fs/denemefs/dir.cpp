@@ -1,7 +1,7 @@
-#include "denemefs.h"
-
+#include <kernel/kernel.h>
 #include <string.h>
-#include "../../kernel.h"
+
+#include "denemefs.h"
 
 static struct  File_operations denemefs_dir_op = {
 	denemefs_read,

@@ -25,14 +25,14 @@
  *
  */
 
+#include <kernel/kernel.h>
+
 #include "trap.h"
 #include "task.h"
 #include <asm/x86.h>
 
 #include "sched.h"
 #include "signal.h"
-
-#include "kernel.h"
 
 /* traphandler.S dosyasinda tanimli fonksiyonlar */
 asmlink void divide_error(void);
@@ -62,24 +62,18 @@ asmlink void syscall_trap(); /* 0x80 */
 
 // memory.cpp
 extern SegmentDesc gdt[];
-//
 
 // sched.cpp
 asmlink void do_timer(Trapframe*);
-//
 
 // keyboard.cpp
 asmlink void do_irq_keyboard(Trapframe*);
-//
 
 // syscall.cpp
 asmlink void do_syscall(int no);
-//
-
 
 // kernel_monitor.cpp
 extern bool kernel_monitor_running;
-//
 
 // fonksiyon prototipleri
 void do_error(Trapframe*);
@@ -194,7 +188,7 @@ void init_traps() {
 	/* load IDT */
 	idt_load((uint32_t)&idt_pd);
 
-	printf(">> init_traps OK\n");
+	print_info(">> init_traps OK\n");
 }
 
 /** kayitli olmayan exception durumu */
@@ -203,20 +197,23 @@ static const TrapFunction exception_unknown = {
 };
 
 void print_trapframe(Trapframe *tf) {
-	printf("err: %08x\n", tf->err);
-	printf("eip: %08x\n", tf->eip);
-	printf("cs: %08x\n", tf->cs);
-	printf("ds: %08x\n", tf->ds);
-	printf("esp: %08x\n", tf->esp);
-	printf("ebp: %08x\n", tf->regs.ebp);
 
-	printf("eax: %08x\n", tf->regs.eax);
-	printf("ecx: %08x\n", tf->regs.ecx);
-	printf("edx: %08x\n", tf->regs.edx);
-	printf("ebx: %08x\n", tf->regs.ebx);
-	printf("edi: %08x\n", tf->regs.edi);
-	printf("esi: %08x\n", tf->regs.esi);
+	print_error("err: %08x\n"
+				"eip: %08x\n"
+				"cs: %08x\n"
+				"ds: %08x\n"
+				"esp: %08x\n"
+				"ebp: %08x\n",
+				tf->err, tf->eip, tf->cs, tf->ds, tf->esp, tf->regs.ebp);
 
+	print_error("eax: %08x\n"
+				"ecx: %08x\n"
+				"edx: %08x\n"
+				"ebx: %08x\n"
+				"edi: %08x\n"
+				"esi: %08x\n",
+				tf->regs.eax, tf->regs.ecx, tf->regs.edx, tf->regs.ebx,
+				tf->regs.edi, tf->regs.esi);
 }
 
 asmlink void trap_handler(Trapframe *tf) {
@@ -227,15 +224,17 @@ asmlink void trap_handler(Trapframe *tf) {
 
 	const bool user_mode_trap = (tf->cs & 3) == 3;
 
-	if (task_curr)
-		task_curr->popped_kstack = 0;
+	ASSERT_DTEST(task_curr);
+
+	task_curr->popped_kstack = 0;
 
 	if (tf->trapno >= IRQ_OFFSET && tf->trapno < 48) {
 		/* kernel monitor calisiyorsa, donanim kesmeleri devre disi */
 		if (kernel_monitor_running)
 			return;
 
-		ASSERT(!(eflags_read() & FL_IF));
+		ASSERT_int_disable();
+
 		irq_handlers[tf->trapno-IRQ_OFFSET].fn(tf);
 /*
 * user modda donanim kesmesi olduysa task switch yapilabilir (timer).
@@ -250,10 +249,10 @@ asmlink void trap_handler(Trapframe *tf) {
 
 	/* fonksiyonun devamina kernel mod traplarindan ulasilmamali */
 	if (!user_mode_trap) {
-		printf("trapno: %d\n", tf->trapno);
+		print_error("trapno: %d\n", tf->trapno);
 		print_trapframe(tf);
 		uint32_t cr2; read_reg(%cr2, cr2);
-		printf("cr2: %08x\n", cr2);
+		print_error("cr2: %08x\n", cr2);
 		PANIC("kernel mode trap");
 		return;
 	}
@@ -264,33 +263,34 @@ asmlink void trap_handler(Trapframe *tf) {
 		goto return_trap_handler;
 	}
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
+
 	if (tf->trapno < sizeof(exceptions)/sizeof(exceptions[0]))
 		exceptions[tf->trapno].fn(tf);
 	else
 		do_unknown(tf);
 
 return_trap_handler:
-	cli(); // interruptlar disable olmazsa tuhaf hatalar oluyor
+	// cli(); // interruptlar disable olmazsa tuhaf hatalar oluyor
 	ASSERT(task_curr->state == Task::State_running);
 }
 
 void do_error(Trapframe* tf) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	const TrapFunction *e = &exception_unknown;
 	if (tf->trapno < sizeof(exceptions)/sizeof(exceptions[0]))
 		e = &exceptions[tf->trapno];
-	printf("%s\n", e->name);
+	print_error("%s\n", e->name);
 	print_trapframe(tf);
 	do_exit(111);
 }
 
 void do_unknown(Trapframe* tf) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	if (tf->trapno >= IRQ_OFFSET && tf->trapno < 48) {
-		printf(">> unknown IRQ %d\n", tf->trapno);
+		print_warning(">> unknown IRQ %d\n", tf->trapno);
 		return;
 	}
 
@@ -298,24 +298,25 @@ void do_unknown(Trapframe* tf) {
 	if ((tf->cs & 3) == 0) {
 		PANIC(">> unknown trap in kernel");
 	} else {
-		printf(">> trapno: %d\n", tf->trapno);
+		print_error(">> trapno: %d\n", tf->trapno);
 		PANIC(">> unknown trap in user - (destroy task)");
 	}
 }
 
 void do_page_fault(Trapframe *tf) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
+
+	/* bu fonksiyon kernel mode page faultta calismaz */
+	ASSERT_DTEST((tf->cs & 3) == 3);
 
 	int r;
 	uint32_t fault_va; read_reg(%cr2, fault_va);
 
-	ASSERT((tf->cs & 3) == 3);
-
 	/* programin sonlanmasi durumu */
 	if (tf->eip == va2uaddr(0xffffffff)) {
-		printf(">> program normal bir bicimde sonlandi. [%d]\n",
+		print_info(">> program normal bir bicimde sonlandi. [%d]\n",
 			   task_curr->id);
-		printf(">> return degeri: %08x\n", tf->regs.eax);
+		print_info(">> return degeri: %08x\n", tf->regs.eax);
 		do_exit(0);
 	}
 
@@ -332,7 +333,7 @@ void do_page_fault(Trapframe *tf) {
 
 		/* stack limiti asilmissa processi sonlandir */
 		if (fault_va < MMAP_USER_STACK_BASE_LIMIT) {
-			printf(">> stack limiti asildi\n"
+			print_warning(">> stack limiti asildi\n"
 				   "\tfault_va: %08x\n"
 				   "\tstack_base_limit: %08x\n",
 				   fault_va,
@@ -346,7 +347,7 @@ void do_page_fault(Trapframe *tf) {
 		r = task_curr->pgdir.page_alloc_insert(stack_base, PTE_P | PTE_U | PTE_W);
 		if (r < 0) {
 			/* bellek yetmediyse processi sonlandir */
-			printf(">> stacki buyutmek icin bellek yetmedi\n");
+			print_warning(">> stacki buyutmek icin bellek yetmedi\n");
 			do_exit(222);
 			return;
 		}
@@ -355,7 +356,7 @@ void do_page_fault(Trapframe *tf) {
 	}
 
 	print_trapframe(tf);
-	printf(">> fault va: %08x\n", fault_va);
+	print_warning(">> fault va: %08x\n", fault_va);
 
 	/* user modda bilinmeyen bir page fault olursa programi sonlandir */
 	do_exit(111);

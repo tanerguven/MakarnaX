@@ -1,5 +1,8 @@
-#include <stdio.h>
+#include <stdarg.h>
 #include <user.h>
+
+// FIXME: --
+#include "../user_programs/test/include/stdio.h"
 
 static char buf[1024];
 

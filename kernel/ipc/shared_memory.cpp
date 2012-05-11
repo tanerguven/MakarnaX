@@ -15,13 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../kernel.h"
-#include  <types.h>
+#include <kernel/kernel.h>
 
 #include "../trap.h"
 #include "../task.h"
-
-#include "../kernel.h"
 
 /*
  * kaynaklar
@@ -75,12 +72,12 @@ void sys_shmget() {
 	Page *p = NULL;
 
 	if (size > 0x1000) {
-		printf(">> shm max size: 4096 byte\n");
+		print_warning(">> shm max size: 4096 byte\n");
 		return set_return(tf, -1);
 	}
 
 	if ((shmflg != 0) && (shmflg != 1)) {
-		printf(">> shmflg not supported. Use [0, 1]\n");
+		print_warning(">> shmflg not supported. Use [0, 1]\n");
 		return set_return(tf, -1);
 	}
 
@@ -104,7 +101,7 @@ void sys_shmget() {
 
 	int shmid = next_shm_id++;
 	if (shmid > 1023) {
-		printf(">> shm id kalmadi\n");
+		print_warning(">> shm id kalmadi\n");
 		return set_return(tf, -1);
 	}
 
@@ -146,10 +143,10 @@ void sys_shmctl() {
 	int cmd = (int)get_param3(tf);
 	struct shmid_ds* buf = (struct shmid_ds*)get_param4(tf);
 
-	printf(">> sys_shmctl\n");
-	printf(">> shmid: %d\n", shmid);
-	printf(">> cmd: %d\n", cmd);
-	printf(">> buf: %08x\n", buf);
+	print_warning(">> sys_shmctl\n");
+	print_warning(">> shmid: %d\n", shmid);
+	print_warning(">> cmd: %d\n", cmd);
+	print_warning(">> buf: %08x\n", buf);
 
 	return set_return(tf, -1);
 }
@@ -175,13 +172,13 @@ void sys_shmat() {
 	}
 
 	if (shmaddr != NULL) {
-		printf(">> shmaddr not supported. Use NULL\n");
+		print_warning(">> shmaddr not supported. Use NULL\n");
 		eflags_load(eflags);
 		return set_return(tf, -1);
 	}
 
 	if (shmflg != 0) {
-		printf(">> shmflg not supported. Use 0\n");
+		print_warning(">> shmflg not supported. Use 0\n");
 		eflags_load(eflags);
 		return set_return(tf, -1);
 	}
@@ -204,7 +201,7 @@ void sys_shmat() {
 	}
 
 	if (pte == NULL) {
-		printf(">> shm: no virtual memory\n");
+		print_warning(">> shm: no virtual memory\n");
 		goto bad_sys_shmat;
 	}
 
@@ -235,7 +232,7 @@ bad_sys_shmat:
 }
 
 int detach_shared_mem(SharedMemDesc* d) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 	for (uint32_t i = uaddr2va(d->start) ; i < uaddr2va(d->end) ; i+=0x1000) {
 		int r = d->task()->pgdir.page_remove(i, 1);
 		if (r < 0)
@@ -278,7 +275,7 @@ void sys_shmdt() {
 }
 
 int shm_fork(Task *child) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 	child->shared_mem_list.init();
 
 	SharedMemList_t::iterator i = task_curr->shared_mem_list.begin();
@@ -314,7 +311,7 @@ bad_shm_fork:
 }
 
 void shm_task_free(Task* t) {
-	// printf(">> task_free_shared_memory\n");
+	// print_info(">> task_free_shared_memory\n");
 	ASSERT(t == task_curr);
 
 	while (t->shared_mem_list.size() > 0) {

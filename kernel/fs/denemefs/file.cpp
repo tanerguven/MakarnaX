@@ -1,7 +1,8 @@
-#include "denemefs.h"
 
+#include <kernel/kernel.h>
 #include <string.h>
-#include "../../kernel.h"
+
+#include "denemefs.h"
 
 static struct File_operations denemefs_file_op = {
 	denemefs_read,
@@ -56,12 +57,12 @@ uint32_t denemefs_write(struct File *f, const char *buf, size_t size) {
 }
 
 int denemefs_open(struct File *f) {
-	// printf("denemefs_open ino %d\n", f->inode->ino);
+	// print_info("denemefs_open ino %d\n", f->inode->ino);
 	return 0;
 }
 
 int denemefs_release(struct File *f) {
-	// printf("denemefs_release\n");
+	// print_info("denemefs_release\n");
 	return 0;
 }
 

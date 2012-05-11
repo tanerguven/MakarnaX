@@ -15,28 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "kernel.h"
-
-#include <types.h>
-
+#include <kernel/kernel.h>
 #include <kernel/syscall.h>
+
+#include <errno.h>
 
 #include "memory/virtual.h"
 #include "task.h"
 #include "sched.h"
-#include <errno.h>
-#include "kernel.h"
+
 
 // console.cpp
 extern TaskList_t console_input_list;
 extern int console_getc();
+asmlink void putchar(int c);
 
 // syscall_table.c
 extern void (* const syscalls[])();
 
 
 SYSCALL_DEFINE0(nosys) {
-	printf(">> no sys %d\n", tf->regs.eax);
+	print_warning(">> no sys %d\n", tf->regs.eax);
 
 	return SYSCALL_RETURN(-ENOSYS);
 }
@@ -56,7 +55,7 @@ asmlink void do_syscall(uint32_t no) {
 SYSCALL_DEFINE2(cputs, const char*, s, size_t, len) {
 	/* adresin kullaniciya ait oldugundan ve dogru oldugundan emin ol */
 	if ( task_curr->pgdir.verify_user_addr(s, len, PTE_U) < 0 ) {
-		printf(">> cputs not verified: 0x%08x - 0x%08x\n", s, s+len);
+		print_warning(">> cputs not verified: 0x%08x - 0x%08x\n", s, s+len);
 		do_exit(111);
 	}
 
@@ -124,7 +123,6 @@ bad_sys_brk_alloc:
 	for ( ; i >= task_curr->pgdir.end_brk ; i -= 0x1000) {
 		task_curr->pgdir.page_remove(uaddr2va(i), 1);
 	}
-bad_sys_brk:
 	return SYSCALL_RETURN(0);
 }
 SYSCALL_END(brk)
@@ -133,7 +131,7 @@ SYSCALL_END(brk)
 uint32_t user_to_kernel_check(uint32_t base, uint32_t limit, int rw) {
 	int perm = (rw) ? PTE_W | PTE_U : PTE_U;
 	if ( task_curr->pgdir.verify_user_addr((const void*)base, limit, perm) < 0 ) {
-		printf(">> user addr not verified: 0x%08x - 0x%08x\n", base,
+		print_warning(">> user addr not verified: 0x%08x - 0x%08x\n", base,
 			   base+limit);
 		do_exit(111);
 	}

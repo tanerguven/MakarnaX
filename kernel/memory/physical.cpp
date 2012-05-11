@@ -15,9 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <types.h>
-#include <stdio.h>
-using namespace std;
+#include <kernel/kernel.h>
 
 #include "physical.h"
 #include "../multiboot.h"
@@ -61,7 +59,7 @@ extern void pm_init() {
 	freePageList.init();
 
 	if (!(_multiboot_info->flags & MULTIBOOT_INFO_MEM_MAP)) {
-		printf("0x%08x\n", _multiboot_info);
+		print_error("0x%08x\n", _multiboot_info);
 		PANIC("multiboot memory map okunamiyor");
 	}
 

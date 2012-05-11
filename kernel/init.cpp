@@ -15,10 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <types.h>
+#include <kernel/kernel.h>
 #include <asm/x86.h>
-#include <stdio.h>
-using namespace std;
 
 #include "test_programs.h"
 #include "memory/physical.h"
@@ -52,19 +50,10 @@ asmlink int main() {
 	int r;
 
 	init_console();
-	printf("\n");
-
-#ifdef M_DEBUG_1
-	printf("DEBUG 1\n");
-#endif
-#ifdef M_DEBUG_2
-	printf("DEBUG 2\n");
-#endif
+	print_info("\n");
 
 	task_init();
-
 	memory_init();
-
 	init_traps();
 
 	schedule_init();
@@ -77,7 +66,7 @@ asmlink int main() {
 
 	free_memory_start = mem_free();
 
-	printf("init_kernel_task\n");
+	print_info("init_kernel_task\n");
 	init_kernel_task(root_dir);
 
 	/* stdout dosyasi denemesi: */
@@ -102,7 +91,7 @@ asmlink int main() {
 }
 
 void kernel_task() {
-	printf(">> kernel_task started\n");
+	print_info(">> kernel_task started\n");
 	while (1) {
 		sti();
 		asm("hlt");
@@ -114,7 +103,7 @@ void init_task() {
 	int r;
 	char* argv[1] = { NULL };
 
-	printf(">> init_task started\n");
+	print_info(">> init_task started\n");
 
 	r = do_execve("/bin/init", argv);
 	ASSERT(r == 0);
@@ -123,8 +112,8 @@ void init_task() {
 void __panic(const char *msg, const char* file, int line) {
 	asm("cli");
 	asm("cld");
-	printf("Panic: %s:%d\n", file, line);
-	printf("%s\n", msg);
+	print_error("Panic: %s:%d\n", file, line);
+	print_error("%s\n", msg);
 	start_kernel_monitor();
 	while(1) {
 		asm("hlt");
@@ -134,8 +123,8 @@ void __panic(const char *msg, const char* file, int line) {
 void __panic_assert(const char* file, int line, const char* d) {
 	asm("cli");
 	asm("cld");
-	printf("Panic: %s:%d\n", file, line);
-	printf("assertion failed: %s\n", d);
+	print_error("Panic: %s:%d\n", file, line);
+	print_error("assertion failed: %s\n", d);
 	start_kernel_monitor();
 	while(1) {
 		asm("hlt");

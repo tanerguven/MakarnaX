@@ -18,15 +18,13 @@
 #ifndef _MEMORY_VIRTUAL_H_
 #define _MEMORY_VIRTUAL_H_
 
-#include "../kernel.h"
-
 #include <asm/x86.h>
-#include <types.h>
 #include <string.h>
 #include <errno.h>
 #include "physical.h"
 
 #include <kernel/configuration.h>
+#include <kernel/kernel.h>
 
 /*
  * Kernel ve user adres uzaylarinin yerleri bu makrolar ile degistirilebilir
@@ -268,14 +266,13 @@ inline PTE_t * PageDirInfo::page_get_c(VA_t va) {
 		if (pde_alloc(va.pdx) < 0)
 			return NULL;
 	}
-	//TODO: ASSERT_D
-	/* ASSERT(pgtables[va.pdx]); */
+	ASSERT_DTEST(pgtables[va.pdx]);
 	return &(pgtables[va.pdx]->e[va.ptx]);
 }
 
 /** hatada errno, normal durumda refCount dondurur */
 inline int PageDirInfo::page_insert(Page *p, VA_t va, int perm) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/* FuncLevelTester(&(this->function_level)); */
 	int r;
@@ -303,7 +300,7 @@ inline int PageDirInfo::page_insert(Page *p, VA_t va, int perm) {
 }
 
 inline int PageDirInfo::pde_alloc(uint32_t pde_no) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/* pde olarak kullanmak icin, bir fiziksel page bul ve sıfırla */
 	Page *p;
@@ -320,7 +317,7 @@ inline int PageDirInfo::pde_alloc(uint32_t pde_no) {
 }
 
 inline int PageDirInfo::pde_free(uint32_t pde_no) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	uint32_t pgtable_va = (uint32_t)pgtables[pde_no];
 	int r = tmp_page_free(kaddr2va(pgtable_va));
@@ -337,7 +334,7 @@ inline int PageDirInfo::pde_free(uint32_t pde_no) {
 
 /** hata durumunda errno, normal refCount dondurur */
 inline int PageDirInfo::page_remove(VA_t va, int invl) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/* FuncLevelTester(&(this->function_level)); */
 
@@ -365,7 +362,7 @@ inline int PageDirInfo::page_remove(VA_t va, int invl) {
 
 /** hatada errno, normal durumda refCount dondurur */
 inline int PageDirInfo::page_alloc_insert(uint32_t va, int perm) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	Page *p;
 	int r;

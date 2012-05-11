@@ -1,7 +1,7 @@
-#include <types.h>
-#include <asm/io.h>
 
-#include  <kernel/trap.h>
+#include <kernel/kernel.h>
+#include <kernel/trap.h>
+#include <asm/io.h>
 
 extern void pic_enable(int irq);
 

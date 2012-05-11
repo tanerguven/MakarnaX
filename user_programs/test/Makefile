@@ -1,7 +1,7 @@
 D = ../..
 include $(D)/Makefile.inc
 
-CFLAGS = $(M) -I$(D)/include -O0 -g3 -Wall -c -nostdlib -nostdinc -fno-builtin\
+CFLAGS = $(M) -I$(D)/include -Iinclude -O0 -g3 -Wall -c -nostdlib -nostdinc -fno-builtin\
 	    -fno-stack-protector -nostartfiles -nodefaultlibs -D_USER_PROGRAM
 
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti

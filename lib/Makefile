@@ -4,7 +4,6 @@ include ../Makefile.inc
 OBJ_LIB = \
 	genel_fonksiyonlar.o\
 	vsprintf.o\
-	readline.o\
 
 OBJ_USER_LIB = \
 	syscall.o\

@@ -15,13 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../kernel.h"
+#include <kernel/kernel.h>
 
 #include "../trap.h"
 #include "../task.h"
 #include "../sched.h"
-
-#include "../kernel.h"
 
 /*
  * TODO: SemInfo icin alinan bellek geri verilmeli
@@ -53,9 +51,10 @@ void sys_semget() {
 	// int pshared = (int)get_param3(tf);
 	unsigned int value = get_param4(tf);
 
+	// FIXME: fonksiyon var
 	if ( task_curr->pgdir.verify_user_addr(sem, sizeof(sem_t*), PTE_U) < 0 ) {
 		// FIXME: adres hatasi olmasi durumda process sonlanmali mi, hata mi dondurulmeli
-		printf(">> sys_semget not verified: 0x%08x - 0x%08x\n", sem, sem+1);
+		print_warning(">> sys_semget not verified: 0x%08x - 0x%08x\n", sem, sem+1);
 		return set_return(tf, -1);
 	}
 
@@ -125,7 +124,7 @@ void sys_semwait() {
 void do_sempost(void *p) {
 	SemInfo *sem_info = (SemInfo*)p;
 	sem_info->value--;
-	// printf("value %d\n", sem->value);
+	// print_info("value %d\n", sem->value);
 	ASSERT(sem_info->value == 0);
 	wakeup_uninterruptible(&sem_info->wait_list);
 }
@@ -186,7 +185,7 @@ void sys_semgetvalue() {
 	// struct sem_t *sem = (struct sem_t*)get_param2(tf);
 	// int *val = (int*)get_param3(tf);
 
-	printf(">> sys_semgetvalue\n");
+	print_warning(">> sys_semgetvalue\n");
 
 	return set_return(tf, -1);
 }
@@ -195,14 +194,14 @@ void sys_semop() {
 	Trapframe *tf = task_curr->registers();
 	struct sem_t *sem = (struct sem_t*)get_param2(tf);
 
-	printf("sys_semop\n");
-	printf(">> sem: %08x\n", sem);
+	print_warning("sys_semop\n");
+	print_warning(">> sem: %08x\n", sem);
 
 	return set_return(tf, -1);
 }
 
 void sys_semctl() {
-	printf("sys_semctl\n");
+	print_warning("sys_semctl\n");
 	PANIC("yok");
 	return set_return(task_curr->registers(), -1);
 }

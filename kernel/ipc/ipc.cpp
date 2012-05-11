@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../kernel.h"
 #include <kernel/syscall.h>
 
 #include "../trap.h"
@@ -63,7 +62,7 @@ static void (*ipc_func[])() = {
 
 static void no_ipc() {
 	uint32_t ipc_no = get_param1(task_curr->registers());
-	printf("ipc no: %d\n", ipc_no);
+	print_warning("ipc no: %d\n", ipc_no);
 	PANIC("no_ipc");
 }
 

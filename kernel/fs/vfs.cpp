@@ -18,9 +18,7 @@
 #include "vfs.h"
 #include "../task.h"
 
-#include <stdio.h>
 #include <string.h>
-#include "../kernel.h"
 
 extern void denemefs_init();
 extern DirEntry* mount_root();

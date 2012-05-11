@@ -15,21 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <types.h>
+#include <kernel/kernel.h>
+#include <kernel/syscall.h>
 #include <asm/x86.h>
+#include <string.h>
 
 #include "task.h"
-#include "elf.h"
-
 #include "sched.h"
 #include "time.h"
-
-#include <string.h>
-#include <stdio.h>
-using namespace std;
-
-#include "kernel.h"
-#include <kernel/syscall.h>
 
 // signal.cpp
 extern void free_sigstack();
@@ -69,7 +62,7 @@ Task *task_curr;
 
 /** task için sanal bellek oluşturur */
 static int task_setup_vm(Task *t, PageDirInfo *parent_pgdir) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	int err;
 	uint32_t va;
@@ -100,7 +93,7 @@ static int task_setup_vm(Task *t, PageDirInfo *parent_pgdir) {
 }
 
 static void task_delete_vm(Task *t) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/* task baska taski silemez, killemek icin signal gondermeli */
 	ASSERT(t != task_curr);
@@ -125,7 +118,7 @@ static void task_delete_vm(Task *t) {
 }
 
 void task_free_kernel_stack(Task* t) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 	uint32_t va;
 	VA_t va_kernel_stack(MMAP_KERNEL_STACK_BASE);
 
@@ -142,7 +135,7 @@ void task_free_kernel_stack(Task* t) {
 }
 
 void task_free_vm_user(Task* t) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/*  user alanindaki butun pageleri serbest birak */
 	for (uint32_t pde_no = VA_t(MMAP_USER_BASE).pdx ;
@@ -172,7 +165,7 @@ void task_free_vm_user(Task* t) {
 }
 
 void task_free(Task *t) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 	ASSERT(t == task_curr);
 
 	ipc_task_free(t);
@@ -199,7 +192,7 @@ void task_free(Task *t) {
 }
 
 void free_zombie_tasks() {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	while (task_zombie_list.size() > 0) {
 		Task *t = task_zombie_list.front();
@@ -219,7 +212,7 @@ void task_init() {
 	task_id_ht.init(mem_task_id_ht, sizeof(mem_task_id_ht));
 	task_zombie_list.init();
 
-	printf(">> task_init OK\n");
+	print_info(">> task_init OK\n");
 }
 
 
@@ -254,7 +247,7 @@ void move_stack(uint32_t ka_curr, uint32_t ka_new, uint32_t size) {
 }
 
 inline void set_task_id(Task* t) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	t->id = next_task_id++;
 	ASSERT( task_id_ht.put(&t->id_hash_node) == 0);
@@ -264,7 +257,7 @@ inline void set_task_id(Task* t) {
 void init_kernel_task(struct DirEntry* root) {
 	int r;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	task_curr = &task0;
 
@@ -285,7 +278,7 @@ void init_kernel_task(struct DirEntry* root) {
 	set_task_id(task_curr);
 	add_to_runnable_list(task_curr);
 
-	printf(">> task %d created\n", task_curr->id);
+	print_info(">> task %d created\n", task_curr->id);
 }
 
 // TODO: fork kurallari duzenlenmeli (neler kopyalanacak, neler kopyalanmayacak?)
@@ -303,7 +296,7 @@ int do_fork() {
 	int e = 0; // error (bad_fork_* icin)
 	uint32_t eflags;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	t = (Task*)kmalloc(sizeof(Task));
 	if (!t)
@@ -384,26 +377,26 @@ int do_fork() {
 
 bad_fork_copy_kernel_stack:
 	if (e++ == 0)
-		printf("!! bad_fork_copy_kernel_stack\n");
+		print_warning("!! bad_fork_copy_kernel_stack\n");
 	task_free_kernel_stack(t);
 	ASSERT(mem_free() == mem_before_kernel_stack);
 bad_fork_ipc:
 	// TODO: --
 bad_fork_copy_vm_user:
 	if (e++ == 0)
-		printf("!! bad_fork_copy_vm_user\n");
+		print_warning("!! bad_fork_copy_vm_user\n");
 	task_free_vm_user(t);
 	ASSERT(mem_free() == mem_before_copy_pages);
 bad_fork_setup_vm:
 	if (e++ == 0)
-		printf("!! bad_fork_setup_vm\n");
+		print_warning("!! bad_fork_setup_vm\n");
 	task_delete_vm(t);
 	ASSERT(mem_free() == mem_before_setup_vm);
 	kfree(t);
 	t = NULL;
 bad_fork_task_alloc:
 	if (e++ == 0)
-		printf("!! bad_fork_task_alloc\n");
+		print_warning("!! bad_fork_task_alloc\n");
 	ASSERT(t == NULL);
 	return -1;
 }
@@ -411,9 +404,9 @@ bad_fork_task_alloc:
 void switch_to_task(Task *newtask) {
 	CLOBBERED_REGISTERS_ALL();
 
-	// printf(">> [%d] switch to %d\n", task_curr->id, newtask->id);
+	// print_info(">> [%d] switch to %d\n", task_curr->id, newtask->id);
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/* eski proses calismissa */
 	if (task_curr->k_eip == 0) {

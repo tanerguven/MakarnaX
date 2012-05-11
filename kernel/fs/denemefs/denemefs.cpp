@@ -1,6 +1,8 @@
-#include "denemefs.h"
 
-#include "../../kernel.h"
+#include <kernel/kernel.h>
+#include <string.h>
+
+#include "denemefs.h"
 #include "../../test_programs.h"
 
 struct Deneme_inode di[100];
@@ -83,7 +85,7 @@ void denemefs_init() {
 	in->data = &_binary_init_programs_start;
 	in->size = (uint32_t)&_binary_init_programs_size;
 
-	printf(">> denemefs init OK\n");
+	print_info(">> denemefs init OK\n");
 }
 
 int denemefs_read_super(struct SuperBlock* sb) {
@@ -126,7 +128,7 @@ int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest)
 				i_dest->op = &chrdev_inode_operations;
 				break;
 			default:
-				printf("file type: %d\n", di[sd->no[i]].mode.type);
+				print_error("file type: %d\n", di[sd->no[i]].mode.type);
 				PANIC("Unknown file type");
 			}
 			i_dest->ino = sd->no[i];

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "kernel.h"
+#include <kernel/kernel.h>
 #include <kernel/syscall.h>
 
 #include "task.h"
@@ -45,14 +45,14 @@ void schedule_init() {
 		__task_runnable_queue[i].init();
 	}
 
-	printf(">> schedule init OK\n");
+	print_info(">> schedule init OK\n");
 }
 
 Task* find_runnable_task() {
 	Task *task_next = NULL;
 	TaskList_t *first_priority_level;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	/* process olan en yuksek oncelikli listeyi bul */
 	first_priority_level = NULL;
@@ -107,7 +107,6 @@ void schedule() {
 
 	switch_to_task(task_next);
 
-	ASSERT(!(eflags_read() & FL_IF));
 	check_signals();
 
 	/* signal yokken push yapilmis stack olmamali */
@@ -150,10 +149,11 @@ SYSCALL_END(yield)
 
 /** timer kesmesi ile calistirilan fonksiyon */
 asmlink void do_timer(Trapframe *tf) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
+
 	jiffies++;
 
-	ASSERT(task_curr->state == Task::State_running);
+	ASSERT_DTEST(task_curr->state == Task::State_running);
 
 	task_curr->counter--;
 
@@ -186,7 +186,6 @@ SYSCALL_DEFINE1(alarm, unsigned int, seconds) {
 	}
 
 	task_curr->alarm = jiffies_to_seconds() + seconds;
-	ASSERT(task_curr->alarm > jiffies_to_seconds());
 
 	/* alarm listesine sure siralamasina gore insert yap */
 	AlarmList_t::iterator i;
@@ -243,7 +242,7 @@ void sleep_interruptible(TaskList_t *list) {
 
 /** bir kaynak uzerinde sleep yapan tasklardan ilkini uyandirir */
 void wakeup_interruptible(TaskList_t *list) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	if (list->size() == 0)
 		return;
@@ -256,8 +255,8 @@ void wakeup_interruptible(TaskList_t *list) {
 }
 
 void sleep_uninterruptible(TaskList_t *list) {
-	ASSERT(!(eflags_read() & FL_IF));
-	ASSERT(task_curr->state == Task::State_running);
+	ASSERT_int_disable();
+	ASSERT_DTEST(task_curr->state == Task::State_running);
 
 	remove_from_runnable_list(task_curr);
 	task_curr->state = Task::State_uninterruptible;
@@ -268,7 +267,7 @@ void sleep_uninterruptible(TaskList_t *list) {
 }
 
 void wakeup_uninterruptible(TaskList_t *list) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	Task* t = list->front();
 	ASSERT( list->pop_front() );

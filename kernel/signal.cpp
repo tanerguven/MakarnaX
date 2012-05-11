@@ -15,16 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <types.h>
 #include "task.h"
 #include "sched.h"
 
 #include <errno.h>
 #include <signal.h>
 
-#include "kernel.h"
 #include <kernel/syscall.h>
+#include <kernel/kernel.h>
 
 /*
  * TODO: signal mask eklenmeli
@@ -112,7 +110,7 @@ int send_signal(uint32_t sig, Task* t) {
 		 * uninterruptible durumu henuz kullanilmadi
 		 * diger durumlar da tanimlanmali
 		 */
-		printf("[%d] %d\n", t->id, t->state);
+		print_error("[%d] %d\n", t->id, t->state);
 		PANIC("--");
 	}
 
@@ -120,7 +118,7 @@ int send_signal(uint32_t sig, Task* t) {
 }
 
 void check_signals() {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 	uint32_t cr3; read_reg(%cr3, cr3);
 	ASSERT(task_curr->pgdir.pgdir_pa == cr3);
 
@@ -188,7 +186,7 @@ void check_signals() {
 
 /* user signal handler fonksiyonundan return yapildiginda calisir */
 void signal_return(Trapframe *tf) {
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	uint32_t* esp = (uint32_t*)uaddr2kaddr(tf->esp);
 
@@ -241,7 +239,7 @@ static void push_stack() {
 	uint32_t eip;
 
 	ASSERT(!task_curr->popped_kstack);
-	// printf(">> push stack to %d\n", task_curr->sigstack.size()+1);
+	// print_info(">> push stack to %d\n", task_curr->sigstack.size()+1);
 	ASSERT(task_curr->sigstack.size() < 32);
 
 	/* stackin kopyalanacagi page */
@@ -286,7 +284,7 @@ static void pop_stack() {
 
 	ASSERT(!task_curr->popped_kstack);
 	ASSERT(task_curr->sigstack.size() > 0);
-	// printf(">> pop stack from %d\n", task_curr->sigstack.size());
+	// print_info(">> pop stack from %d\n", task_curr->sigstack.size());
 
 	s = task_curr->sigstack.front();
 	r = task_curr->sigstack.pop_front();

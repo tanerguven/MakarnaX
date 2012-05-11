@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <kernel/syscall.h>
+#include <kernel/kernel.h>
+
 #include "../elf.h"
 #include "../task.h"
 #include "../fs/vfs.h"
-#include <kernel/syscall.h>
-
-#include <types.h>
 
 // task.cpp
 extern void task_free_vm_user(Task* t);

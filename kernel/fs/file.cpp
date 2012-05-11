@@ -15,11 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../task.h"
-#include "../kernel.h"
+#include <kernel/kernel.h>
 #include <kernel/syscall.h>
-#include "vfs.h"
+
 #include <sys/stat.h>
+
+#include "../task.h"
+#include "vfs.h"
 
 // FIXME: path size
 
@@ -40,7 +42,7 @@ int do_open(File **f, const char *path, int flags) {
 	int r;
 	File *file;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	r = find_dir_entry(path, -1, &file_dentry);
 	if (r < 0)
@@ -235,7 +237,7 @@ int do_creat(const char *path, int mode) {
 	const char *name;
 	struct inode newinode;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	r = find_file_and_dir(path, &dir, &name);
 	if (r < 0)
@@ -271,7 +273,7 @@ int do_unlink(const char *path) {
 	int r;
 	const char *name;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	r = find_file_and_dir(path, &file_dentry, &name);
 	if (r < 0)
@@ -309,7 +311,7 @@ int do_mknod(const char* pathname, FileMode mode, int dev) {
 	const char *name;
 	int r;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	r = find_file_and_dir(pathname, &dir, &name);
 	if (r < 0)

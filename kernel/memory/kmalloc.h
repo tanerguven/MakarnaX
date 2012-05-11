@@ -18,7 +18,7 @@
 #ifndef _MEMORY_KMALLOC_H_
 #define _MEMORY_KMALLOC_H_
 
-#include <types.h>
+#include <kernel/kernel.h>
 #include <wmc/list.h>
 #include "virtual.h"
 /*

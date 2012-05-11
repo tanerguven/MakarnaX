@@ -43,9 +43,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "kernel.h"
-
-#include <types.h>
+#include <kernel/kernel.h>
 #include <asm/io.h>
 #include <asm/x86.h>
 
@@ -53,11 +51,9 @@
 
 // console.cpp
 extern void console_interrupt(int (*proc)());
-//
 
 // kernel_monitor.cpp
 extern void start_kernel_monitor();
-//
 
 /** kbd controller status port(I) */
 #define	KBSTATP 0x64
@@ -211,7 +207,7 @@ int keyboard_getc(void) {
 	};
 	uint32_t st, data, c;
 
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	st = inb(KBSTATP);
 	if((st & KBS_DIB) == 0)
@@ -244,7 +240,7 @@ int keyboard_getc(void) {
 
 	if (!(~shift & (CTL | ALT)) && c == KEY_DEL) {
 		/* debug modu */
-		printf(">> debug mode: \n");
+		print_info(">> debug mode: \n");
 		start_kernel_monitor();
 	}
 

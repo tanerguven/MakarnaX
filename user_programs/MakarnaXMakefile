@@ -1,3 +1,7 @@
+#
+# lib ve bin dizinlerinden kullaniliyor
+#
+
 R = $(D)/tools/gcc_cross_compiler/local
 PATH := ${PATH}:$(R)/bin
 CC = i686-makarnax-gcc

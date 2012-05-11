@@ -103,8 +103,12 @@ documentation-clean:
 #		running
 ######################################
 
-qemu: kernel #image
-	$(QEMU) -kernel bin/kernel -serial mon:stdio
+tmp-dir:
+	rm -rf tmp
+	mkdir tmp
+
+qemu: tmp-dir kernel #image
+	$(QEMU) -kernel bin/kernel -serial mon:stdio -serial file:tmp/serial2
 
 qemu-gdb: kernel #image
 	$(QEMU) -kernel bin/kernel -serial mon:stdio -S -s

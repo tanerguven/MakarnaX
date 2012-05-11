@@ -6,7 +6,7 @@ OBJS = \
 	init.o\
 	console.o\
 	keyboard.o\
-	printf.o\
+	print.o\
 	kernel_monitor.o\
 	memory/physical.o\
 	memory/virtual.o\

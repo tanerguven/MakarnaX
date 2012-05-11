@@ -1,7 +1,14 @@
-#include <stdio.h>
 #include <stdarg.h>
 
-int printf(const char *fmt, ...) {
+#include <kernel/kernel.h>
+
+// console.cpp
+asmlink void putchar(int c);
+
+// lib/vsprintf.c
+asmlink int vsprintf(char *buf, const char *fmt, va_list args);
+
+int __kernel_print(const char *fmt, ...) {
 	va_list args;
 	int i;
 	char buf[1024];

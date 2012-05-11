@@ -15,7 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "kernel.h"
+
+#include <kernel/kernel.h>
+#include <kernel/syscall.h>
+#include <wmc/idhashtable.h>
 
 #include <signal.h>
 #include <sys/wait.h>
@@ -23,14 +26,11 @@
 #include "task.h"
 #include "sched.h"
 #include "time.h"
-#include "memory/virtual.h"
-#include "kernel/syscall.h"
 
-#include <wmc/idhashtable.h>
 
 // task.cpp
 extern void task_free(struct Task *t);
-//
+
 
 /*
  * TODO: parent prosesin, child prosesten once sonlanmasi durumu
@@ -75,7 +75,7 @@ asmlink void do_exit(int code) {
 		task_curr->exit_signal = SIGCHLD;
 
 	notify_parent(task_curr);
-	printf(">> [%d] exit OK\n", task_curr->id);
+	print_info(">> [%d] exit OK\n", task_curr->id);
 
 	schedule();
 	PANIC("do_exit return");
@@ -109,8 +109,9 @@ SYSCALL_END(kill)
  */
 SYSCALL_DEFINE1(wait, int*, state) {
 
+	// FIXME: bunu yapan fonksiyon var ...
 	if ( task_curr->pgdir.verify_user_addr(state, 4, PTE_U) < 0 ) {
-		printf(">> wait not verified: 0x%08x - 0x%08x\n", state, state+1);
+		print_warning(">> wait not verified: 0x%08x - 0x%08x\n", state, state+1);
 		do_exit(111);
 	}
 	state = (int*)uaddr2kaddr((uint32_t)state);

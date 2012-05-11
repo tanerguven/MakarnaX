@@ -22,8 +22,6 @@
 #ifndef TASK_H_
 #define TASK_H_
 
-#include "kernel.h"
-
 #include <types.h>
 #include <wmc/list.h>
 #include <wmc/idhashtable.h>
@@ -128,7 +126,7 @@ inline Task* SharedMemDesc::task() {
 
 
 inline Trapframe* current_registers() {
-	ASSERT(task_curr);
+	ASSERT_DTEST(task_curr);
 	if (task_curr->popped_kstack)
 		return (Trapframe*)va2kaddr(MMAP_KERNEL_STACK_2_TOP - sizeof(Trapframe));
 	else

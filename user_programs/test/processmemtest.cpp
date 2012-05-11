@@ -1,5 +1,6 @@
 #include <user.h>
 #include <stdio.h>
+#include <string.h>
 #include <asm/x86.h>
 
 int stacktest();

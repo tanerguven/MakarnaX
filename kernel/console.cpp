@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <types.h>
+#include <kernel/kernel.h>
 #include <asm/io.h>
-#include <string.h>
 #include <asm/x86.h>
+#include <string.h>
 
 #include "task.h"
 #include "sched.h"
@@ -26,17 +26,25 @@
 // keyboard.cpp
 void keyboard_init();
 void keyboard_interrupt();
-//
 
-//
 static void serial_init();
-static void serial_putc(int c);
-#if 0
-static void serial_interrupt();
-#endif
 static void cga_putc(int c);
 void console_putc(int c);
-//
+
+static uint16_t COM1 = 0;
+static uint16_t COM2 = 0;
+static uint16_t COM3 = 0;
+static uint16_t COM4 = 0;
+
+static void COM1_putc(int) __attribute__((unused));
+static void COM2_putc(int) __attribute__((unused));
+static void COM3_putc(int) __attribute__((unused));
+static void COM4_putc(int) __attribute__((unused));
+
+static int COM1_getc() __attribute__((unused));
+static int COM2_getc() __attribute__((unused));
+static int COM3_getc() __attribute__((unused));
+static int COM4_getc() __attribute__((unused));
 
 /****************************************************
  * Aygittan bagimsiz console islemleri
@@ -69,7 +77,7 @@ void init_console() {
  */
 void console_interrupt(int (*proc)()) {
 	int c;
-	ASSERT(!(eflags_read() & FL_IF));
+	ASSERT_int_disable();
 
 	while ( (c = (*proc)()) != -1) {
 		if (c == 0)
@@ -89,9 +97,10 @@ int console_getc() {
 	cli();
 
 	keyboard_interrupt();
-	// FIXME: bir makroya gore etkinlestir
-	#if 0
-	serial_interrupt();
+
+	#ifdef __CONF_use_COM1_io
+	if (COM1)
+		console_interrupt(COM1_getc);
 	#endif
 
 	if (console.rpos != console.wpos) {
@@ -110,7 +119,11 @@ int console_getc() {
 void console_putc(int c) {
 	/* console'a bağlı tüm çıkış aygıtlarına, çıktıyı gönder */
 	cga_putc(c);
-	serial_putc(c);
+
+	#ifdef __CONF_use_COM1_io
+	if (COM1)
+		COM1_putc(c);
+	#endif
 }
 
 /****************************************************
@@ -143,52 +156,66 @@ asmlink int iscons(int fdnum) {
  * 							Serial
  *******************************************************************/
 
-static int serial_port = 0x3f8;
+static void find_com_ports() {
+	// http://wiki.osdev.org/Memory_Map_(x86)#BIOS_Data_Area_.28BDA.29
+	COM1 = *(uint16_t*)0x0400;
+	COM2 = *(uint16_t*)0x0402;
+	COM3 = *(uint16_t*)0x0404;
+	COM4 = *(uint16_t*)0x0406;
+}
+
+static void init_serial(uint16_t port) {
+	uint32_t eflags = eflags_read();
+	cli();
+	outb(port + 1, 0x00);
+	outb(port + 3, 0x80);
+	outb(port + 0, 0x03);
+	outb(port + 1, 0x00);
+	outb(port + 3, 0x03);
+	outb(port + 2, 0xC7);
+	outb(port + 4, 0x0B);
+	eflags_load(eflags);
+}
 
 static void serial_init() {
-	uint32_t eflags = eflags_read();
-	cli();
-	outb(serial_port + 1, 0x00);
-	outb(serial_port + 3, 0x80);
-	outb(serial_port + 0, 0x03);
-	outb(serial_port + 1, 0x00);
-	outb(serial_port + 3, 0x03);
-	outb(serial_port + 2, 0xC7);
-	outb(serial_port + 4, 0x0B);
-	eflags_load(eflags);
+	find_com_ports();
+	init_serial(COM1);
 }
 
-#if 0
-static int serial_getc() {
-	int r;
-
-	uint32_t eflags = eflags_read();
-	cli();
-	if ((inb(serial_port + 5) & 1) == 0) /* if not received */
-		r = -1;
-	else
-		r = inb(serial_port);
-	eflags_load(eflags);
-	return r;
-}
-#endif
-
-static void serial_putc(int c) {
-	uint32_t eflags = eflags_read();
-	cli();
-
-	while ((inb(serial_port + 5) & 0x20) == 0)
-		/* if transmit not empty, wait */;
-	outb(serial_port, c);
-	eflags_load(eflags);
+#define COM_N_getc(COM) \
+static int COM##_getc() {	\
+	int r; \
+	uint32_t eflags = eflags_read(); \
+	ASSERT(COM != 0); \
+	cli(); \
+	if ((inb(COM1 + 5) & 1) == 0) /* if not received */ \
+		r = -1; \
+	else \
+		r = inb(COM1); \
+	eflags_load(eflags); \
+	return r; \
 }
 
-#if 0
-static void serial_interrupt(void) {
-	console_interrupt(serial_getc);
-}
-#endif
+COM_N_getc(COM1);
+COM_N_getc(COM2);
+COM_N_getc(COM3);
+COM_N_getc(COM4);
 
+#define COM_N_putc(COM) \
+static void COM##_putc(int c) { \
+	ASSERT(COM != 0); \
+	uint32_t eflags = eflags_read(); \
+	cli(); \
+	while ((inb(COM + 5) & 0x20) == 0) \
+		/* if transmit not empty, wait */; \
+	outb(COM, c); \
+	eflags_load(eflags); \
+}
+
+COM_N_putc(COM1);
+COM_N_putc(COM2);
+COM_N_putc(COM3);
+COM_N_putc(COM4);
 
 /*******************************************************************
  * 							CGA
