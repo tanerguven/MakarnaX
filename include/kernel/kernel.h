@@ -3,14 +3,18 @@
 
 #include <types.h>
 
+// panic.cpp
 extern void __panic(const char *msg, const char* file, int line);
 extern void __panic_assert(const char* file, int line, const char* d);
-
+extern void __panic_assert3(const char* file, int line, const char *c_a, uint32_t v_a,
+							const char *op, const char *c_b, uint32_t v_b);
 #define PANIC(msg) __panic(msg, __FILE__, __LINE__)
 #define ASSERT(b) ((b) ? (void)0 : __panic_assert(__FILE__, __LINE__, #b))
+#define ASSERT3(a, op, b) \
+	((a op b) ? (void)0 : __panic_assert3(__FILE__, __LINE__, #a, a, #op, #b, b))
 
+// print.c
 asmlink int __kernel_print(const char *fmt, ...);
-
 #define print_info(args...) __kernel_print(args)
 #define print_warning(args...) __kernel_print(args)
 #define print_error(args...) __kernel_print(args)

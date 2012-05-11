@@ -7,6 +7,7 @@ OBJS = \
 	console.o\
 	keyboard.o\
 	print.o\
+	panic.o\
 	kernel_monitor.o\
 	memory/physical.o\
 	memory/virtual.o\

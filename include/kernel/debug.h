@@ -6,16 +6,18 @@
 
 #define debug_test(level) (__KERNEL_DEBUG_##level == 1)
 
-#if __KERNEL_DEBUG_test == 1
+#if debug_test(test)
 # define ASSERT_DTEST(p) ASSERT(p)
+# define ASSERT3_DTEST(args...) ASSERT3(args)
 #else
-# define ASSERT_DTEST(p) /* */
+# define ASSERT_DTEST(p) (void)0
+# define ASSERT3_DTEST(args...) (void)0
 #endif
 
-#if __KERNEL_DEBUG_interrupt_check == 1
+#if debug_test(interrupt_check)
 # define ASSERT_int_disable() ASSERT(!(eflags_read() & FL_IF))
 #else
-# define ASSERT_int_disable() /* */
+# define ASSERT_int_disable() (void)0
 #endif
 
 // TODO: fonksiyonlarin kac kere cagrildigini sayan birsey

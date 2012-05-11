@@ -27,7 +27,6 @@ extern void init_traps();
 extern void task_init();
 extern void schedule_init();
 extern void run_first_task();
-extern void start_kernel_monitor();
 extern void picirq_init();
 extern void timer_init();
 extern void ipc_init();
@@ -108,29 +107,6 @@ void init_task() {
 	r = do_execve("/bin/init", argv);
 	ASSERT(r == 0);
 }
-
-void __panic(const char *msg, const char* file, int line) {
-	asm("cli");
-	asm("cld");
-	print_error("Panic: %s:%d\n", file, line);
-	print_error("%s\n", msg);
-	start_kernel_monitor();
-	while(1) {
-		asm("hlt");
-	}
-}
-
-void __panic_assert(const char* file, int line, const char* d) {
-	asm("cli");
-	asm("cld");
-	print_error("Panic: %s:%d\n", file, line);
-	print_error("assertion failed: %s\n", d);
-	start_kernel_monitor();
-	while(1) {
-		asm("hlt");
-	}
-}
-
 
 /******************************
  * Test programlari
