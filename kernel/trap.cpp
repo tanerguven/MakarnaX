@@ -75,9 +75,6 @@ asmlink void do_syscall(int no);
 // kernel_monitor.cpp
 extern bool kernel_monitor_running;
 
-// spinlock.cpp
-extern int n_stackif;
-
 // fonksiyon prototipleri
 void do_error(Trapframe*);
 void do_unknown(Trapframe*);
@@ -267,7 +264,7 @@ asmlink void trap_handler(Trapframe *tf) {
 	PANIC("kernel mode trap");
 return_trap_handler:
 	/* butun pushcli yapilan yerlerden popif yapilmis olmali */
-	ASSERT(n_stackif == 0);
+	ASSERT(task_curr->n_cli == 0);
 }
 
 void do_error(Trapframe* tf) {

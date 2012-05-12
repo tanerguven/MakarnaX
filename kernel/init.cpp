@@ -48,10 +48,11 @@ asmlink int main() {
 	struct DirEntry *root_dir;
 	int r;
 
+	task_init();
+
 	init_console();
 	print_info("\n");
 
-	task_init();
 	memory_init();
 	init_traps();
 

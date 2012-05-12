@@ -398,12 +398,7 @@ static int readline(const char *prompt, char* buf, int buflen)
 static int getchar() {
 	int c;
 
-	pushsti();
-	while ((c = console_getc()) == 0) {
-		/* karakter yoksa kesme gelene kadar bekle */
-		asm("hlt");
-	}
-	popif();
+	while ((c = console_getc()) == 0);
 	return c;
 }
 

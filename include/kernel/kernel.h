@@ -35,8 +35,9 @@ struct spinlock {
 	uint32_t locked;
 };
 asmlink void pushcli();
+// FIXME: popif yerine popcli kullan
 asmlink void popif();
-asmlink void pushsti();
+#define popcli popif
 asmlink void spinlock_init(struct spinlock *l);
 asmlink void spinlock_acquire(struct spinlock* l);
 asmlink void spinlock_release(struct spinlock* l);

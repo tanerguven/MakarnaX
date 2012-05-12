@@ -102,6 +102,10 @@ struct Task {
 
 	struct spinlock lock;
 
+	/* pushcli/popcli icin degiskenler */
+	int n_cli;
+	uint32_t before_pushcli;
+
 	inline void init();
 	inline Trapframe* registers();
 };
@@ -152,6 +156,7 @@ inline void Task::init() {
 	run_before_switch_f = NULL;
 	sigstack.init();
 	spinlock_init(&this->lock);
+	n_cli = 0;
 }
 
 inline Trapframe* Task::registers() {

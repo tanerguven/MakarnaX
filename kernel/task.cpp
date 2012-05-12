@@ -58,7 +58,7 @@ uint8_t mem_task_id_ht[4096];
 int next_task_id = 0;
 
 TaskList_t task_zombie_list;
-Task *task_curr;
+Task *task_curr = &task0;
 
 /** task için sanal bellek oluşturur */
 static int task_setup_vm(Task *t, PageDirInfo *parent_pgdir) {
@@ -211,8 +211,6 @@ void task_init() {
 	memset(&task0, 0, sizeof(Task));
 	task_id_ht.init(mem_task_id_ht, sizeof(mem_task_id_ht));
 	task_zombie_list.init();
-
-	print_info(">> task_init OK\n");
 }
 
 
