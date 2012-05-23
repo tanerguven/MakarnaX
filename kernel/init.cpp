@@ -112,7 +112,8 @@ void init_task() {
 /******************************
  * Test programlari
  ******************************/
-TestProgram test_programs[] = {
+
+const TestProgram test_programs[] = {
 	{ "yield", &TEST_PROGRAM(yield), &TEST_PROGRAM_END(yield) },
 	{ "hello", &TEST_PROGRAM(hello), &TEST_PROGRAM_END(hello) },
 	{ "divide_error", &TEST_PROGRAM(divide_error), &TEST_PROGRAM_END(divide_error) },
@@ -128,10 +129,9 @@ TestProgram test_programs[] = {
 	{ "init", &TEST_PROGRAM(init), &TEST_PROGRAM_END(init) },
 	{ "hello_newlib", &TEST_PROGRAM(hello_newlib), &TEST_PROGRAM_END(hello_newlib) },
 };
-// FIXME: const
-size_t nr_test_programs = sizeof(test_programs)/sizeof(test_programs[0]);
+const size_t nr_test_programs = sizeof(test_programs)/sizeof(test_programs[0]);
 
-TestProgram *test_program(const char *name) {
+const TestProgram *test_program(const char *name) {
 	for (unsigned int i = 0 ; i < nr_test_programs ; i++) {
 		if ( strcmp(test_programs[i].name, name) == 0 )
 			return &test_programs[i];

@@ -225,7 +225,7 @@ static int command_create(int argc, char **argv) {
 	int r;
 
 	if (argc > 1) {
-		TestProgram *tp = test_program(argv[1]);
+		const TestProgram *tp = test_program(argv[1]);
 		if (tp) {
 			r = do_fork();
 			if (r < 0)

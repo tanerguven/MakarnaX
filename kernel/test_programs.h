@@ -26,9 +26,9 @@ struct TestProgram {
 	void *end;
 };
 
-extern TestProgram test_programs[];
-extern size_t nr_test_programs;
-TestProgram *test_program(const char *name);
+extern const TestProgram test_programs[];
+extern const size_t nr_test_programs;
+extern const TestProgram *test_program(const char *name);
 
 #define TEST_PROGRAM(x) _binary_user_programs_test_##x##_bin_start
 #define TEST_PROGRAM_END(x) _binary_user_programs_test_##x##_bin_end
