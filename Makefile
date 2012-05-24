@@ -77,6 +77,12 @@ clean-test:
 test-%:
 	echo "/bin/"$* >> init_programs
 
+ktest-%: ktest-clean
+	make DEFS=-DKTEST=$*
+
+ktest-clean:
+	rm -f kernel/init.o
+
 documentation:
 	doxygen doc/doc.doxygen
 

@@ -40,7 +40,15 @@ extern int do_execve(const char *path, char *const argv[]);
 
 void kernel_task();
 void init_task();
+void run_kernel_test(const char* name);
 
+#define STR(x) #x
+#define TO_STR(x) STR(x)
+#ifdef KTEST
+# define __KERNEL_TEST_FUNCTION TO_STR(KTEST)
+#endif
+
+// gecici
 #include "fs/vfs.h"
 int do_mknod(const char* pathname, FileMode mode, int dev);
 
@@ -52,6 +60,10 @@ asmlink int main() {
 
 	init_console();
 	print_info("\n");
+
+#ifdef __KERNEL_TEST_FUNCTION
+	run_kernel_test(__KERNEL_TEST_FUNCTION);
+#endif
 
 	memory_init();
 	init_traps();
@@ -107,6 +119,41 @@ void init_task() {
 
 	r = do_execve("/bin/init", argv);
 	ASSERT(r == 0);
+}
+
+
+/*********************************
+ * Kernel testleri
+ *********************************/
+
+extern void kernel_test_fs();
+
+struct KernelTest {
+	const char *name;
+	void (*function)();
+};
+
+const KernelTest kernel_test[] = {
+	{ "fs", kernel_test_fs },
+	{ NULL, NULL }
+};
+
+const KernelTest *get_kernel_test(const char *name) {
+	const KernelTest *i;
+
+	for (i = kernel_test ; i->name != NULL ; i++) {
+		if (strcmp(i->name, name) == 0)
+			return i;
+	}
+	return NULL;
+}
+
+void run_kernel_test(const char *name) {
+	const KernelTest* ktest = get_kernel_test(name);
+	if (ktest == NULL)
+		PANIC("ktest not found");
+	ktest->function();
+	PANIC("kernel test finished");
 }
 
 /******************************

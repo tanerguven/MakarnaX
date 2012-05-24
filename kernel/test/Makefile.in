@@ -1,0 +1,1 @@
+SRC += $(wildcard test/*.c) $(wildcard test/*.cpp)

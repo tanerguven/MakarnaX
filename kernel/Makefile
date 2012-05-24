@@ -5,6 +5,7 @@ kernel_dirs = \
 	fs \
 	memory \
 	ipc \
+	test
 INCLUDE_DIRS = $(kernel_dirs:=/Makefile.in)
 
 SRC = $(wildcard *.S) $(wildcard *.c) $(wildcard *.cpp)
