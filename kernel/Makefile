@@ -1,42 +1,20 @@
 D = ..
 include $(D)/Makefile.inc
 
-OBJS = \
-	boot.o\
-	init.o\
-	console.o\
-	keyboard.o\
-	print.o\
-	panic.o\
-	kernel_monitor.o\
-	memory/physical.o\
-	memory/virtual.o\
-	memory/memory.o\
-	memory/kmalloc.o\
-	task.o\
-	task_exit.o\
-	trap.o\
-	traphandler.o\
-	syscall.o\
-	syscall_table.o\
-	sched.o\
-	picirq.o\
-	timer.o\
-	signal.o\
-	spinlock.o\
-	ipc/ipc.o\
-	ipc/semaphore.o\
-	ipc/shared_memory.o\
-	fs/vfs.o\
-	fs/superblock.o\
-	fs/file.o\
-	fs/dir.o\
-	fs/denemefs/denemefs.o\
-	fs/denemefs/file.o\
-	fs/denemefs/dir.o\
-	fs/exec.o\
-	fs/devices.o\
+kernel_dirs = \
+	fs \
+	memory \
+	ipc \
+INCLUDE_DIRS = $(kernel_dirs:=/Makefile.in)
 
+SRC = $(wildcard *.S) $(wildcard *.c) $(wildcard *.cpp)
+
+# kernel_dirs/Makefile.in dosyasindan SRC degiskenine dosyalari ekler
+include $(INCLUDE_DIRS)
+
+OBJS := $(SRC:.S=.o)
+OBJS := $(OBJS:.c=.o)
+OBJS := $(OBJS:.cpp=.o)
 DEPS = $(OBJS:.o=.d)
 
 all: $(OBJS)

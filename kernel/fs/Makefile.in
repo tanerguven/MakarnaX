@@ -1,0 +1,2 @@
+SRC += $(wildcard fs/*.c) $(wildcard fs/*.cpp)
+SRC += $(wildcard fs/*/*.c) $(wildcard fs/*/*.cpp)

@@ -10,20 +10,7 @@ OBJS = \
 	lib/lib.O \
 	lib/string/string.O \
 
-PROGRAMS = \
-	user_programs/test/divide_error.bin \
-	user_programs/test/hello.bin \
-	user_programs/test/yield.bin \
-	user_programs/test/forktest.bin \
-	user_programs/test/dongu.bin \
-	user_programs/test/sys_dongu.bin \
-	user_programs/test/signaltest.bin \
-	user_programs/test/init.bin \
-	user_programs/test/ipctest.bin \
-	user_programs/test/processmemtest.bin \
-	user_programs/test/kill.bin \
-	user_programs/test/fs.bin \
-	user_programs/test/hello_newlib.bin \
+PROGRAMS = $(wildcard user_programs/test/*.bin)
 
 ######################################
 #	env variables
@@ -38,9 +25,6 @@ endif
 ######################################
 
 all: rm_objs kernel
-
-debug:
-	export KERNEL_CFLAGS=-D__KERNEL_DEBUG__
 
 rm_objs:
 	@rm -f $(OBJS)

@@ -1,0 +1,1 @@
+SRC += $(wildcard memory/*.c) $(wildcard memory/*.cpp)
