@@ -1,5 +1,5 @@
 D = ..
-include $(D)/Makefile.inc
+include $(D)/Makefile.in
 
 kernel_dirs = \
 	fs \

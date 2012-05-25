@@ -1,5 +1,5 @@
 D = ../..
-include $(D)/Makefile.inc
+include $(D)/Makefile.in
 
 NEWLIB_VER=1.20.0
 

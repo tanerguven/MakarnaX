@@ -1,5 +1,5 @@
 D = ..
-include ../Makefile.inc
+include ../Makefile.in
 
 OBJ_LIB = \
 	genel_fonksiyonlar.o\

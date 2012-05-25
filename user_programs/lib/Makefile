@@ -1,5 +1,5 @@
 D = ../..
-include $(D)/Makefile.inc
+include $(D)/Makefile.in
 include ../MakarnaXMakefile
 
 CFLAGS = -nostdinc -O0 -g3 -Wall \
