@@ -1,5 +1,7 @@
 #include <user.h>
 #include <stdio.h>
+#include <string.h>
+#include <genel_fonksiyonlar.h>
 
 char buf[2048];
 char *lines[100];

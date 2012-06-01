@@ -79,6 +79,7 @@ int brktest2() {
 	b = sbrk(0);
 	printf("brk = %08x\n", b);
 
+	return 0;
 }
 
 int brktest() {
