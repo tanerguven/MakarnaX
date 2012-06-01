@@ -31,9 +31,9 @@
 #include "memory/virtual.h"
 #include "signal.h"
 #include "ipc/ipc.h"
+#include "fs/task_fs.h"
 
 #define DEFAULT_PRIORITY 3
-#define TASK_MAX_FILE_NR 32
 
 define_list(struct Task, AlarmList_t);
 define_list(struct Task, ChildList_t);
@@ -95,11 +95,7 @@ struct Task {
 
 	SharedMemList_t shared_mem_list;
 
-	struct DirEntry * pwd;
-	struct DirEntry * root;
-	/* struct inode * executable; */
-	struct File *files[TASK_MAX_FILE_NR];
-
+	Task_FS fs;
 	struct spinlock lock;
 
 	/* pushcli/popcli icin degiskenler */

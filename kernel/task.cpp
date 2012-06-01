@@ -27,12 +27,6 @@
 // signal.cpp
 extern void free_sigstack();
 
-// fs/vfs.cpp
-extern struct File* dup_file(struct File *src);
-
-// fs/file.cpp
-void task_curr_free_files();
-
 // boot.asm
 extern "C" void *__boot_stack;
 
@@ -247,8 +241,8 @@ inline void set_task_id(Task* t) {
 	ASSERT( task_id_ht.put(&t->id_hash_node) == 0);
 }
 
-/* ilk prosesi (proses 0, kernel task) olusturur */
-void init_kernel_task(struct DirEntry* root) {
+/* ilk process i (task0, kernel task) olusturur */
+void init_kernel_task(struct dirent* root) {
 	int r;
 
 	ASSERT_int_disable();
@@ -258,7 +252,7 @@ void init_kernel_task(struct DirEntry* root) {
 	task_curr->init();
 	task_curr->shared_mem_list.init();
 	task_curr->priority = 3;
-	task_curr->root = task_curr->pwd = root;
+	fs_task_init(task_curr, root);
 
 	/* task icin kernel stack alani olustur */
 	r = task_curr->pgdir.segment_alloc(MMAP_KERNEL_STACK_BASE,
@@ -329,13 +323,9 @@ int do_fork() {
 	if (r < 0)
 		goto bad_fork_ipc;
 
-	/* dosya bilgilerini kopyala */
-	for (int i = 0 ; i < TASK_MAX_FILE_NR ; i++) {
-		if (task_curr->files[i])
-			t->files[i] = dup_file(task_curr->files[i]);
-		else
-			t->files[i] = NULL;
-	}
+	r = fs_fork(t);
+	if (r < 0)
+		goto bad_fork_fs;
 
 	/* kernel stackini kopyala */
 	mem_before_kernel_stack = mem_free();
@@ -372,6 +362,8 @@ bad_fork_copy_kernel_stack:
 		print_warning("!! bad_fork_copy_kernel_stack\n");
 	task_free_kernel_stack(t);
 	ASSERT(mem_free() == mem_before_kernel_stack);
+bad_fork_fs:
+	// TODO: --
 bad_fork_ipc:
 	// TODO: --
 bad_fork_copy_vm_user:

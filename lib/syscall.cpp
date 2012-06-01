@@ -56,3 +56,23 @@ asmlink void sys_yield() {
 asmlink void sys_dongu() {
 	syscall(SYS_dongu, 0, 0, 0, 0, 0);
 }
+
+/*
+ * malloc olmadigi icin bir hile :D
+ * her 16 readdir isleminde bir eski veri kaybolur
+ */
+static struct dirent dirents[16];
+static uint32_t dirents_i = 0;
+
+asmlink struct dirent* readdir(DIR* dirp) {
+	int r;
+	struct dirent *dirent = &dirents[dirents_i++ % 16];
+
+	r = syscall(SYS_readdir, (uint32_t)dirp, (uint32_t)dirent, 0, 0, 0);
+	if (r < 0) {
+		dirents_i--;
+		return NULL;
+	}
+
+	return dirent;
+}

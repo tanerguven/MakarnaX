@@ -16,16 +16,26 @@
  */
 
 #include <kernel/kernel.h>
-#include <string.h>
-
-#include "vfs.h"
 #include "denemefs/denemefs.h"
+
+#include <string.h>
 
 #define NR_SUPERBLOCKS 32
 
+// denemefs/denemefs.cpp
+extern void denemefs_init();
+
+// devices.cpp
+extern void init_devices();
+
+// superblock.cpp
+extern dirent* mount_root();
+
 static struct SuperBlock superblocks[NR_SUPERBLOCKS];
 
-DirEntry* mount_root() {
+void init_fs(struct dirent **root) {
+	denemefs_init();
+	init_devices();
 
 	memset(superblocks, 0, sizeof(superblocks));
 	superblocks[0].dev = 123;
@@ -33,7 +43,7 @@ DirEntry* mount_root() {
 
 	denemefs_read_super(&superblocks[0]);
 
-	print_info(">> mount_root OK\n");
+	*root = superblocks[0].root;
 
-	return superblocks[0].root;
+	print_info(">> init_fs OK\n");
 }

@@ -30,8 +30,8 @@ extern void run_first_task();
 extern void picirq_init();
 extern void timer_init();
 extern void ipc_init();
-extern struct DirEntry* init_vfs();
-extern void init_kernel_task(struct DirEntry* root);
+extern void init_fs(struct dirent **root);
+extern void init_kernel_task(struct dirent* root);
 
 extern uint32_t free_memory_start;
 
@@ -49,11 +49,11 @@ void run_kernel_test(const char* name);
 #endif
 
 // gecici
-#include "fs/vfs.h"
-int do_mknod(const char* pathname, FileMode mode, int dev);
+// #include "fs/vfs.h"
+// int do_mknod(const char* pathname, FileMode mode, int dev);
 
 asmlink int main() {
-	struct DirEntry *root_dir;
+	struct dirent *root_dir;
 	int r;
 
 	task_init();
@@ -74,19 +74,18 @@ asmlink int main() {
 	picirq_init();
 	timer_init();
 
-	root_dir = init_vfs();
+	init_fs(&root_dir);
 
 	free_memory_start = mem_free();
 
-	print_info("init_kernel_task\n");
 	init_kernel_task(root_dir);
 
 	/* stdout dosyasi denemesi: */
-	FileMode fm;
-	fm.type = FileMode::FT_chrdev;
-	fm.write = 1;
-	r = do_mknod("/stdout", fm, 11);
-	ASSERT(r == 0);
+	// FileMode fm;
+	// fm.type = FileMode::FT_chrdev;
+	// fm.write = 1;
+	// r = do_mknod("/stdout", fm, 11);
+	// ASSERT(r == 0);
 	/* */
 
 	r = do_fork();

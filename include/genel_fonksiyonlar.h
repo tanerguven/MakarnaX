@@ -89,4 +89,17 @@ extern void parse_cmd(char *cmd, int *argc, char *argv[11]);
 }
 #endif
 
+static inline uint8_t mem_equals_1(const void *a, const void* b) {
+	return *(uint8_t*)a == *(uint8_t*)b;
+}
+static inline uint8_t mem_equals_2(const void *a, const void *b) {
+	return *(uint16_t*)a == *(uint16_t*)b;
+}
+static inline uint8_t mem_equals_3(const void *a, const void *b) {
+    return (*(uint32_t*)a & 0XFFFFFF) == (*(uint32_t*)b & 0xFFFFFF );
+}
+static inline uint8_t mem_equals_4(const void *a, const void *b) {
+    return *(uint32_t*)a == *(uint32_t*)b;
+}
+
 #endif /* GENELFONKSIYONLAR_H_ */

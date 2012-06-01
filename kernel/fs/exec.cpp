@@ -20,7 +20,7 @@
 
 #include "../elf.h"
 #include "../task.h"
-#include "../fs/vfs.h"
+#include "fs.h"
 
 // task.cpp
 extern void task_free_vm_user(Task* t);
@@ -64,7 +64,7 @@ int init_user_stack(char *const argv[], addr_t *user_esp) {
 	return 0;
 }
 
-int load_program(File* f, Elf32_Ehdr *header, uint32_t *last_addr) {
+int load_program(file* f, Elf32_Ehdr *header, uint32_t *last_addr) {
 	int r;
 	Elf32_Phdr ph;
 	uint32_t old_pos;
@@ -73,7 +73,7 @@ int load_program(File* f, Elf32_Ehdr *header, uint32_t *last_addr) {
 	/* ilk program header'i (ph), binary'nin baslangici + ph offset */
 	f->fpos = header->phoff;
 	for (int i = 0 ; i < header->phnum ; i++) {
-		ASSERT( do_read(f, (char*)&ph, sizeof(Elf32_Phdr)) == sizeof(Elf32_Phdr) );
+		ASSERT( file_read(f, (char*)&ph, sizeof(Elf32_Phdr)) == sizeof(Elf32_Phdr) );
 		if (ph.type == Elf32_Phdr::Type_LOAD) {
 			/* programin bulunacagi bellek araligini ayir */
 			r = task_curr->pgdir.segment_alloc(uaddr2va(ph.vaddr), ph.memsz,
@@ -90,7 +90,7 @@ int load_program(File* f, Elf32_Ehdr *header, uint32_t *last_addr) {
 			/* dosyadan bellekte bulunacagi yere oku */
 			old_pos = f->fpos;
 			f->fpos = ph.offset;
-			r = do_read(f, (char*)uaddr2kaddr(ph.vaddr), ph.memsz);
+			r = file_read(f, (char*)uaddr2kaddr(ph.vaddr), ph.memsz);
 			ASSERT((uint32_t)r == ph.memsz);
 			f->fpos = old_pos;
 
@@ -110,7 +110,7 @@ int load_program(File* f, Elf32_Ehdr *header, uint32_t *last_addr) {
  */
 int do_execve(const char *path, char *const argv[]) {
 	int r;
-	File *f;
+	file *f;
 	Trapframe registers;
 	Elf32_Ehdr header;
 	addr_t last_addr;
@@ -118,10 +118,10 @@ int do_execve(const char *path, char *const argv[]) {
 	cli();
 
 	/* dosyayi readonly ac ve dosya headerini oku */
-	r = do_open(&f, path, 1);
+	r = file_open(path, 1, &f);
 	if (r < 0)
 		return r;
-	r = do_read(f, (char*)&header, sizeof(header));
+	r = file_read(f, (char*)&header, sizeof(header));
 	if (r < 0)
 		return r;
 
@@ -152,7 +152,7 @@ int do_execve(const char *path, char *const argv[]) {
 	if (r < 0)
 		return r;
 
-	do_close(f);
+	file_close(f);
 
 	/* heap alani */
 	task_curr->pgdir.start_brk = task_curr->pgdir.end_brk = last_addr;
@@ -191,7 +191,7 @@ SYSCALL_DEFINE2(execve, const char*, path, char *const*, argv) {
 	i = 0;
 	do {
 		_argv[i] = _a[i];
-		strncpy(_a[i], (char*)uaddr2kaddr((uint32_t)argv[i]), MAX_DIR_ENTRY_SIZE);
+		strncpy(_a[i], (char*)uaddr2kaddr((uint32_t)argv[i]), MAX_DIRENTRY_NAME_SIZE);
 		i++;
 	} while(argv[i] != NULL);
 	_argv[i] = NULL;

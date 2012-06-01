@@ -2,6 +2,7 @@
 #define INC_LIB_H_
 
 #include <types.h>
+#include <sys/dirent.h>
 
 typedef void (*sighandler_t)(int);
 
@@ -44,6 +45,9 @@ extern int mkdir(const char* pathname, int mode);
 extern int rmdir(const char* pathname);
 extern int creat(const char* pathname, int mode);
 extern int unlink(const char* pathname);
+extern DIR* opendir(const char *path);
+extern int closedir(DIR *dirp);
+extern struct dirent* readdir(DIR* dirp);
 
 /******************************
  * Shared Memory

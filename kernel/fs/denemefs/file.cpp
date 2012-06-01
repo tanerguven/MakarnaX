@@ -4,12 +4,12 @@
 
 #include "denemefs.h"
 
-static struct File_operations denemefs_file_op = {
+static struct file_operations denemefs_file_op = {
 	denemefs_read,
 	denemefs_write,
-	NULL,
-	denemefs_open,
-	denemefs_release
+	NULL, /* readdir */
+	NULL, /* open */
+	NULL /* release */
 };
 
 struct inode_operations denemefs_file_inode_op = {
@@ -24,12 +24,12 @@ struct inode_operations denemefs_file_inode_op = {
 };
 
 
-uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
+uint32_t denemefs_read(struct file *f, char *buf, size_t size) {
 	struct Deneme_inode *in = inode_to_deneme(f->inode);
 	unsigned int i;
 
 	if (in->mode.type != FileMode::FT_regular) {
-		// PANIC("tanimsiz durum");
+		print_info("denemefs not support non-regular files");
 		return -1;
 	}
 
@@ -41,7 +41,7 @@ uint32_t denemefs_read(struct File *f, char *buf, size_t size) {
 	return i;
 }
 
-uint32_t denemefs_write(struct File *f, const char *buf, size_t size) {
+uint32_t denemefs_write(struct file *f, const char *buf, size_t size) {
 	struct Deneme_inode *in = inode_to_deneme(f->inode);
 	unsigned int i;
 
@@ -54,16 +54,6 @@ uint32_t denemefs_write(struct File *f, const char *buf, size_t size) {
 	}
 
 	return i;
-}
-
-int denemefs_open(struct File *f) {
-	// print_info("denemefs_open ino %d\n", f->inode->ino);
-	return 0;
-}
-
-int denemefs_release(struct File *f) {
-	// print_info("denemefs_release\n");
-	return 0;
 }
 
 int denemefs_create(struct inode *i_dir, const char* name, int mode, struct inode *i_dest) {
@@ -103,6 +93,9 @@ int denemefs_unlink(struct inode *i_dir, const char* name) {
 	r = denemefs_lookup(i_dir, name, &inode);
 	if (r < 0)
 		return -1; // not exist
+
+	if (inode.mode.type != FileMode::FT_regular)
+		return -1; // not regular file
 
 	r = denemefs_remove_entry(i_dir, name);
 	ASSERT(r == 0); // lookup ile bulunabiliyorsa, olmak zorunda

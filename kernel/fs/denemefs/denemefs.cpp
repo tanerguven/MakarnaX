@@ -92,13 +92,16 @@ int denemefs_read_super(struct SuperBlock* sb) {
 	ASSERT(sb->dev == 123);
 	ASSERT(sb->fs_type == 123);
 
-	sb->root = (struct DirEntry*)kmalloc(sizeof(DirEntry));
-	sb->root->init();
+	sb->root = dirent_alloc();
 	sb->root->mounted = 1;
 	strcpy(sb->root->name, "");
 
-	sb->root->inode = (struct inode*)kmalloc(sizeof(struct inode));
-	sb->root->inode->init(0, sb, &denemefs_dir_inode_op, di[0].size);
+	sb->root->inode = inode_alloc();
+	struct inode *i = sb->root->inode;
+	i->ino = 0;
+	i->superblock = sb;
+	i->op = &denemefs_dir_inode_op;
+	i->size = di[0].size;
 
 	return 0;
 }
@@ -123,10 +126,10 @@ int denemefs_lookup(struct inode* i_dir, const char *name, struct inode *i_dest)
 			case FileMode::FT_regular:
 				i_dest->op = &denemefs_file_inode_op;
 				break;
-			case FileMode::FT_chrdev:
-				i_dest->dev = di[sd->no[i]].dev;
-				i_dest->op = &chrdev_inode_operations;
-				break;
+			// case FileMode::FT_chrdev:
+			// 	i_dest->dev = di[sd->no[i]].dev;
+			// 	i_dest->op = &chrdev_inode_operations;
+			// 	break;
 			default:
 				print_error("file type: %d\n", di[sd->no[i]].mode.type);
 				PANIC("Unknown file type");

@@ -61,28 +61,33 @@ int sem_getvalue(sem_t *sem, int *val) {
  * dirent
  ***************************/
 
-#include <dirent.h>
+#include <sys/dirent.h>
+
+/*
+ * malloc olmadigi icin bir hile :D
+ * her 16 opendir isleminde bir eski veri kaybolur
+ */
+static DIR dirs[16];
+static uint32_t dirs_i = 0;
 
 asmlink DIR* opendir(const char *path) {
-	int r;
+	DIR *dirp = &dirs[dirs_i++ % 16];
 
-	r = open(path, 0, 0);
-	if (r < 0)
+	dirp->dd_fd = open(path, 1, 0);
+	if (dirp->dd_fd < 0) {
+		dirs_i--;
 		return NULL;
+	}
 
-	return NULL;
+	return dirp;
 }
 
 asmlink int closedir(DIR *dirp) {
 	int r;
 
-	r = close(dirp->fd);
+	r = close(dirp->dd_fd);
 	if (r < 0)
 		return r;
 
 	return 0;
-}
-
-asmlink struct dirent* readdir(DIR *dirp) {
-	return NULL;
 }

@@ -7,8 +7,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <dirent.h>
 #include <sys/stat.h>
+#include <sys/dirent.h>
 
 #include "test.h"
 
@@ -132,26 +132,18 @@ int writefile() {
 	 * dosya1 isimli dosyayi 2 kere ro ac ve birinde yazip digerinde oku
 	 * dosya readonly oldugu icin yazmamali
 	 */
-	printf("open dosya1 R\n");
 	fd1 = open("dosya1", 1, 0);
-	printf("fd1: %d\n", fd1);
-	if (fd1 < 0)
-		return fd1;
+	ASSERT3(fd1, >=, 0);
 
 	fd2 = open("dosya1", 1, 0);
-	printf("fd2: %d\n", fd2);
-	if (fd2 < 0)
-		return fd2;
+	ASSERT3(fd2, >=, 0);
 
 	r = write(fd1, yazi, strlen(yazi));
-	printf("r %d\n", r);
-	// TODO: assert(r == -1);
+	ASSERT3(r, ==, -1);
 
 	r = read(fd2, buf, 10);
-	printf("r %d\n", r);
-	printf("buf: %s\n", buf);
-	// TODO: assert(r == 7);
-	// TODO: assert(buf == data 1);
+	ASSERT3(r, ==, 10);
+	ASSERT(strncmp(buf, yazi, 10) != 0);
 
 	close(fd1);
 	close(fd2);
@@ -160,29 +152,21 @@ int writefile() {
 	printf("\n");
 
 	/*
-	 * dosya2 isimli dosyayi rw ve ro ac
+	 * dosya2 isimli dosyayi w ve ro ac
 	 * dosya rw oldugu icin yazilabilmeli
 	 */
-	printf("open dosya2 W\n");
 	fd1 = open("dosya2", 2, 0);
-	printf("fd1: %d\n", fd1);
-	if (fd1 < 0)
-		return fd1;
+	ASSERT3(fd1, >=, 0);
 
 	fd2 = open("dosya2", 1, 0);
-	printf("fd2: %d\n", fd2);
-	if (fd2 < 0)
-		return fd2;
+	ASSERT3(fd2, >=, 0);
 
 	r = write(fd1, yazi, strlen(yazi));
-	printf("r %d\n", r);
-	// TODO: assert(r == -1);
+	ASSERT3(r, !=, -1);
 
-	r = read(fd2, buf, -1);
-	printf("r %d\n", r);
-	printf("buf: %s\n", buf);
-	// TODO: assert(r == 100);
-	// TODO: assert(buf == yazi);
+	r = read(fd2, buf, strlen(yazi));
+	ASSERT3(r, ==, strlen(yazi));
+	ASSERT(strcmp(buf, yazi) == 0);
 
 	printf("rw file write OK\n");
 	close(fd1);
@@ -191,16 +175,14 @@ int writefile() {
 	printf("\n");
 
 	/* dosya1'i w ac */
-	printf("open dosya1 W\n");
 	fd1 = open("dosya1", 2, 0);
-	printf("fd1: %d\n", fd1);
-	//TODO: assert(fd1 > 0)
+	ASSERT3(fd1, <, 0);
 
 	/* dosya1'i rw ac */
-	printf("open dosya1 RW\n");
-	fd1 = open("dosya1", 2, 0);
-	printf("fd1: %d\n", fd1);
-	//TODO: assert(fd1 < 0)
+	fd1 = open("dosya1", 3, 0);
+	ASSERT3(fd1, <, 0);
+
+	printf("ro file open rw error OK\n");
 
 	return 0;
 }
@@ -210,9 +192,10 @@ int test_readdir() {
 	struct dirent *dirent;
 
 	dir = opendir(".");
+	ASSERT3((uint32_t)dir, !=, 0);
 
 	while((dirent = readdir(dir))) {
-		printf("%s\n",dirent->d_name);
+		printf("%s\n", dirent->d_name);
 	}
 
 	closedir(dir);
@@ -241,6 +224,7 @@ int test_chdir() {
 		printf("r %d\n", r);
 		return -1;
 	}
+	printf("--\n");
 	getcwd(buf, 256);
 	printf("cwd %s\n\n", buf);
 
@@ -316,53 +300,54 @@ int mkdir_rmdir() {
 
 	/* / ro, home silinemez */
 	r = rmdir("/home");
-	assertNotEquals(0, r);
+	ASSERT3(r, <, 0);
 
 	/* /home/dir2 olustur ve sil */
 	r = mkdir("/home/dir2", 1);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
+
 	r = rmdir("/home/dir2");
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
 	/* /home/dir2 silindi, erisilemez */
 	r = chdir("/home/dir2");
-	assertNotEquals(0, r);
+	ASSERT3(r, <, 0);
 
 	/* /home/dir2 tekrar olustur, chdir ve sil */
 	r = mkdir("/home/dir2", 1);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 	r = chdir("/home/dir2");
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 	r = rmdir("/home/dir2");
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
 	/* silinmis /home/dir2 ye chdir ve sil */
 	r = chdir("/home/dir2");
-	assertNotEquals(0, r);
+	ASSERT3(r, <, 0);
 	r = rmdir("/home/dir2");
-	assertNotEquals(0, r);
+	ASSERT3(r, <, 0);
 
 	/* ic ice dizin */
 	r = mkdir("/home/dir1", 3);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 	r = mkdir("/home/dir1/dir11", 1);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
 	/* ro dizine (/home/dir1/dir11), dizin olusturlamaz */
 	r = mkdir("/home/dir1/dir11/dir111", 1);
-	assertNotEquals(0, r);
+	ASSERT3(r, <, 0);
 
 	/* ayni isimde dizinler */
 	r = mkdir("/home/home", 3);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 	r = mkdir("/home/home/dir1", 3);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 	r = rmdir("/home/home/dir1");
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
-	/* // FIXME: bos olmayan dizinler silinmemeli */
-	/* r = rmdir("/home/dir1"); */
-	/* asssertNotEquals(0, r); */
+	// FIXME: bos olmayan dizinler silinmemeli
+	r = rmdir("/home/dir1");
+	ASSERT3(r, <, 0);
 
 	printf("mkdir_rmdir OK\n");
 
@@ -375,54 +360,53 @@ int creat_unlink() {
 	char buf[256];
 
 	r = creat("/home/deneme.txt", 3);
-	if (r < 0)
-		printf("hata %s:%d\n", __FILE__, __LINE__);
+	ASSERT3(r, >=, 0);
 
 	/* olusturulan dosyaya birseyler yaz */
 	fd = open("/home/deneme.txt", 3, 0);
-	assertNotLess(fd, 0);
+	ASSERT3(fd, >=, 0);
 	r = write(fd, "deneme", 6);
-	assertEquals(6, r);
+	ASSERT3(r, ==, 6);
 	r = close(fd);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
 	/* olusturulan dosyayi ro modunda ac */
 	fd = open("/home/deneme.txt", 1, 0);
-	assertNotLess(r, 0);
+	ASSERT3(fd, >=, 0);
 
 	/* yazmaya calis */
 	r = write(fd, "aaaaa", 5);
-	assertNotEquals(5, r);
+	ASSERT3(r, ==, -1);
 	/* oku */
 	r = read(fd, buf, 256);
-	assertEquals(256, r);
-	assertEquals(0, strcmp(buf, "deneme"));
+	ASSERT3(r, ==, 256);
+	ASSERT(strcmp(buf, "deneme") == 0);
 	r = close(fd);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
 	/* sil */
 	r = unlink("/home/deneme.txt");
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
 	/* silinmis dosyayi acmaya calis */
 	fd = open("/home/deneme.txt", 1, 0);
-	assertNotLess(-1, fd);
+	ASSERT3(fd, <, 0);
 
 	/* ro dosya olustur */
 	r = creat("/home/ro.txt", 1);
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
 	/* ro dosyayi rw olarak acmaya calis */
 	fd = open("/home/ro.txt", 3, 0);
-	assertNotLess(r, 0);
+	ASSERT3(fd, <, 0);
 
 	/* ro dosyayi sil */
 	r = unlink("/home/ro.txt");
-	assertNotLess(r, 0);
+	ASSERT3(r, ==, 0);
 
 	/* silinmis ro dosyayi acmaya calis */
 	fd = open("/home/ro.txt", 1, 0);
-	assertNotLess(-1, fd);
+	ASSERT3(fd, <, 0);
 
 	return 0;
 }

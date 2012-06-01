@@ -16,47 +16,26 @@
  */
 
 #include <kernel/kernel.h>
-#include <kernel/syscall.h>
 
-#include <sys/stat.h>
+#include "fs.h"
 
-#include "../task.h"
-#include "vfs.h"
-
-// FIXME: path size
-
-int permission(struct inode* inode, int flags) {
-
-	if (inode->op->permission && inode->op->permission(inode, flags))
-		return 1;
-
-	if ((inode->mode.get_mode() & flags) == flags)
-		return 1;
-
-	return 0;
-}
-
-
-int do_open(File **f, const char *path, int flags) {
-	DirEntry *file_dentry;
+int file_open(const char *path, int flags, struct file **f) {
+	struct inode *file_inode;
 	int r;
-	File *file;
+	struct file *file;
 
 	ASSERT_int_disable();
 
-	r = find_dir_entry(path, -1, &file_dentry);
+	r = inode_find(path, -1, &file_inode);
 	if (r < 0)
 		return r;
 
-
-	if ( ! permission(file_dentry->inode, flags) )
+	if ( ! inode_permission(file_inode, flags) )
 		return -1; // FIXME: erisim izni hatasi
 
-	file = (File*)kmalloc(sizeof(File));
+	file = (struct file*)kmalloc(sizeof(struct file));
 
-	strcpy(file->path, "/");
-	strcpy(&file->path[1], path);
-	file->inode = file_dentry->inode;
+	file->inode = inode_dup(file_inode);
 	file->fo = file->inode->op->default_file_ops;
 	file->fpos = 0;
 	file->flags = flags;
@@ -66,79 +45,23 @@ int do_open(File **f, const char *path, int flags) {
 			PANIC("FIXME");
 	}
 
-	// FIXME: --
-	file->inode->ref_count++;
-
 	*f = file;
 	return r;
 }
 
-
-void do_close(File *f) {
+int file_close(struct file *f) {
 	ASSERT(f->inode->ref_count > 0);
-
-	// FIXME: --
-	f->inode->ref_count--;
 
 	if (f->fo->release)
 		f->fo->release(f);
 
+	inode_free(f->inode);
 	kfree(f);
+
+	return 0;
 }
 
-/* open, opendir cagrilari */
-SYSCALL_DEFINE2(open, const char*, path, int, flags) {
-	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
-	int fd;
-	int r;
-	File *f;
-
-	uint32_t eflags = eflags_read();
-	cli();
-
-	r = do_open(&f, path, flags);
-	if (r < 0)
-		return SYSCALL_RETURN(r);
-
-	for (fd = 0 ; fd < TASK_MAX_FILE_NR ; fd++) {
-		if (task_curr->files[fd] == NULL) {
-			task_curr->files[fd] = f;
-			// FIXME: --
-			f->inode->ref_count++;
-			break;
-		}
-	}
-
-	if (fd == TASK_MAX_FILE_NR)
-		PANIC("FIXME");
-
-/*
- * TODO: opendir durumu ?
- */
-
-	eflags_load(eflags);
-	return SYSCALL_RETURN(fd);
-}
-SYSCALL_END(open)
-
-
-SYSCALL_DEFINE1(close, unsigned int, fd) {
-	uint32_t eflags = eflags_read();
-	cli();
-
-	if (task_curr->files[fd] == NULL)
-		return SYSCALL_RETURN(-1);
-
-	do_close(task_curr->files[fd]);
-	task_curr->files[fd] = NULL;
-
-	eflags_load(eflags);
-	return SYSCALL_RETURN(0);
-}
-SYSCALL_END(close)
-
-
-int do_read(File *f, char *buf, size_t size) {
+int file_read(struct file *f, char *buf, size_t size) {
 	int r;
 
 	if ((f->flags & 1) != 1)
@@ -152,18 +75,7 @@ int do_read(File *f, char *buf, size_t size) {
 	return r;
 }
 
-SYSCALL_DEFINE3(read, unsigned int, fd, char*, buf, size_t, size) {
-	buf = (char*)user_to_kernel_check((uint32_t)buf, size, 1);
-	size_t r;
-
-	// TODO: olmayan dosya girilirse hata ver
-	r = do_read(task_curr->files[fd], buf, size);
-	return SYSCALL_RETURN(r);
-}
-SYSCALL_END(read)
-
-
-int do_write(File *f, const char *buf, size_t size) {
+int file_write(struct file *f, const char *buf, size_t size) {
 	int r;
 
 	if ((f->flags & 2) != 2)
@@ -177,149 +89,67 @@ int do_write(File *f, const char *buf, size_t size) {
 	return r;
 }
 
-SYSCALL_DEFINE3(write, unsigned int, fd, const char*, buf, size_t, size) {
-	buf = (const char*)user_to_kernel_check((uint32_t)buf, size, 1);
-	size_t r;
-
-	// TODO: olmayan dosya girilirse hata ver
-	r = do_write(task_curr->files[fd], buf, size);
-	return SYSCALL_RETURN(r);
-}
-SYSCALL_END(write)
-
-
-SYSCALL_DEFINE2(stat, char*, path, struct stat*, stat) {
-	path = (char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 1);
-	stat = (struct stat*)user_to_kernel_check((uint32_t)stat,sizeof(struct stat), 1);
-
-	struct DirEntry *dentry;
-	int r;
-	uint32_t eflags = eflags_read();
-	cli();
-
-	r = find_dir_entry(path, -1, &dentry);
-
-	if (r < 0)
-		return SYSCALL_RETURN(r);
-
-	stat->st_dev = 123;
-	stat->st_ino = dentry->inode->ino;
-	stat->st_rdev = 0;
-	stat->st_size =  dentry->inode->size;
-
-	eflags_load(eflags);
-	return SYSCALL_RETURN(0);
-}
-SYSCALL_END(stat)
-
-
-struct File* dup_file(struct File *src) {
-	struct File *f = (struct File*)kmalloc(sizeof(struct File));
-	*f = *src;
-	f->inode->ref_count++;
+struct file* file_dup(struct file *f) {
+	struct file *file_new = (struct file*)kmalloc(sizeof(struct file));
+	*file_new = *f;
+	file_new->inode->ref_count++;
 	return f;
 }
 
-/* task_curr'in tum dosyalarini kapatir (task_free'de kullanim icin) */
-void task_curr_free_files() {
-	for (int i = 0 ; i < TASK_MAX_FILE_NR ; i++) {
-		if (task_curr->files[i]) {
-			do_close(task_curr->files[i]);
-			task_curr->files[i] = NULL;
-		}
-	}
-}
-
-
-int do_creat(const char *path, int mode) {
-	DirEntry *dir;
+int unlink(const char *path, int file_type) {
+	struct inode *dir_inode;
 	int r;
 	const char *name;
-	struct inode newinode;
 
-	ASSERT_int_disable();
-
-	r = find_file_and_dir(path, &dir, &name);
+	r = inode_find2(path, &dir_inode, &name);
 	if (r < 0)
 		return -1;
 
-	if ( ! permission(dir->inode, 3) )
+	inode_lock(dir_inode);
+
+	if ( ! inode_permission(dir_inode, 3) ) {
+		r = -1; // FIXME: erisim izni hatasi
+		goto unlink_end;
+	}
+
+	if (file_type == FileMode::FT_regular)
+		r = dir_inode->op->unlink(dir_inode, name);
+	else if (file_type == FileMode::FT_dir)
+		r = dir_inode->op->rmdir(dir_inode, name);
+	if (r < 0)
+		goto unlink_end;
+
+	r = 0;
+	dirent_cache_remove(path);
+
+unlink_end:
+	inode_unlock(dir_inode);
+	return r;
+}
+
+int create(const char *path, FileMode fmode, int dev) {
+	struct inode *i_dir;
+	struct inode newinode;
+	int r;
+	const char *name;
+
+	r = inode_find2(path, &i_dir, &name);
+	if (r < 0)
+		return -1;
+
+	if ( ! inode_permission(i_dir, 3) )
 		return -2; // FIXME: erisim izni hatasi
 
-	r = dir->inode->op->create(dir->inode, name, mode, &newinode);
+	if (fmode.type == FileMode::FT_regular)
+		r = i_dir->op->create(i_dir, name, fmode.mode(), &newinode);
+	else if (fmode.type == FileMode::FT_dir)
+		r = i_dir->op->mkdir(i_dir, name, fmode.mode());
+	else {
+		print_info("create unknown file type: %d\n", fmode.type);
+		return -4;
+	}
+
 	if (r < 0)
-		return -3;
-
-	return 0;
-}
-
-SYSCALL_DEFINE2(creat, const char*, path, int, mode) {
-	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
-	int r;
-
-	uint32_t eflags = eflags_read();
-	cli();
-
-	r = do_creat(path, mode);
-
-	eflags_load(eflags);
-	return SYSCALL_RETURN(r);
-}
-SYSCALL_END(creat)
-
-
-int do_unlink(const char *path) {
-	DirEntry *file_dentry;
-	int r;
-	const char *name;
-
-	ASSERT_int_disable();
-
-	r = find_file_and_dir(path, &file_dentry, &name);
-	if (r < 0)
-		return -1;
-
-	if ( ! permission(file_dentry->inode, 3) )
-		return -1; // FIXME: erisim izni hatasi
-
-	r = file_dentry->inode->op->unlink(file_dentry->inode, name);
-	if (r < 0)
-		return -1;
-
-	remove_from_dir_entry_cache(path);
-
-	return 0;
-}
-
-SYSCALL_DEFINE1(unlink, const char*, path) {
-	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
-	int r;
-
-	uint32_t eflags = eflags_read();
-	cli();
-
-	r = do_unlink(path);
-
-	eflags_load(eflags);
-	return SYSCALL_RETURN(r);
-}
-SYSCALL_END(rmdir)
-
-
-int do_mknod(const char* pathname, FileMode mode, int dev) {
-	DirEntry *dir;
-	const char *name;
-	int r;
-
-	ASSERT_int_disable();
-
-	r = find_file_and_dir(pathname, &dir, &name);
-	if (r < 0)
-		return -1;
-
-	r = dir->inode->op->mknod(dir->inode, name, mode, dev);
-	if (r < 0)
-		return -1;
-
+		return -3; // FIXME: error no
 	return 0;
 }

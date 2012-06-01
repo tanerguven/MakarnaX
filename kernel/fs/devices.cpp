@@ -2,19 +2,20 @@
 #include <kernel/kernel.h>
 #include <string.h>
 
-#include "vfs.h"
+#include "fs.h"
 
 #define MAX_CHRDEV 64
 
 struct Device {
 	const char *name;
-	const File_operations *file_op;
+	const file_operations *file_op;
 };
 
-// FIXME: sifirla
-static struct Device chrdevs[MAX_CHRDEV];
+static struct Device chrdevs[MAX_CHRDEV] = {
+  { NULL, NULL }
+};
 
-int register_chrdev(uint32_t chrdev_no, const char* name, const File_operations *file_op) {
+int register_chrdev(uint32_t chrdev_no, const char* name, const file_operations *file_op) {
 	if (chrdev_no >= MAX_CHRDEV)
 		return -1; // hatali device no
 	if (chrdevs[chrdev_no].file_op)
@@ -36,7 +37,7 @@ int unregister_chrdev(int chrdev_no, const char *name) {
 	return 0;
 }
 
-int chrdev_open(struct File *fp) {
+int chrdev_open(struct file *fp) {
 	int dev = fp->inode->dev;
 	if (dev >= MAX_CHRDEV)
 		return -1;
@@ -47,7 +48,7 @@ int chrdev_open(struct File *fp) {
 	return 0;
 }
 
-static const File_operations chrdev_file_op = {
+static const file_operations chrdev_file_op = {
 	NULL, /* read */
 	NULL, /* write */
 	NULL, /* readdir */
@@ -67,18 +68,18 @@ const inode_operations chrdev_inode_operations = {
 };
 
 
-uint32_t stdio_read(struct File *f, char *buf, size_t size) {
+uint32_t stdio_read(struct file *f, char *buf, size_t size) {
 
 	return 0;
 }
 
-uint32_t stdio_write(struct File* f, const char *buf, size_t size) {
+uint32_t stdio_write(struct file* f, const char *buf, size_t size) {
 	// FIXME: --
 	__kernel_print("%s", buf);
 	return size;
 }
 
-const File_operations stdout_operations = {
+const file_operations stdout_operations = {
 	NULL, /* read */
 	stdio_write,
 	NULL, /* readdir */
@@ -86,7 +87,7 @@ const File_operations stdout_operations = {
 	NULL, /* release */
 };
 
-const File_operations stdin_operations = {
+const file_operations stdin_operations = {
 	stdio_read, /* read */
 	NULL, /* write */
 	NULL, /* readdir */

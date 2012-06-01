@@ -113,14 +113,11 @@ Task* find_runnable_task() {
 	}
 
 	popif();
-	ASSERT_int_enable();
 
 	return task_next;
 }
 
 void schedule() {
-
-	ASSERT_int_enable();
 
 	if (task_curr->run_before_switch_f) {
 		task_curr->run_before_switch_f(task_curr->run_before_switch_f_p);
@@ -136,7 +133,7 @@ void schedule() {
  */
 	check_alarm();
 	check_sleep_list();
-	ASSERT_int_enable();
+
 	task_next = find_runnable_task();
 
 	if (!task_next) {
@@ -173,6 +170,7 @@ SYSCALL_DEFINE0(pause) {
 	 * http://www.kernel.org/doc/man-pages/online/pages/man2/pause.2.html
 	 */
 	SYSCALL_RETURN(-1);
+	ASSERT_int_enable();
 
 	schedule();
 }
@@ -270,6 +268,8 @@ void sleep_interruptible(TaskList_t *list) {
 	task_curr->state = Task::State_interruptible;
 
 	popif();
+	ASSERT_int_enable();
+
 	schedule();
 }
 

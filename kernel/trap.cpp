@@ -264,7 +264,7 @@ asmlink void trap_handler(Trapframe *tf) {
 	PANIC("kernel mode trap");
 return_trap_handler:
 	/* butun pushcli yapilan yerlerden popif yapilmis olmali */
-	ASSERT(task_curr->n_cli == 0);
+	ASSERT3(task_curr->n_cli, == ,0);
 }
 
 void do_error(Trapframe* tf) {

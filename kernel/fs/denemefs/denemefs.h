@@ -1,7 +1,7 @@
 #ifndef _DENEMEFS_H_
 #define _DENEMEFS_H_
 
-#include "../vfs.h"
+#include "../fs.h"
 
 #define Deneme_subdentry_count 16
 
@@ -28,15 +28,16 @@ extern int denemefs_create(struct inode *i_dir, const char* name, int mode, stru
 extern int denemefs_unlink(struct inode *i_dir, const char* name);
 extern int denemefs_mkdir(struct inode *i_dir, const char *name, int mode);
 extern int denemefs_rmdir(struct inode *i_dir, const char *name);
-extern int denemefs_mknod(struct inode *i_dir, const char *name, FileMode mode, int dev);
+extern int denemefs_mknod(struct inode *i_dir, const char *name, FileMode fmode, int dev);
 extern struct inode_operations denemefs_file_inode_op;
 extern struct inode_operations denemefs_dir_inode_op;
 
 /* file operations */
-extern uint32_t denemefs_read(struct File *f, char *buf, size_t size);
-extern uint32_t denemefs_write(struct File *f, const char *buf, size_t size);
-extern int denemefs_open(struct File *f);
-extern int denemefs_release(struct File *f);
+extern uint32_t denemefs_read(struct file *f, char *buf, size_t size);
+extern uint32_t denemefs_write(struct file *f, const char *buf, size_t size);
+extern int denemefs_open(struct file *f);
+extern int denemefs_release(struct file *f);
+extern int denemefs_readdir(struct file *f, struct dirent_user *udirent);
 
 extern int denemefs_read_super(struct SuperBlock* sb);
 

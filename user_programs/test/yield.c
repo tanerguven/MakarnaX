@@ -3,6 +3,7 @@
 #endif
 
 #include <stdio.h>
+#include <string.h>
 
 int y1();
 int y2();

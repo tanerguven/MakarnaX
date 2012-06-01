@@ -1,6 +1,8 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
+#define _KERNEL_SRC_
+
 #include <types.h>
 
 // panic.cpp
