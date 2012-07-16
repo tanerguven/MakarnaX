@@ -93,7 +93,7 @@ struct file* file_dup(struct file *f) {
 	struct file *file_new = (struct file*)kmalloc(sizeof(struct file));
 	*file_new = *f;
 	file_new->inode->ref_count++;
-	return f;
+	return file_new;
 }
 
 int unlink(const char *path, int file_type) {
