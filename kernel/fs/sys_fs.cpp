@@ -59,8 +59,10 @@ SYSCALL_END(open)
 SYSCALL_DEFINE1(close, unsigned int, fd) {
 	pushcli();
 
-	if (task_curr->fs.files[fd] == NULL)
+	if (task_curr->fs.files[fd] == NULL) {
+		popif();
 		return SYSCALL_RETURN(-1);
+	}
 
 	file_close(task_curr->fs.files[fd]);
 	task_curr->fs.files[fd] = NULL;
