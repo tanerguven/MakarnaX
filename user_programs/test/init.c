@@ -11,15 +11,15 @@ int main(int argc, char** argv) {
 	int size;
 	int i, i_line = 0;
 
-	fd = open("/init_script", 1, 0);
+	fd = open("/initrd/init_programs", 1, 0);
 	if (fd < 0) {
-		printf("/init_script not found\n");
+		printf("/initrd/init_programs not found\n");
 		return -1;
 	}
 
 	size = read(fd, buf, 2048);
 	if (size < 0) {
-		printf("/init_script okunamadi\n");
+		printf("/initrd/init_programs okunamadi\n");
 		return -1;
 	}
 

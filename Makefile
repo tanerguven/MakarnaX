@@ -3,14 +3,11 @@ include Makefile.in
 DIRS = \
 	kernel \
 	lib \
-	user_programs \
 
 OBJS = \
 	kernel/kernel.O \
 	lib/lib.O \
 	lib/string/string.O \
-
-PROGRAMS = $(wildcard user_programs/test/*.bin)
 
 ######################################
 #	env variables
@@ -32,7 +29,7 @@ rm_objs:
 kernel: dirs
 	@mkdir -p bin
 	@echo [ld] bin/kernel
-	@$(LD) -Tscripts/link.ld -o"bin/kernel" $(OBJS) $(LIBS) -b binary $(PROGRAMS) init_programs
+	@$(LD) -Tscripts/link.ld -o"bin/kernel" $(OBJS) $(LIBS)
 	@objdump -S bin/kernel > bin/kernel.asm
 
 clean-kernel:
@@ -45,7 +42,14 @@ usr_bin:
 	cd user_programs/bin; make clean; make;
 
 user:
-	cd user_programs; make clean; make;
+	cd user_programs; make;
+
+clean-user:
+	cd user_programs; make clean;
+
+initrd:
+	cp -f init_programs bin/initrd
+	cd bin; tar cf initrd.tar initrd
 
 linux:
 	cd user_programs/test/linux; make;
@@ -98,7 +102,7 @@ tmp-dir:
 	mkdir tmp
 
 qemu: tmp-dir kernel #image
-	$(QEMU) -kernel bin/kernel -serial mon:stdio -serial file:tmp/serial2
+	$(QEMU) -kernel bin/kernel -initrd bin/initrd.tar -serial mon:stdio -serial file:tmp/serial2
 
 qemu-gdb: kernel #image
 	$(QEMU) -kernel bin/kernel -serial mon:stdio -S -s

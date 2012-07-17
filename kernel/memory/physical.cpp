@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Taner Guven <tanerguven@gmail.com>
+ * Copyright (C) 2011,2012 Taner Guven <tanerguven@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ namespace PreVirtMem {
 struct Page* pages;
 uint32_t pages_nr;
 FreePageList freePageList;
+uint32_t initrd_start = 0, initrd_end = 0;
 
 /*
  * grub multiboot bilgilerini kullanarak belleğin boyutunu tespit eder
@@ -36,8 +37,24 @@ FreePageList freePageList;
  * boş belleğin başlangıç noktasını, PrePaging'deki değişkene atar
  */
 void detect_memory() {
+	if (_multiboot_info->mods_count == 1) {
+		multiboot_module_t *a = (multiboot_module_t*)_multiboot_info->mods_addr;
+		initrd_start = a[0].mod_start;
+		initrd_end = a[0].mod_end;
+		print_info(">> initrd: %08x - %08x\n", initrd_start, initrd_end);
+	} else if (_multiboot_info->mods_count > 1) {
+		PANIC("birden fazla initrd desteklenmiyor");
+	} else {
+		print_info(">> initrd not found\n");
+	}
+
 	/* pages'i kernelin bittiği noktadan başlat */
-	pages = (Page*)roundUp(&__kernel_end);
+	if (initrd_end > (uint32_t)&__kernel_end) {
+		pages = (Page*)roundUp(initrd_end);
+	} else {
+		pages = (Page*)roundUp(&__kernel_end);
+	}
+
 	/* multiboot bilgisinden ram boyutunu okuyoruz ve page sayısını hesaplıyoruz */
     /* (1<<20) = 1MB = lowmem */
 	uint32_t physicalEnd = (_multiboot_info->mem_upper<<10) + (1<<20);

@@ -1,5 +1,8 @@
 #$(D) -> ".." "../.."
 
+BIN_FOLDER = $(D)/bin
+INITRD_BIN_FOLDER = $(D)/bin/initrd/bin
+
 M = -m32
 
 ASFLAGS = $(M) -I$(D)/include

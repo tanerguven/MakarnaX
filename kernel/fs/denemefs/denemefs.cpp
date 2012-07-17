@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "denemefs.h"
-#include "../../test_programs.h"
 
 struct Deneme_inode di[100];
 
@@ -11,12 +10,44 @@ struct Deneme_inode* inode_to_deneme(struct inode *inode) {
 	return &di[inode->ino];
 }
 
+#include <tar.h>
+extern uint32_t initrd_start, initrd_end;
+
+void mount_initrd(struct inode *root) {
+	int i;
+	int r;
+	uint32_t address = initrd_start;
+
+	for (i = 0; ; i++) {
+		struct inode inode;
+		struct tar_header *header = (struct tar_header *)address;
+		const char *name = strrchr(header->name, '/')+1;
+
+		print_info("%s %c\n", header->name, header->typeflag[0]);
+
+		if (header->name[0] == '\0')
+			break;
+		unsigned long size = tar_getsize(header->size);
+
+		if (header->typeflag[0] == '0') {
+			r = denemefs_create(root, name, 1, &inode);
+			ASSERT(r == 0);
+			di[inode.ino].data = (void*)(address+512);
+			di[inode.ino].size = size;
+		}
+
+		address += ((size / 512) + 1) * 512;
+		if (size % 512)
+			address += 512;
+	}
+}
+
 /*
  * RAM uzerinde saklanan sahte bir dosya sistemi olusturuyoruz
  */
 void denemefs_init() {
 	unsigned int i;
-	struct inode root_inode, dir1_inode, bin_inode, newinode;
+	struct inode root_inode, dir1_inode, bin_inode, newinode, initrd_inode;
 	int r;
 	Deneme_inode *in;
 
@@ -58,32 +89,14 @@ void denemefs_init() {
 	r = denemefs_mkdir(&dir1_inode, "dir11", 3);
 	ASSERT(r == 0);
 
-	/* /bin */
-	r = denemefs_mkdir(&root_inode, "bin", 1);
-	ASSERT(r == 0);
-	r = denemefs_lookup(&root_inode, "bin", &bin_inode);
-	ASSERT(r == 0);
-
-	/* /bin/ * */
-	ASSERT(nr_test_programs < Deneme_subdentry_count);
-	for (i = 0 ; i < nr_test_programs ; i++) {
-		r = denemefs_create(&bin_inode, test_programs[i].name, 1, &newinode);
+	/* /initrd */
+	if (initrd_start) {
+		r = denemefs_mkdir(&root_inode, "initrd", 1);
 		ASSERT(r == 0);
-		/* kernel'e gomulu dosyalari map et */
-		in = inode_to_deneme(&newinode);
-		kfree(in->data);
-		in->data = test_programs[i].addr;
-		in->size = (uint32_t)test_programs[i].end - (uint32_t)test_programs[i].addr;
+		r = denemefs_lookup(&root_inode, "initrd", &initrd_inode);
+		ASSERT(r == 0);
+		mount_initrd(&initrd_inode);
 	}
-
-	/* /init_script */
-	r = denemefs_create(&root_inode, "init_script", 1, &newinode);
-	ASSERT(r == 0);
-	/* kernel gomulu init_programs dosyasini map et */
-	in = inode_to_deneme(&newinode);
-	kfree(in->data);
-	in->data = &_binary_init_programs_start;
-	in->size = (uint32_t)&_binary_init_programs_size;
 
 	print_info(">> denemefs init OK\n");
 }

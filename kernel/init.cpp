@@ -18,7 +18,6 @@
 #include <kernel/kernel.h>
 #include <asm/x86.h>
 
-#include "test_programs.h"
 #include "memory/physical.h"
 
 extern void init_console();
@@ -111,13 +110,12 @@ void kernel_task() {
 }
 
 void init_task() {
-	int r;
 	char* argv[1] = { NULL };
 
 	print_info(">> init_task started\n");
 
-	r = do_execve("/bin/init", argv);
-	ASSERT(r == 0);
+	do_execve("/initrd/init", argv);
+	PANIC("/initrd/init baslatilamadi");
 }
 
 
@@ -153,34 +151,4 @@ void run_kernel_test(const char *name) {
 		PANIC("ktest not found");
 	ktest->function();
 	PANIC("kernel test finished");
-}
-
-/******************************
- * Test programlari
- ******************************/
-
-const TestProgram test_programs[] = {
-	{ "yield", &TEST_PROGRAM(yield), &TEST_PROGRAM_END(yield) },
-	{ "hello", &TEST_PROGRAM(hello), &TEST_PROGRAM_END(hello) },
-	{ "divide_error", &TEST_PROGRAM(divide_error), &TEST_PROGRAM_END(divide_error) },
-	{ "forktest", &TEST_PROGRAM(forktest), &TEST_PROGRAM_END(forktest) },
-	{ "dongu", &TEST_PROGRAM(dongu), &TEST_PROGRAM_END(dongu) },
-	{ "sys_dongu", &TEST_PROGRAM(sys_dongu), &TEST_PROGRAM_END(sys_dongu) },
-	{ "signaltest", &TEST_PROGRAM(signaltest), &TEST_PROGRAM_END(signaltest) },
-	{ "ipctest", &TEST_PROGRAM(ipctest), &TEST_PROGRAM_END(ipctest) },
-	{ "processmemtest", &TEST_PROGRAM(processmemtest),
-	  &TEST_PROGRAM_END(processmemtest) },
-	{ "kill", &TEST_PROGRAM(kill), &TEST_PROGRAM_END(kill) },
-	{ "fs", &TEST_PROGRAM(fs), &TEST_PROGRAM_END(fs) },
-	{ "init", &TEST_PROGRAM(init), &TEST_PROGRAM_END(init) },
-	{ "hello_newlib", &TEST_PROGRAM(hello_newlib), &TEST_PROGRAM_END(hello_newlib) },
-};
-const size_t nr_test_programs = sizeof(test_programs)/sizeof(test_programs[0]);
-
-const TestProgram *test_program(const char *name) {
-	for (unsigned int i = 0 ; i < nr_test_programs ; i++) {
-		if ( strcmp(test_programs[i].name, name) == 0 )
-			return &test_programs[i];
-	}
-	return NULL;
 }

@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include <sys/dirent.h>
 
-#include "test.h"
+#include "include/test.h"
 
 int openfile();
 int readfile();

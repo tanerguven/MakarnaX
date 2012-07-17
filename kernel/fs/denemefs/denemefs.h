@@ -3,7 +3,7 @@
 
 #include "../fs.h"
 
-#define Deneme_subdentry_count 16
+#define Deneme_subdentry_count 56
 
 struct Deneme_subdentry {
 	int n; // dentry count

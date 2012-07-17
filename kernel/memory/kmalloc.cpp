@@ -61,7 +61,7 @@ void *kmalloc(size_t size) {
 	FreeBlock *b = NULL;
 
 	if (size > (2048 - sizeof(BlockHeader))) {
-		print_warning(">> kmalloc icin cok buyuk\n");
+		print_warning(">> kmalloc icin cok buyuk: %d byte\n", size);
 		return NULL;
 	}
 

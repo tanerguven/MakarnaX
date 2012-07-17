@@ -28,7 +28,6 @@
 
 #include "multiboot.h"
 #include "memory/physical.h"
-#include "test_programs.h"
 #include "task.h"
 #include "sched.h"
 
@@ -225,29 +224,21 @@ static int command_create(int argc, char **argv) {
 	int r;
 
 	if (argc > 1) {
-		const TestProgram *tp = test_program(argv[1]);
-		if (tp) {
-			r = do_fork();
+		r = do_fork();
+		if (r < 0)
+			return r;
+		if (r == 0) { // child
+			r = do_execve(argv[1], &argv[1]);
 			if (r < 0)
-				return r;
-			if (r == 0) { // child
-				char buf[256];
-				strcpy(buf, "/bin/");
-				strcat(buf, argv[1]);
-				r = do_execve(buf, &argv[1]);
-				if (r < 0)
-					do_exit(0); // FIXME: code
-				PANIC("--");
-			}
-			return 0;
+				do_exit(0); // FIXME: code
+			PANIC("--");
 		}
+		return 0;
 	}
 
 	printf("run [program name] [program args]\n");
-	printf("programs:\n");
-	for (uint32_t i = 0 ; i < nr_test_programs ; i++) {
-		printf("    %s\n", test_programs[i].name);
-	}
+	// FIXME: --
+	// printf("programs:\n");
 
 	return 0;
 }
