@@ -24,6 +24,10 @@ all: crt0.o libmakarnax
 libmakarnax: $(OBJS)
 	i686-makarnax-ar cr libmakarnax.a $(OBJS)
 
+syslib:
+	ar r ../../tools/gcc_cross_compiler/local/i686-makarnax/lib/libc.a sys/*.o
+	cp crt0.o ../../tools/gcc_cross_compiler/local/i686-makarnax/lib
+
 clean:
 	rm -f *.o *.a *.d
 	cd sys; rm -f *.o *.a *.d

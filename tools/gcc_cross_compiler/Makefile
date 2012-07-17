@@ -50,7 +50,7 @@ newlib: create-dirs
 	patch -p1 -d ${BUILD_DIR}/newlib-${NEWLIB_VER} < files/newlib.patch
 
 	mkdir -p ${BUILD_DIR}/newlib-${NEWLIB_VER}/newlib/libc/sys/${OSNAME}
-	cp files/newlib/* ${BUILD_DIR}/newlib-${NEWLIB_VER}/newlib/libc/sys/${OSNAME}
+	cp -r files/newlib/* ${BUILD_DIR}/newlib-${NEWLIB_VER}/newlib/libc/sys/${OSNAME}
 
 	cd ${BUILD_DIR}/newlib-${NEWLIB_VER}/newlib/libc/sys; autoconf; \
 		cd ${OSNAME}; autoreconf;
