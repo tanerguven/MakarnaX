@@ -150,21 +150,25 @@ void init_traps() {
 	idt[T_NMI].set_trap_gate(nmi);
 	idt[T_BRKPT].set_system_gate(int3);
 	idt[T_OFLOW].set_system_gate(overflow);
+
 	idt[T_BOUND].set_system_gate(bounds_check);
 	idt[T_ILLOP].set_trap_gate(invalid_opcode);
 	idt[T_DEVICE].set_trap_gate(device_not_available);
 	idt[T_DBLFLT].set_trap_gate(double_fault);
- 	idt[T_COPROC].set_trap_gate(coprecosser_segment_overrun);
+	idt[T_COPROC].set_trap_gate(coprecosser_segment_overrun);
+
  	idt[T_TSS].set_trap_gate(invalid_TSS);
  	idt[T_SEGNP].set_trap_gate(segment_not_present);
  	idt[T_STACK].set_trap_gate(stack_exception);
  	idt[T_GPFLT].set_trap_gate(general_protection);
 	idt[T_PGFLT].set_trap_gate(page_fault);
+
 	idt[T_RES].set_trap_gate(reserved);
 	idt[T_FPERR].set_trap_gate(floating_point_error);
 	idt[T_ALIGN].set_trap_gate(alignment_check);
 	idt[T_MCHK].set_trap_gate(machine_check);
 	idt[T_SIMDERR].set_trap_gate(SIMD_floating_point_error);
+
 	for (int i = 21 ; i < 32 ; i++) {
 		idt[i].set_trap_gate(reserved);
 	}

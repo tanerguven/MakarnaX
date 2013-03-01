@@ -11,6 +11,8 @@ asmlink void spinlock_init(struct spinlock *l) {
 asmlink void spinlock_acquire(struct spinlock* l) {
 	ASSERT_DTEST(l != NULL);
 	pushcli();
+
+	/* FIXME: == 0 hatali */
 	while (xchg(&l->locked, 1) == 0)
 		/* bekle */;
 }
