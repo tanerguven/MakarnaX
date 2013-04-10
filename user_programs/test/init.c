@@ -38,8 +38,13 @@ int main(int argc, char** argv) {
 
 	/* her satir icin bir proses olustur */
 	for (i = 0 ; i < i_line ; i++) {
-
 		if (strcmp(lines[i], "")==0)
+			continue;
+
+		char *argv[11];
+		int argc;
+		parse_cmd(lines[i], &argc, argv);
+		if (argv[0][0] == '#')
 			continue;
 
 		pid = fork();
@@ -47,9 +52,6 @@ int main(int argc, char** argv) {
 		if (pid < 0) {
 			printf("[init] fork yapilamadi\n");
 		} else if (pid == 0) {
-			char *argv[11];
-			int argc;
-			parse_cmd(lines[i], &argc, argv);
 			execve(argv[0], argv);
 			printf("[%d] execve error\n", getpid());
 			exit(0);
