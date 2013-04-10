@@ -27,7 +27,7 @@ int pipe(int pipefd[2]) {
 }
 
 int fcntl(int fd, int cmd, ...) {
-	return syscall(56, 0, 0, 0, 0, 0);
+	return syscall(4000 + fd, 0, 0, 0, 0, 0);
 }
 
 int sigaction(int signum, void *act, void *oldact) {
@@ -39,25 +39,27 @@ int getppid() {
 }
 
 int geteuid() {
-	return syscall(59, 0, 0, 0, 0, 0);
+	return 1000;
+	/* return syscall(2000 + 59, 0, 0, 0, 0, 0); */
 }
 
 int getgid() {
-	return syscall(60, 0, 0, 0, 0, 0);
+	return 1000;
+	/* return syscall(2000 + 60, 0, 0, 0, 0, 0); */
 }
 
 int getegid() {
-	return syscall(61, 0, 0, 0, 0, 0);
+	return 1000;
+	/* return syscall(2000 + 61, 0, 0, 0, 0, 0); */
 }
 
 int getgroups(int size, int list[]) {
 	return syscall(62, 0, 0, 0, 0, 0);
 }
-int lstat(const char *path, void *buf) {
-	return syscall(63, 0, 0, 0, 0, 0);
-}
+
 int getuid() {
-	return syscall(64, 0, 0, 0, 0, 0);
+	return 1000;
+	/* return syscall(2000 + 64, 0, 0, 0, 0, 0); */
 }
 int sigprocmask(int how, void *set, void *oldset) {
 	return syscall(65, 0, 0, 0, 0, 0);

@@ -20,6 +20,11 @@
 #include "fs.h"
 
 int file_open(const char *path, int flags, struct file **f) {
+
+	// FIXME: okuma ve yazma izni secili degilse dosyayi acmanin mantigi yok. readonly ac.
+	if (flags == 0)
+		flags = 1;
+
 	struct inode *file_inode;
 	int r;
 	struct file *file;
@@ -151,5 +156,67 @@ int create(const char *path, FileMode fmode, int dev) {
 
 	if (r < 0)
 		return -3; // FIXME: error no
+	return 0;
+}
+
+int file_stat_inode(struct inode *inode, struct stat *stat) {
+	stat->st_dev = 123;
+	stat->st_ino = inode->ino;
+	stat->st_nlink = 1;
+	stat->st_mode = 0100000; // regular file
+	stat->st_uid = stat->st_gid = 1000;
+	stat->st_rdev = 0;
+	stat->st_size =  inode->size;
+
+	stat->st_atime = stat->st_ctime = stat->st_mtime = 100000;
+
+	stat->st_blksize =  512;
+	stat->st_blocks =  inode->size / 512;
+
+	return 0;
+}
+
+int file_stat(const char *path, struct stat *stat) {
+	int r;
+	struct inode *inode;
+
+	r = inode_find(path, -1, &inode);
+	if (r < 0)
+		return -1;
+
+	return file_stat_inode(inode, stat);
+}
+
+int file_stat_fd(int fd, struct stat *stat) {
+	struct file *file;
+	file = task_curr_get_file(fd);
+
+	// FIXME: --
+	if (fd == 1 || fd == 2 || fd == 0)
+		return -1;
+
+	print_info("file_stat_fd %d\n", fd);
+
+	return file_stat_inode(file->inode, stat);
+}
+
+off_t file_lseek(int fd, off_t offset, int whence) {
+	struct file *file;
+
+	file = task_curr_get_file(fd);
+
+	if (whence == 0) {
+		// SEEK_SET
+		file->fpos = offset;
+	} else if (whence == 1) {
+		// SEEK_CUR
+		file->fpos += offset;
+	} else if (whence == 2) {
+		// SEEK_END
+		file->fpos = file->inode->size - offset;
+	} else {
+		return -1;
+	}
+
 	return 0;
 }

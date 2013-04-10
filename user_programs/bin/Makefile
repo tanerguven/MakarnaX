@@ -10,7 +10,8 @@ CFLAGS = -nostdinc -O0 -g3 -Wall ${INCLUDES}
 
 PROGRAMS = \
 	bin/hello_newlib \
-	bin/signal_newlib
+	bin/signal_newlib \
+	bin/file_newlib
 
 all: $(PROGRAMS)
 

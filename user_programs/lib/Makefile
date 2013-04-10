@@ -18,6 +18,7 @@ OBJS = \
 	sys/signal.o \
 	sys/sleep.o \
 	sys/wait.o \
+	sys/unistd.o \
 
 all: crt0.o libmakarnax
 

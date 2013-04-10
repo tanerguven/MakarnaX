@@ -3,9 +3,9 @@
 asmlink _syscall3(int, open, const char*, filename, int, flags, int, mode)
 asmlink _syscall1(int, close, unsigned int, fd)
 
-void lseek() {
-	syscall(55, 0, 0, 0, 0, 0);
-}
+// FIXME: off_t
+asmlink _syscall3(int, lseek, int, fd, int, offset, int, whence)
+
 
 size_t read(unsigned int fd, char *buf, unsigned int count) {
 	/* stdin yok, cgetc kullan */
@@ -21,9 +21,14 @@ size_t read(unsigned int fd, char *buf, unsigned int count) {
 
 size_t write(int fd, char *buf, int nbytes) {
 	/* stdout tanimli degil, cputs kullan */
-	if (fd == 1) {
+	if (fd == 1 || fd == 2) {
 		syscall(SYS_cputs, (uint32_t)buf, nbytes, 0, 0, 0);
 		return nbytes;
 	}
-	return syscall(58, 0, 0, 0, 0, 0);
+	return syscall(1000+fd, (uint32_t)buf, nbytes, 0, 0, 0);
 }
+
+// FIXME: int->mode_t
+asmlink _syscall2(int, chmod, const char*, path, int, mode);
+
+asmlink _syscall2(int, access, const char*, pathname, int, mode);

@@ -23,7 +23,9 @@
 #include "../task.h"
 
 SYSCALL_DEFINE2(open, const char*, path, int, flags) {
-	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
+	// FIXME: max length
+	path = (char*)user_to_kernel_check((uint32_t)path, -1, 0);
+
 	int fd;
 	int r;
 	file *f;
@@ -36,8 +38,10 @@ SYSCALL_DEFINE2(open, const char*, path, int, flags) {
 		return SYSCALL_RETURN(r);
 	}
 
-	for (fd = 0 ; fd < TASK_MAX_FILE_NR ; fd++) {
+	// FIXME: 0,1,2 stdin,out ve err icin sabit olarak atandi. Boyle olmamali
+	for (fd = 3 ; fd < TASK_MAX_FILE_NR ; fd++) {
 		if (task_curr->fs.files[fd] == NULL) {
+			print_info(">> opened fd:%d\n", fd);
 			task_curr->fs.files[fd] = f;
 			// FIXME: --
 			f->inode->ref_count++;
@@ -77,8 +81,11 @@ SYSCALL_DEFINE3(read, unsigned int, fd, char*, buf, size_t, size) {
 	buf = (char*)user_to_kernel_check((uint32_t)buf, size, 1);
 	size_t r;
 
+	print_info(">> read_file: %d %d\n", fd, size);
+
 	// TODO: olmayan dosya girilirse hata ver
 	r = file_read(task_curr->fs.files[fd], buf, size);
+	print_info(">> read ok %d\n", r);
 	return SYSCALL_RETURN(r);
 }
 SYSCALL_END(read)
@@ -119,18 +126,28 @@ SYSCALL_DEFINE1(unlink, const char*, path) {
 }
 SYSCALL_END(unlink)
 
+SYSCALL_DEFINE2(stat, char*, path, struct stat*, stat) {
+	int r;
+	// FIXME: max length
+	path = (char*)user_to_kernel_check((uint32_t)path, -1, 0);
+	stat = (struct stat*)user_to_kernel_check((uint32_t)stat, sizeof(struct stat), 1);
 
-SYSCALL_DEFINE2(stat, char*, path __attribute__((unused)), struct stat*, stat __attribute__((unused))) {
-	// path = (char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 1);
-	// stat = (struct stat*)user_to_kernel_check((uint32_t)stat,sizeof(struct stat), 1);
+	r = file_stat(path, stat);
+	print_info("stat ok: %d\n", r);
 
-	// TODO: --
-	PANIC("sys_stat");
-
-	return SYSCALL_RETURN(-1);
+	return SYSCALL_RETURN(r);
 }
 SYSCALL_END(stat)
 
+SYSCALL_DEFINE2(fstat, int, fd, struct stat*, buf) {
+	int r;
+	buf = (struct stat*)user_to_kernel_check((uint32_t)buf, sizeof(struct stat), 1);
+
+	r = file_stat_fd(fd, buf);
+
+	return SYSCALL_RETURN(r);
+}
+SYSCALL_END(fstat)
 
 SYSCALL_DEFINE1(chdir, const char*, path) {
 	path = (const char*)user_to_kernel_check((uint32_t)path, MAX_PATH_SIZE, 0);
@@ -212,3 +229,27 @@ SYSCALL_DEFINE2(readdir, DIR*, dirp, struct dirent_user*, dirent) {
 	return SYSCALL_RETURN(r);
 }
 SYSCALL_END(readdir)
+
+SYSCALL_DEFINE3(lseek, int, fd, off_t, offset, int, whence) {
+	int r;
+	print_info(">> lseek %d %d %d\n", fd, offset, whence);
+
+	r = file_lseek(fd, offset, whence);
+	return SYSCALL_RETURN(r);
+}
+SYSCALL_END(lseek)
+
+
+SYSCALL_DEFINE2(lstat, const char*, path, struct stat*, stat) {
+	// FIXME: stat cagrisindan kopyalandi. duzelt
+	int r;
+	// FIXME: max length
+	path = (char*)user_to_kernel_check((uint32_t)path, -1, 0);
+	stat = (struct stat*)user_to_kernel_check((uint32_t)stat, sizeof(struct stat), 1);
+
+	r = file_stat(path, stat);
+	print_info("stat ok: %d\n", r);
+
+	return SYSCALL_RETURN(r);
+}
+SYSCALL_END(lstat)

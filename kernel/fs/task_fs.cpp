@@ -49,3 +49,9 @@ void task_curr_free_files() {
 		}
 	}
 }
+
+struct file * task_curr_get_file(int fd) {
+	ASSERT3(fd, <, TASK_MAX_FILE_NR);
+	ASSERT3(fd, >=, 0);
+	return task_curr->fs.files[fd];
+}

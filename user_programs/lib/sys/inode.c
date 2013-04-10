@@ -3,22 +3,25 @@
 asmlink _syscall1(int, chdir, const char*, path)
 asmlink _syscall2(int, getcwd, char*, buf, size_t, size)
 
+// FIXME: --
+/* asmlink _syscall3(int, chown, const char *, path, int, owner, int, group) */
+
 void chown() {
-	syscall(50, 0, 0, 0, 0, 0);
+	syscall(2000 + 50, 0, 0, 0, 0, 0);
 }
 
 void link() {
-	syscall(54, 0, 0, 0, 0, 0);
+	syscall(2000 + 54, 0, 0, 0, 0, 0);
 }
 
 void readlink() {
-	syscall(56, 0, 0, 0, 0, 0);
+	syscall(2000 + 56, 0, 0, 0, 0, 0);
 }
 
 void symlink() {
-	syscall(57, 0, 0, 0, 0, 0);
+	syscall(2000 + 57, 0, 0, 0, 0, 0);
 }
 
 void unlink() {
-	syscall(58, 0, 0, 0, 0, 0);
+	syscall(2000 + 58, 0, 0, 0, 0, 0);
 }

@@ -102,6 +102,40 @@ struct inode_operations {
 };
 
 
+/* */
+// FIXME: bunlar kullanici programlariyla ortak kullanilabilecek bir yerde olmali
+typedef unsigned int mode_t;
+typedef unsigned short nlink_t;
+typedef short uid_t;
+typedef short gid_t;
+typedef long int blksize_t;
+typedef long int blkcnt_t;
+typedef long int time_t;
+typedef long time_t;
+struct stat
+{
+	dev_t st_dev;
+	ino_t st_ino;
+	mode_t st_mode;
+	nlink_t st_nlink;
+	uid_t st_uid;
+	gid_t st_gid;
+	dev_t st_rdev;
+	off_t st_size;
+
+	time_t st_atime;
+	long st_spare1;
+	time_t st_mtime;
+	long st_spare2;
+	time_t st_ctime;
+	long st_spare3;
+	long st_blksize;
+	long st_blocks;
+	long st_spare4[2];
+};
+/* */
+
+
 // inode.cpp
 extern struct inode *inode_dup(struct inode* inode);
 extern struct inode *inode_alloc();
@@ -132,5 +166,11 @@ extern int file_write(struct file *f, const char *buf, size_t size);
 extern struct file* file_dup(struct file *f);
 extern int unlink(const char *path, int file_type);
 extern int create(const char *path, FileMode mode, int dev);
+extern int file_stat(const char *path, struct stat *stat);
+extern int file_stat_fd(int fd, struct stat *stat);
+extern off_t file_lseek(int, off_t, int);
+
+// task_fs.cpp
+extern struct file * task_curr_get_file(int fd);
 
 #endif /* _FS_H */
