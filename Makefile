@@ -36,7 +36,7 @@ clean-kernel:
 	cd kernel; make clean;
 
 usr_lib:
-	cd user_programs/lib; make clean; make;
+	cd user_programs/lib; make clean; make; make syslib;
 
 usr_bin:
 	cd user_programs/bin; make clean; make;
