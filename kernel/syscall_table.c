@@ -33,6 +33,7 @@ asmlink void sys_sleep();
 asmlink void sys_nosys();
 
 asmlink void sys_fstat();
+asmlink void sys_gettimeofday();
 
 void (* const syscalls[])() = {
 	[0 ... MAX_SYSCALL_COUNT] = sys_nosys,
@@ -61,6 +62,7 @@ void (* const syscalls[])() = {
 	[SYS_creat] = sys_creat,
 	[SYS_unlink] = sys_unlink,
 	[SYS_fstat] = sys_fstat,
+	[SYS_gettimeofday] = sys_gettimeofday,
 
 	[SYS_cputs] = sys_cputs,
 	[SYS_cgetc] = sys_cgetc,

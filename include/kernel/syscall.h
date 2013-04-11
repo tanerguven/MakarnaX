@@ -60,6 +60,7 @@
 #define SYS_lstat		107
 #define SYS_fstat		108
 #define SYS_ipc			117
+#define SYS_gettimeofday 169
 #define SYS_getcwd		183
 #define SYS_cputs		901
 #define SYS_cgetc		902

@@ -23,7 +23,9 @@
 #include "memory/virtual.h"
 #include "task.h"
 #include "sched.h"
+#include "time.h"
 
+#include <sys/time.h>
 
 // console.cpp
 extern TaskList_t console_input_list;
@@ -127,6 +129,21 @@ bad_sys_brk_alloc:
 }
 SYSCALL_END(brk)
 
+SYSCALL_DEFINE2(gettimeofday, struct timeval*, tv, struct timezone*, tz) {
+	tv = (struct timeval*)user_to_kernel_check((uint32_t)tv, sizeof(struct timeval), 1);
+	tv->tv_sec = jiffies_to_seconds();
+	tv->tv_usec = (jiffies_to_milliseconds()%1000);
+	tv->tv_usec = tv->tv_usec * 1000;
+	if (tz != NULL) {
+		tz = (struct timezone*)user_to_kernel_check(
+			(uint32_t)tz, sizeof(struct timeval), 1);
+		tz->tz_minuteswest = 0;
+		tz->tz_dsttime = 0;
+	}
+
+	return SYSCALL_RETURN(0);
+}
+SYSCALL_END(gettimeofday);
 
 uint32_t user_to_kernel_check(uint32_t base, uint32_t limit, int rw) {
 	int perm = (rw) ? PTE_W | PTE_U : PTE_U;

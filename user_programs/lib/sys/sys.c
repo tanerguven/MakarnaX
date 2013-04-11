@@ -1,6 +1,10 @@
 #include <kernel/syscall.h>
 
+struct timeval;
+struct timezone;
+
 asmlink _syscall5(int, ipc, unsigned int, ipc_no, int, a1, int, a2, int, a3, int, a4)
+asmlink _syscall2(int, gettimeofday, struct timeval*, tv, struct timezone*, tz)
 
 void sys_dongu() {
 	syscall(SYS_dongu, 0, 0, 0, 0, 0);
@@ -8,10 +12,6 @@ void sys_dongu() {
 
 void sys_yield() {
 	syscall(SYS_yield, 0, 0, 0, 0, 0);
-}
-
-void gettimeofday() {
-	syscall(52, 0, 0, 0, 0, 0);
 }
 
 void isatty() {
@@ -65,10 +65,10 @@ int sigprocmask(int how, void *set, void *oldset) {
 	return syscall(65, 0, 0, 0, 0, 0);
 }
 void *opendir(const char *name) {
-	return syscall(66, 0, 0, 0, 0, 0);
+	return (void*)syscall(66, 0, 0, 0, 0, 0);
 }
 void *readdir(void *dirp) {
-	return syscall(67, 0, 0, 0, 0, 0);
+	return (void*)syscall(67, 0, 0, 0, 0, 0);
 }
 int closedir(void *dirp) {
 	return syscall(68, 0, 0, 0, 0, 0);
