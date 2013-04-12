@@ -14,7 +14,7 @@ OBJS = \
 ######################################
 
 ifndef QEMU
-QEMU := qemu-os6828
+QEMU := ${CURDIR}/tools/qemu/local/bin/qemu
 endif
 
 ######################################
