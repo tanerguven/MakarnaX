@@ -1,143 +1,229 @@
-	MakarnaX kernel 0.01
+MakarnaX Kernel 0.02
+
 
 NELER VAR?
 
- - bellek yonetimi
-    - fiziksel bellegin yonetilmesi
-  	- sanal bellek (segmantasyon & paging)
-  	- malloc fonksiyonu (kmalloc)
- - fork
- - execve
- - task scheduling
- - sistem cagrilari
- - Unix signalleri
- - ipc
-    - shared memory
-    - semaphore
- - sanal dosya sistemi
- - bellekte readonly dosya sistemi (open, read sistem cagrilari calisiyor)
- - kernel monitor ve debug modu: ctrl-alt-delete ile sistem duraklatilip,
-   kaynaklar, process vb. gozlemlenebilir
- - test programlari (user_programs): sistem cagrilarini test etmek icin
-   gelistirilmis programlar.
- - Kullanici programlari icin C library destegi (newlib)
- - Linux uzerinde calisabilen gcc cross compiler (i686-makarnax-gcc vb.)
+- Bellek yonetimi:
+	fiziksel bellek yonetimi
+  	sanal bellek (segmantasyon & paging)
+  	kernelde malloc fonksiyonu (kmalloc)
+- Process olusturma ve scheduling
+	fork, execve vb..
+- Standart user-kernel mode seklindeki kullanim ve sistem cagrilari
+- POSIX benzeri seyler
+	signal handling
+	ipc (shared memory, semaphore)
+- Sanal dosya sistemi
+- Bellekte uzerinde calisan bir dosya sistemi
+- Debug modu: ctrl-alt-delete ile sistemi duraklatip inceleme
+- Test programlari: sistem cagrilarini test etmek icin eklenmis programlar
+- Kullanici programlari icin C library destegi (newlib)
+- Linux uzerinde calisabilen GCC cross compiler (i686-makarnax-gcc)
 
-
-NELER YOK?
-
- - copy-on-write fork
- - ipc
-    - message queues
-    - ipc permissions
- - disk uzerinde dosya sistemi
- - kullanicilar
- - socket
- - bircok sey ...
 
 
 EKLENMIS SISTEM CAGRILARI
 
-  fork, execve, getpid, exit, kill, pause, wait, signal, alarm, sleep, brk, sbrk
-
-  open, close, read, stat, opendir, closedir, readdir, chdir, getcwd
-
-  shmget, shmat, shmdt, sem_init, sem_wait, sem_post
-
-  sys_cputs (printf), sys_cgetc (getchar), sys_yield
+exit, fork, execve, kill, pause, getpid, brk, sleep, alarm
+open, close, read, write, readdir, stat, lseek
+chdir, getcwd, mkdir, rmdir, creat, unlik
+signal, ipc, shmget, shmat, sem_init, sem_wait, sem_post
+gettimeofday
 
 
-DIZINLER VE DOSYALAR:
 
-  kernel: kernel kodlari
+HIZLI BASLANGIC
 
-  user_programs: kullanici program ve kutuphaneleri
-  	test: test programlari (C library olmadan derlenenler)
-	bin: kullanici programlari
-	lib: libmakarnax.a, crt0.o
+kurulu olmasi gerekenler:
+	C/C++ derleme araclari (gcc, g++, make, ...)
+	qemu (kvm)
 
-  lib: kernel icerisinde kullanilan kutuphaneler. newlib kullanilmayan
-    programlarda da kullanilabilir.
-
-  include: kernel ve test programlari icin kullanilan include directory
-    kernel: kernele ozel header dosyalari
-	asm: assembly kodlari icin hazirlanmis inline fonksiyonlar
-    user.h: test programlari icin (newlib kullanilmayanlarda)
-
-  tools: kerneli ve programlari derlemek icin cesitli araclar ve kutuphaneler
-    gcc_cross_compiler: makarnax icin gcc cross compiler ve newlibin bulundugu dizin
-
-  init_programs: baslangicta calistirilacak programlarin listesi.
-    bu dosya user_programs/test/init (/bin/init) tarafindan kullaniliyor.
-
-  kernel_conf.h: kernel configrasyon dosyasi
-
-  bin: derleme sonucunda olusturulan kernel'in bulundugu dizin
-
-  doc: dokumantasyon
-
-DERLEMEK:
-
-  Derlemek icin, bir Linux dagitimi uzerinde make, gcc, g++ gibi standart
-  C / C++ derlemek icin gerekli olan program ve copilerlar kurulu olmalidir.
-
-  derlemek icin ana dizin icerisinden
-      make
-
-  farkli versiyon gcc ile derlemek icin:
-      make CC=gcc-4.4 CXX=g++-4.4
-  ya da
-      export CC=gcc-4.4
-      export CXX=g++-4.4
-      make
-
-  gcc 4.4 : calisiyor
-  gcc 4.5 : calisiyor
-  gcc 4.6 : calisiyor
-
-CALISTIRMAK:
-
-  MakarnaX sanal makinada ve gercek makinada calistirilabilir.
+hizli baslangic komutlari:
+	make
+	make user
+	make test-hello
+	make initrd
+	make qemu QEMU=kvm
 
 
-  Sanal Makinada Calistirmak (QEMU):
-      make qemu
+
+SISTEMIN CALISMASI
+
+Sistem bellek uzerinden calisan bir dosya sistemi ile calismaktadir (denemefs)
+ve disk destegi bulunmamaktadir.  Kernel acilirken initrd (bin/initrd.tar) dosya
+sistemine /initrd olarak baglanilir.
+
+Sistemde ilk olarak init processi baslatilir (initrd/init). Bu process
+initrd/init_programs dosyasini okur ve bu dosyaya gore diger programlari
+baslatir.
+
+init_programs dosyasinda her satir calistirilacak olan bir programi belirtir.
+/initrd/hello
+/initrd/foktest test1
+Ornegin yukaridaki dosya baslangicta iki program calisacak ve forktest programi
+"test1" prametresiyle calistirilacak anlamina gelmektedir.
+
+init_programs dosyasi degistirildikten sonra calistirilmadan once
+	make initrd
+komutu ile dosya sistemi guncellenmelidir. Dosya sistemi guncellenmezse eski
+init_programs calisir.
 
 
-  Farkli Qemu versiyonu kullanmak:
-      export QEMU=[qemu programi ve parametreleri]
-	  make qemu
-  yada
-      make QEMU=[qemu programi ve parametreleri] qemu
 
+MAKARNAX ICIN PROGRAM DERLEMEK
 
-  Baslangicta program calistirmak:
-      programlar, init_programs isimli dosyaya eklenir
-      her satir bir programi belirtir
+user_programs/test altindaki programlar cross-compiler olmadan derlenebilir.
 
-      programlarin listesi: kernel/test_programs.h
+user_programs/bin altindaki programlarin derlenebilmesi icin stdc library ve
+cross-compiler gerekmektedir.  Bunun icin projeye "GNU Binutils", "GNU GCC"
+target i686-markarnax olarak eklenilmis ve C library olarak "newlib"
+kullanilmistir.
 
+cross-compiler ve C library su komut ile derlenebilir:
+	make build-cross-compiler
 
-  TODO: GDB ile calistirmak
+Proje disinda herhangi bir program derlemek istenilirse, kullanilan isletim
+sistemine i686-makarnax-* araclarinin eklenmesi gerekmektedir.  Su komut ile
+yapilabilir:
+	sudo make install-cross-compiler
 
-  TODO: gercek makinada calistirmak
+Bu islem yapildiktan sonra "gcc" yerine "i686-makarnax-gcc" kullanilarak program
+derlenebilir.  Derlenilen programin MakarnaX'da calistirilabilmesi icin:
+	programi "bin/initrd/bin/" dizini altina kopyalanip
+	"make initrd" komutu calistirilmalidir.
+
+"make initrd" komutu dosya sistemini yeniden olusturmaktadir.
+
+MakarnaX'da kendi programinizi calistirmak icin "PROGRAM EKLEME ORNEGI"
+basligina bakiniz.
 
 
 
 CALISTIRDIKTAN SONRA:
-  Debug moduna gecmek icin,
-      ctrl-alt-delete
 
-  Acilan komut satirinda help yazarak komut listesini gorebilirsiniz.
+Debug moduna gecmek icin:
+	ctrl-alt-delete
 
-  Debug komut satirindan kumutlar kullanilarak, kaynak kullanimi, process
-  listesi gibi bilgilere ulasilabilir.
+Sisteme henuz bir shell eklenmemistir.  Yeni process baslatmak icin su komutlar
+kullanilabilir:
+	ctrl-alt-delete
+	create /initrd/hello
+	// tek seferde birden fazla program baslatilabilir.
+	continue
+
+Debug modunda "help" komutu ile kullanilabilecek komutlar goruntulenebilir:
+command list:
+	help (h)
+	kernelinfo (ki) - kernel info
+	backtrace (bt)
+	sysinfo (si)
+	info (i)
+	create (cr) - create process
+	tasks (ts)
+	task (t) - task info
+	continue (c) - continue
+	memdebug (md) - memory debug
 
 
-  Simdilik kerneli kullanmak icin fazla secenek yok. test programlarini
-  calistirip, kernel test edilebilir.
+Process kill islemi sistem cagrisi ile yapilmaktadir.  "kill" programi su
+sekilde kullanilabilir:
+	cr /initrd/kill [process id]
 
 
 
-TEST PROGRAMLARI:
-  TODO: --
+PROGRAM EKLEME ORNEGI:
+
+deneme.c:
+#include <stdio.h>
+void main() {
+	printf("deneme\n");
+}
+
+komutlar:
+# programi derle
+i686-makarnax gcc -C deneme.c -o deneme
+# derlenen dosyayi MakarnaX programlarinin bulundugu dizine kopyala
+mv deneme /[MakarnaX proje dizini]/bin/initrd/bin/
+# makarnax proje dizinini ac
+cd /[MakarnaX proje dizini]/
+# baslangicta programi acsin
+make clean-test test-deneme
+# dosya sistemini guncelle
+make initrd initrd
+# isletim sistemini baslat
+make qemu QEMU=kvm
+
+
+
+PROGRAM CALISTIRMAYA ORNEK:
+
+debug moduna geciyoruz
+	ctrl-alt-delete
+3 tane sonsuz dongu yapan program olusturuyoruz
+	cr /initrd/dongu
+	cr /initrd/dongu
+	cr /initrd/dongu
+debug modundan cikiyoruz
+	continue
+
+programlar birlikte calisiyorlar. Durdurup (debug moduna gecip) inceleyelim:
+	ctrl-alt-delete
+task listesine bakiyoruz
+	ts
+
+cikti:
+-----------
+$:ts
+current task:        3
+zombie task: 0
+        0               running
+        1         interruptible
+        2               running
+        3               running
+        4               running
+------------
+
+2 numarali process bilgilerine bakiyoruz:
+  	t 2
+
+cikti:
+-----------
+$:t 2
+id:2  parent id:0  status:0  run count:12  priority:3
+time_start: 378
+time_end: 0
+time_kernel: 48
+time_user:   0
+memory usage: 48 kb
+  user: 20 kb
+    stack: 4 kb
+    program: 16 kb
+    shared: 0 kb
+  kernel: 28 kb
+    kernel stack: 4 kb
+    task struct 512 b(?)
+    page table vb.
+-------------
+
+2 numarali processi sonlandiriyoruz
+  	cr /initrd/kill 2
+sonlandima processinin calismasi icin debug modundan cikmamiz gerek
+	continue
+
+1 sn bekliyoruz ve tekrar debug moduna geciyoruz:
+  	ctrl-alt-delete
+process listesine bakiyoruz:
+	ts
+cikti:
+----------------
+$:ts
+current task:        3
+zombie task: 2
+
+        0               running
+        1         interruptible
+        2                zombie
+        3               running
+        4               running
+        5                zombie
+----------------
