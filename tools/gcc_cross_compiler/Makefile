@@ -8,7 +8,7 @@ PREFIX=${CURDIR}/local
 
 PATH:=${PATH}:${PREFIX}/bin
 
-NCPU=12 # make -j
+NCPU=8 # make -j
 
 BUILD_DIR = build
 

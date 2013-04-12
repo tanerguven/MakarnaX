@@ -48,7 +48,7 @@ clean-user:
 	cd user_programs; make clean;
 
 initrd:
-	cp -f init_programs bin/initrd
+	cp -f init_programs bin/initrd/init_programs
 	cd bin; tar cf initrd.tar initrd
 
 linux:
@@ -71,7 +71,7 @@ clean-test:
 	echo "" > init_programs
 
 test-%:
-	echo "/bin/"$* >> init_programs
+	echo "/initrd/"$* >> init_programs
 
 ktest-%: ktest-clean
 	make DEFS=-DKTEST=$*
