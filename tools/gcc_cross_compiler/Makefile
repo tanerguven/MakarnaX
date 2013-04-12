@@ -2,6 +2,7 @@ OSNAME=makarnax
 BINUTILS_VER=2.22
 GCC_VER=4.6.3
 NEWLIB_VER=1.20.0
+QEMU_VER=0.15
 TARGET=i686-${OSNAME}
 PREFIX=${CURDIR}/local
 
@@ -11,8 +12,31 @@ NCPU=12 # make -j
 
 BUILD_DIR = build
 
-all: clean-prefix binutils gcc newlib clean-buildfiles
-	@echo
+PROGRAMS=\
+	addr2line \
+	ar \
+	as \
+	c++filt \
+	cpp \
+	elfedit \
+	gcc \
+	gcc-4.6.3 \
+	gcov \
+	gprof \
+	ld \
+	ld.bfd \
+	nm \
+	objcopy \
+	objdump \
+	ranlib \
+	readelf \
+	size \
+	strings \
+	strip \
+
+
+all: clean-prefix binutils gcc newlib
+	@echo "syslib"
 
 create-dirs:
 	mkdir -p ${BUILD_DIR}
@@ -66,6 +90,23 @@ clean-buildfiles:
 
 clean-prefix:
 	rm -rf ${PREFIX}
+
+install:
+	@for p in ${PROGRAMS}; \
+	do \
+		echo "ln -sf ${PREFIX}/bin/${TARGET}-$$p /usr/local/bin/${TARGET}-$$p"; \
+		ln -sf ${PREFIX}/bin/${TARGET}-$$p /usr/local/bin/${TARGET}-$$p; \
+	done
+	mkdir -p /usr/local/lib/gcc
+	ln -sf ${CURDIR}/local/lib/gcc/i686-makarnax /usr/local/lib/gcc
+
+uninstall:
+	@for p in ${PROGRAMS}; \
+	do \
+		echo "rm -f /usr/local/bin/${TARGET}-$$p"; \
+		rm -f /usr/local/bin/${TARGET}-$$p; \
+	done
+	rm -f /usr/local/lib/gcc/i686-makarnax
 
 clean: clean-buildfiles clean-prefix
 	rm -f *.tar.*

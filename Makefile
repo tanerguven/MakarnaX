@@ -14,7 +14,7 @@ OBJS = \
 ######################################
 
 ifndef QEMU
-QEMU := qemu
+QEMU := qemu-os6828
 endif
 
 ######################################
@@ -60,14 +60,6 @@ dirs:
 	cd $$p; make; cd ..; \
     done
 
-all-tools:
-	cd tools/gcc_cross_compiler; make
-	ln -f -s ${CURDIR}/user_programs/lib/libmakarnax.a tools/gcc_cross_compiler/local/i686-makarnax/lib/.
-	ln -f -s ${CURDIR}/user_programs/lib/crt0.o tools/gcc_cross_compiler/local/i686-makarnax/lib/.
-
-clean-tools:
-	cd tools/gcc_cross_compiler; make clean;
-
 clean:
 	@for p in  $(DIRS); \
 	do \
@@ -92,6 +84,43 @@ documentation:
 
 documentation-clean:
 	rm -rf doc/html
+
+######################################
+#	cross compiler
+######################################
+
+build-cross-compiler:
+	cd tools/gcc_cross_compiler; make;
+	make usr_lib;
+	ln -f -s ${CURDIR}/user_programs/lib/libmakarnax.a tools/gcc_cross_compiler/local/i686-makarnax/lib/
+	ln -f -s ${CURDIR}/user_programs/lib/crt0.o tools/gcc_cross_compiler/local/i686-makarnax/lib/
+
+install-cross-compiler:
+	cd tools/gcc_cross_compiler; make install;
+
+uninstall-cross-compiler:
+	cd tools/gcc_cross_compiler; make uninstall;
+
+clean-cross-compiler:
+	cd tools/gcc_cross_compiler; make clean;
+
+
+######################################
+#		qemu
+######################################
+
+build-qemu:
+	cd tools/qemu; make;
+
+install-qemu:
+	cd tools/qemu; make install;
+
+uninstall-qemu:
+	cd tools/qemu; make uninstall;
+
+clean-qemu:
+	cd tools/qemu; make clean;
+
 
 ######################################
 #		running
