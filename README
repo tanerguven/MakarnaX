@@ -74,8 +74,8 @@ MAKARNAX ICIN PROGRAM DERLEMEK
 
 user_programs/test altindaki programlar cross-compiler olmadan derlenebilir.
 
-user_programs/bin altindaki programlarin derlenebilmesi icin stdc library ve
-cross-compiler gerekmektedir.  Bunun icin projeye "GNU Binutils", "GNU GCC"
+user_programs/bin altindaki programlarin derlenebilmesi icin standart C library
+ve cross-compiler gerekmektedir.  Bunun icin projeye "GNU Binutils", "GNU GCC"
 target i686-markarnax olarak eklenilmis ve C library olarak "newlib"
 kullanilmistir.
 
@@ -141,7 +141,7 @@ void main() {
 
 komutlar:
 # programi derle
-i686-makarnax gcc -C deneme.c -o deneme
+i686-makarnax-gcc -C deneme.c -o deneme
 # derlenen dosyayi MakarnaX programlarinin bulundugu dizine kopyala
 mv deneme /[MakarnaX proje dizini]/bin/initrd/bin/
 # makarnax proje dizinini ac
@@ -149,7 +149,7 @@ cd /[MakarnaX proje dizini]/
 # baslangicta programi acsin
 make clean-test test-deneme
 # dosya sistemini guncelle
-make initrd initrd
+make initrd
 # isletim sistemini baslat
 make qemu QEMU=kvm
 
