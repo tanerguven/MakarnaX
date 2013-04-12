@@ -22,7 +22,7 @@ NELER VAR?
 
 
 
-EKLENMIS SISTEM CAGRILARI
+KULLANILABILEN SISTEM CAGRILARI
 
 exit, fork, execve, kill, pause, getpid, brk, sleep, alarm
 open, close, read, write, readdir, stat, lseek
@@ -36,14 +36,35 @@ HIZLI BASLANGIC
 
 kurulu olmasi gerekenler:
 	C/C++ derleme araclari (gcc, g++, make, ...)
-	qemu (kvm)
+	kvm (ya da qemu)
 
 hizli baslangic komutlari:
 	make
 	make user
-	make test-hello
+	make clean-test test-hello
 	make initrd
 	make qemu QEMU=kvm
+
+
+
+SANAL MAKINEDE CALISTIRMAK
+
+"make qemu" komutu sanal makinede calistirir.  Sistemde hazir kurulu olan bir
+qemu ya da kvm ile calistirilabilir.  Farkli versiyon kullanmak icin su sekilde
+kullanilir:
+	 make qemu QEMU=[qemu secimi ve paramtreleri]
+
+QEMU parametresi verilmezse tools/qemu altindaki qemu versiyonuyla
+calistirilir.  Bu versiyon "MIT Operating System Engineering" dersi icin
+hazirlanmis ve debug icin daha uygun ozel bir QEMU versiyonudur.
+
+tools/qemu altindaki versiyonun kullanilabilmesi icin sitesinden indirilip
+derlenmesi gerekmektedir. Oncelikle su paketlerin sistemde kurulu olmasi
+gerekir: qemu, zlib1g-dev, libglib2.0-dev, libsdl1.2-dev.
+
+paketler kurulduktan sonra su komut ile indirme ve derleme islemi
+tamamlanabilir:
+	make build-qemu
 
 
 
@@ -70,7 +91,7 @@ init_programs calisir.
 
 
 
-MAKARNAX ICIN PROGRAM DERLEMEK
+MAKARNAX PROGRAMI DERLEYEBILMEK ICIN YAPILMASI GEREKENLER
 
 user_programs/test altindaki programlar cross-compiler olmadan derlenebilir.
 
@@ -79,20 +100,31 @@ ve cross-compiler gerekmektedir.  Bunun icin projeye "GNU Binutils", "GNU GCC"
 target i686-markarnax olarak eklenilmis ve C library olarak "newlib"
 kullanilmistir.
 
-cross-compiler ve C library su komut ile derlenebilir:
+cross-compiler ve C library icin su paketler sistemde kurulu olmalidir:
+libgmp-dev, libmpfr-dev, libmpc-dev, autoconf
+
+gerekli paketler kurulduktan sonra cross-compiler ve C library su komut ile
+derlenebilir:
 	make build-cross-compiler
+
+user_programs/lib altinda C kutuphanesi ile sistem cagrisi baglantilari
+bulunmaktadir.  Bunlarin derlenmesi icin su komut kullanilabilir:
+	make usr_lib
+Ardindan user_programs/bin altindaki programlar su komut ile derlenebilir:
+	make usr_bin
+
+ONEMLI! C kutuphanesinde yapilan her degisiklikten sonra user_programs/lib ve
+usr_programs/bin tekrar derlenmelidir.  Su komut kullanlabilir:
+	make usr_lib usr_bin
+
+Programlarda yapilan degisikliklerden sonra isletim sistemi denenmeden once
+dosya sistemi tekrar olusturulmalidir. Su komut ile yapilabilir:
+	make initrd
 
 Proje disinda herhangi bir program derlemek istenilirse, kullanilan isletim
 sistemine i686-makarnax-* araclarinin eklenmesi gerekmektedir.  Su komut ile
-yapilabilir:
+cross-compiler sisteme yuklenebilir:
 	sudo make install-cross-compiler
-
-Bu islem yapildiktan sonra "gcc" yerine "i686-makarnax-gcc" kullanilarak program
-derlenebilir.  Derlenilen programin MakarnaX'da calistirilabilmesi icin:
-	programi "bin/initrd/bin/" dizini altina kopyalanip
-	"make initrd" komutu calistirilmalidir.
-
-"make initrd" komutu dosya sistemini yeniden olusturmaktadir.
 
 MakarnaX'da kendi programinizi calistirmak icin "PROGRAM EKLEME ORNEGI"
 basligina bakiniz.
