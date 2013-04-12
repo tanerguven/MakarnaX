@@ -21,7 +21,7 @@ qemu: qemu-${QEMU_VER}.tar.gz create-dirs
 
 	mkdir -p ${BUILD_DIR}/build-qemu
 	cd ${BUILD_DIR}/build-qemu; \
-	../qemu-${QEMU_VER}/configure --disable-kvm --prefix=${PREFIX} --target-list="i386-softmmu x86_64-softmmu"
+	../qemu-${QEMU_VER}/configure --enable-sdl --disable-kvm --prefix=${PREFIX} --target-list="i386-softmmu x86_64-softmmu"
 	cd ${BUILD_DIR}/build-qemu; make -j${NCPU}; make install
 	rm -rf build/build-qemu build/qemu-${QEMU_VER}
 

@@ -35,14 +35,15 @@ PROGRAMS=\
 	strip \
 
 
-all: clean-prefix binutils gcc newlib
-	@echo "syslib"
+all: create-dirs local/bin/i686-makarnax-as local/bin/i686-makarnax-gcc local/i686-makarnax/lib/libc.a
+	@
 
 create-dirs:
 	mkdir -p ${BUILD_DIR}
 	mkdir -p ${PREFIX}
 
-binutils: create-dirs
+# binutils
+local/bin/i686-makarnax-as:
 	cd ${BUILD_DIR}; rm -rf build-binutils binutils-${BINUTILS_VER}
 	wget -c "http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VER}.tar.bz2"
 	tar xf binutils-${BINUTILS_VER}.tar.bz2 -C ${BUILD_DIR}
@@ -52,7 +53,8 @@ binutils: create-dirs
 	cd ${BUILD_DIR}/build-binutils; ../binutils-${BINUTILS_VER}/configure --target=${TARGET} --prefix=${PREFIX}
 	cd ${BUILD_DIR}/build-binutils; make -j${NCPU}; make install
 
-gcc: create-dirs
+# gcc
+local/bin/i686-makarnax-gcc:
 	cd ${BUILD_DIR}; rm -rf build-gcc gcc-${GCC_VER}
 	wget -c "http://ftp.gnu.org/gnu/gcc/gcc-${GCC_VER}/gcc-core-${GCC_VER}.tar.gz"
 	tar xf gcc-core-${GCC_VER}.tar.gz -C ${BUILD_DIR}
@@ -66,7 +68,8 @@ gcc: create-dirs
 	cd ${BUILD_DIR}/build-gcc; \
 		make all-gcc all-target-libgcc -j${NCPU}; make install-gcc install-target-libgcc
 
-newlib: create-dirs
+# newlib
+local/i686-makarnax/lib/libc.a:
 	cd ${BUILD_DIR}; rm -rf build-newlib newlib-${NEWLIB_VER}
 	wget -c "ftp://sources.redhat.com/pub/newlib/newlib-${NEWLIB_VER}.tar.gz"
 
