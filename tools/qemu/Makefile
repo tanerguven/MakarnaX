@@ -1,13 +1,13 @@
-QEMU_VER=0.15
+QEMU_VER=1.7.0
 BUILD_DIR = build
 PREFIX=${CURDIR}/local
-NCPU=8
+NCPU=4
 
 all: qemu
 	@
 
 qemu-%.tar.gz:
-	git clone http://pdos.csail.mit.edu/6.828/qemu.git -b 6.828-$*
+	git clone https://github.com/geofft/qemu.git --depth 1 -b 6.828-$*
 	mv qemu qemu-$*
 	tar czf qemu-$*.tar.gz qemu-$*
 	rm -rf qemu-$*

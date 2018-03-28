@@ -30,7 +30,7 @@ download:
 	then \
 		if [ ! -f newlib-${NEWLIB_VER}.tar.gz ]; \
 		then \
-			wget -c "ftp://sources.redhat.com/pub/newlib/newlib-${NEWLIB_VER}.tar.gz"; \
+			wget -c "http://sources.redhat.com/pub/newlib/newlib-${NEWLIB_VER}.tar.gz"; \
 		fi; \
 		tar xf newlib-${NEWLIB_VER}.tar.gz; \
 		cp newlib-1.20.0/newlib/libc/string/*.c .; \

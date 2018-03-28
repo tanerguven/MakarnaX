@@ -8,7 +8,7 @@ PREFIX=${CURDIR}/local
 
 PATH:=${PATH}:${PREFIX}/bin
 
-NCPU=8 # make -j
+NCPU=4 # make -j
 
 BUILD_DIR = build
 
@@ -71,7 +71,7 @@ local/bin/i686-makarnax-gcc:
 # newlib
 local/i686-makarnax/lib/libc.a:
 	cd ${BUILD_DIR}; rm -rf build-newlib newlib-${NEWLIB_VER}
-	wget -c "ftp://sources.redhat.com/pub/newlib/newlib-${NEWLIB_VER}.tar.gz"
+	wget -c "http://sources.redhat.com/pub/newlib/newlib-${NEWLIB_VER}.tar.gz"
 
 	tar xf newlib-${NEWLIB_VER}.tar.gz -C ${BUILD_DIR}
 	patch -p1 -d ${BUILD_DIR}/newlib-${NEWLIB_VER} < files/newlib.patch
