@@ -46,10 +46,8 @@ void mount_initrd(struct inode *root) {
  * RAM uzerinde saklanan sahte bir dosya sistemi olusturuyoruz
  */
 void denemefs_init() {
-	unsigned int i;
-	struct inode root_inode, dir1_inode, bin_inode, newinode, initrd_inode;
+	struct inode root_inode, dir1_inode, newinode, initrd_inode;
 	int r;
-	Deneme_inode *in;
 
 	memset(di, 0, sizeof(di));
 

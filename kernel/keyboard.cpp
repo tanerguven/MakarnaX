@@ -162,7 +162,7 @@ static uint8_t shiftmap[256] =
 	NO,      NO,      NO,      NO,      NO,      NO,      NO,      NO,
 };
 
-#define C(x) (x - '@')
+#define C(x) (uint8_t)(x - '@')
 
 static uint8_t ctlmap[256] =
 {
